@@ -53,6 +53,37 @@ fun HudOverlay(
                 HudWidgetContent(element, data, controls, layout.scale * widget.scale)
             }
         }
+        if (data.isOffRoute) {
+            OffRouteBanner(data.metrics, Modifier.align(Alignment.TopCenter).padding(top = 8.dp))
+        }
+    }
+}
+
+/** Prominent warning shown while off the followed route, with an arrow pointing back to it. */
+@Composable
+private fun OffRouteBanner(metrics: LiveMetrics, modifier: Modifier = Modifier) {
+    val meters = metrics.offRouteMeters?.toInt() ?: 0
+    // Arrow rotates to the route relative to the current heading.
+    val relBearing = ((metrics.bearingToRouteDeg ?: 0.0) - (metrics.bearingDeg ?: 0.0)).toFloat()
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color(0xF2D7191C))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            Icons.Filled.Navigation,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(22.dp).rotate(relBearing),
+        )
+        Text(
+            "  Fora de ruta · $meters m",
+            color = Color.White,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 

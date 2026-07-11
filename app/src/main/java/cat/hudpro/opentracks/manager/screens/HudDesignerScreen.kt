@@ -25,6 +25,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -121,8 +122,62 @@ fun HudDesignerScreen(onBack: () -> Unit) {
                 }
 
                 TrackAppearanceSection(prefs)
+                FollowRouteSection(prefs)
             }
         }
+    }
+}
+
+@Composable
+private fun FollowRouteSection(prefs: ViewerPreferences) {
+    val palette = listOf("#3A86FF", "#E63946", "#2A9D8F", "#F4A261", "#FFD166", "#9B5DE5")
+    var color by remember { mutableStateOf(prefs.followColor) }
+    var width by remember { mutableFloatStateOf(prefs.followWidth) }
+    var arrows by remember { mutableStateOf(prefs.followArrows) }
+    var progress by remember { mutableStateOf(prefs.followProgress) }
+    var threshold by remember { mutableFloatStateOf(prefs.offRouteThresholdM.toFloat()) }
+    var sound by remember { mutableStateOf(prefs.offRouteSound) }
+    var vibrate by remember { mutableStateOf(prefs.offRouteVibrate) }
+
+    Text("Ruta a seguir", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        palette.forEach { hex ->
+            Box(
+                Modifier
+                    .size(30.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(Color(android.graphics.Color.parseColor(hex)))
+                    .border(
+                        if (color == hex) 3.dp else 1.dp,
+                        if (color == hex) Color.Black else Color.Gray,
+                        androidx.compose.foundation.shape.CircleShape,
+                    )
+                    .clickable { color = hex; prefs.followColor = hex },
+            )
+        }
+    }
+    Text("Gruix ${width.toInt()}", style = MaterialTheme.typography.bodySmall)
+    Slider(value = width, onValueChange = { width = it; prefs.followWidth = it }, valueRange = 3f..12f)
+    ToggleRow("Fletxes de direcció", arrows) { arrows = it; prefs.followArrows = it }
+    ToggleRow("Mostrar progrés (recorregut atenuat)", progress) { progress = it; prefs.followProgress = it }
+
+    Text("Avís fora de ruta", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    Text("Llindar de desviació: ${threshold.toInt()} m", style = MaterialTheme.typography.bodySmall)
+    Slider(
+        value = threshold,
+        onValueChange = { threshold = it; prefs.offRouteThresholdM = it.toInt() },
+        valueRange = 10f..100f,
+        steps = 8,
+    )
+    ToggleRow("So", sound) { sound = it; prefs.offRouteSound = it }
+    ToggleRow("Vibració", vibrate) { vibrate = it; prefs.offRouteVibrate = it }
+}
+
+@Composable
+private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        androidx.compose.material3.Switch(checked = checked, onCheckedChange = onChange)
+        Text("  $label", style = MaterialTheme.typography.bodyMedium)
     }
 }
 

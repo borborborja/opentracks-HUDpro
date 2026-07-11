@@ -33,13 +33,51 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getString(KEY_TRACK_COLOR, DEFAULT_TRACK_COLOR) ?: DEFAULT_TRACK_COLOR
         set(value) = prefs.edit().putString(KEY_TRACK_COLOR, value).apply()
 
+    // --- Followed-route appearance ---
+    var followColor: String
+        get() = prefs.getString(KEY_FOLLOW_COLOR, DEFAULT_FOLLOW_COLOR) ?: DEFAULT_FOLLOW_COLOR
+        set(value) = prefs.edit().putString(KEY_FOLLOW_COLOR, value).apply()
+
+    var followWidth: Float
+        get() = prefs.getFloat(KEY_FOLLOW_WIDTH, 6f)
+        set(value) = prefs.edit().putFloat(KEY_FOLLOW_WIDTH, value).apply()
+
+    var followArrows: Boolean
+        get() = prefs.getBoolean(KEY_FOLLOW_ARROWS, true)
+        set(value) = prefs.edit().putBoolean(KEY_FOLLOW_ARROWS, value).apply()
+
+    var followProgress: Boolean
+        get() = prefs.getBoolean(KEY_FOLLOW_PROGRESS, true)
+        set(value) = prefs.edit().putBoolean(KEY_FOLLOW_PROGRESS, value).apply()
+
+    // --- Off-route alert ---
+    var offRouteThresholdM: Int
+        get() = prefs.getInt(KEY_OFFROUTE_THRESHOLD, 40)
+        set(value) = prefs.edit().putInt(KEY_OFFROUTE_THRESHOLD, value).apply()
+
+    var offRouteSound: Boolean
+        get() = prefs.getBoolean(KEY_OFFROUTE_SOUND, true)
+        set(value) = prefs.edit().putBoolean(KEY_OFFROUTE_SOUND, value).apply()
+
+    var offRouteVibrate: Boolean
+        get() = prefs.getBoolean(KEY_OFFROUTE_VIBRATE, true)
+        set(value) = prefs.edit().putBoolean(KEY_OFFROUTE_VIBRATE, value).apply()
+
     companion object {
         private const val KEY_BASE_MAP = "base_map_id"
         private const val KEY_HUD_LAYOUT = "hud_layout_json"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"
         private const val KEY_TRACK_COLOR_MODE = "track_color_mode"
         private const val KEY_TRACK_COLOR = "track_color"
+        private const val KEY_FOLLOW_COLOR = "follow_color"
+        private const val KEY_FOLLOW_WIDTH = "follow_width"
+        private const val KEY_FOLLOW_ARROWS = "follow_arrows"
+        private const val KEY_FOLLOW_PROGRESS = "follow_progress"
+        private const val KEY_OFFROUTE_THRESHOLD = "offroute_threshold"
+        private const val KEY_OFFROUTE_SOUND = "offroute_sound"
+        private const val KEY_OFFROUTE_VIBRATE = "offroute_vibrate"
         const val DEFAULT_TRACK_COLOR = "#E63946"
+        const val DEFAULT_FOLLOW_COLOR = "#3A86FF"
 
         fun get(context: Context): ViewerPreferences =
             ViewerPreferences(context.getSharedPreferences("viewer_prefs", Context.MODE_PRIVATE))

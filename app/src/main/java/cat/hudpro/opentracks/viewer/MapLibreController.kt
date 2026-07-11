@@ -3,6 +3,7 @@ package cat.hudpro.opentracks.viewer
 import cat.hudpro.opentracks.data.map.MapSource
 import cat.hudpro.opentracks.data.map.MapStyleFactory
 import cat.hudpro.opentracks.data.map.TrackColorMode
+import cat.hudpro.opentracks.data.opentracks.model.GeoPoint
 import cat.hudpro.opentracks.data.opentracks.model.Segment
 import cat.hudpro.opentracks.data.opentracks.model.Waypoint
 import org.maplibre.android.camera.CameraUpdateFactory
@@ -30,6 +31,15 @@ class MapLibreController(private val map: MapLibreMap) {
     private var trackLayer: LineLayer? = null
     private var waypointSource: GeoJsonSource? = null
     private var followSource: GeoJsonSource? = null
+    private var followDoneSource: GeoJsonSource? = null
+    private var followLayer: LineLayer? = null
+    private var followDoneLayer: LineLayer? = null
+    private var followArrowLayer: SymbolLayer? = null
+    private var followPoints: List<GeoPoint> = emptyList()
+    private var followColorHex: String = FOLLOW_COLOR
+    private var followWidth: Float = 6f
+    private var followArrows: Boolean = true
+    private var followProgress: Boolean = true
     private var hasFramedTrack = false
 
     private var trackColorMode: TrackColorMode = TrackColorMode.SPEED
@@ -43,6 +53,9 @@ class MapLibreController(private val map: MapLibreMap) {
         const val WAYPOINT_LAYER = "waypoint-layer"
         const val FOLLOW_SOURCE = "follow-source"
         const val FOLLOW_LAYER = "follow-layer"
+        const val FOLLOW_DONE_SOURCE = "follow-done-source"
+        const val FOLLOW_DONE_LAYER = "follow-done-layer"
+        const val FOLLOW_ARROW_LAYER = "follow-arrow-layer"
         const val TRACK_COLOR = "#E63946"
         const val FOLLOW_COLOR = "#3A86FF"
         const val MAX_COLOR_SEGMENTS = 500
@@ -72,18 +85,47 @@ class MapLibreController(private val map: MapLibreMap) {
 
     private fun addOverlayLayers(style: Style) {
         // Follow route drawn first, so the live recorded track renders on top of it.
+        // Traveled ("done") portion underneath, dimmed grey.
+        val followDone = GeoJsonSource(FOLLOW_DONE_SOURCE, FeatureCollection.fromFeatures(emptyList()))
+        style.addSource(followDone)
+        val doneLayer = LineLayer(FOLLOW_DONE_LAYER, FOLLOW_DONE_SOURCE).withProperties(
+            PropertyFactory.lineColor("#9AA5AD"),
+            PropertyFactory.lineWidth((followWidth - 2f).coerceAtLeast(2f)),
+            PropertyFactory.lineOpacity(0.6f),
+            PropertyFactory.lineCap("round"),
+            PropertyFactory.lineJoin("round"),
+        )
+        style.addLayer(doneLayer)
+        followDoneSource = followDone
+        followDoneLayer = doneLayer
+
         val follow = GeoJsonSource(FOLLOW_SOURCE, FeatureCollection.fromFeatures(emptyList()))
         style.addSource(follow)
-        style.addLayer(
-            LineLayer(FOLLOW_LAYER, FOLLOW_SOURCE).withProperties(
-                PropertyFactory.lineColor(FOLLOW_COLOR),
-                PropertyFactory.lineWidth(6f),
-                PropertyFactory.lineOpacity(0.7f),
-                PropertyFactory.lineCap("round"),
-                PropertyFactory.lineJoin("round"),
-            ),
+        val flLayer = LineLayer(FOLLOW_LAYER, FOLLOW_SOURCE).withProperties(
+            PropertyFactory.lineColor(followColorHex),
+            PropertyFactory.lineWidth(followWidth),
+            PropertyFactory.lineOpacity(0.85f),
+            PropertyFactory.lineCap("round"),
+            PropertyFactory.lineJoin("round"),
         )
+        style.addLayer(flLayer)
         followSource = follow
+        followLayer = flLayer
+
+        // Direction arrows along the remaining route (no image assets needed).
+        val arrows = SymbolLayer(FOLLOW_ARROW_LAYER, FOLLOW_SOURCE).withProperties(
+            PropertyFactory.textField("➤"),
+            PropertyFactory.textColor(followColorHex),
+            PropertyFactory.textSize(16f),
+            PropertyFactory.symbolPlacement("line"),
+            PropertyFactory.symbolSpacing(60f),
+            PropertyFactory.textAllowOverlap(true),
+            PropertyFactory.textKeepUpright(false),
+            PropertyFactory.textRotationAlignment("map"),
+            PropertyFactory.visibility(if (followArrows) "visible" else "none"),
+        )
+        style.addLayer(arrows)
+        followArrowLayer = arrows
 
         val track = GeoJsonSource(TRACK_SOURCE, FeatureCollection.fromFeatures(emptyList()))
         style.addSource(track)
@@ -181,14 +223,51 @@ class MapLibreController(private val map: MapLibreMap) {
         org.maplibre.android.style.expressions.Expression.color(android.graphics.Color.parseColor(hex)),
     )
 
-    /** Draws the preloaded route to follow (static). Pass an empty list to clear it. */
-    fun setFollowRoute(points: List<cat.hudpro.opentracks.data.opentracks.model.GeoPoint>) {
-        val features = if (points.size >= 2) {
-            listOf(Feature.fromGeometry(LineString.fromLngLats(points.map { Point.fromLngLat(it.longitude, it.latitude) })))
+    /** Applies the followed-route appearance (color, width, direction arrows, progress split). */
+    fun setFollowRouteStyle(colorHex: String, width: Float, arrows: Boolean, progress: Boolean) {
+        followColorHex = colorHex
+        followWidth = width
+        followArrows = arrows
+        followProgress = progress
+        followLayer?.setProperties(PropertyFactory.lineColor(colorHex), PropertyFactory.lineWidth(width))
+        followDoneLayer?.setProperties(PropertyFactory.lineWidth((width - 2f).coerceAtLeast(2f)))
+        followArrowLayer?.setProperties(
+            PropertyFactory.textColor(colorHex),
+            PropertyFactory.visibility(if (arrows) "visible" else "none"),
+        )
+        if (followPoints.isNotEmpty()) drawFollow(followPoints.size) // refresh remaining/done split
+    }
+
+    /** Draws the preloaded route to follow. Pass an empty list to clear it. */
+    fun setFollowRoute(points: List<GeoPoint>) {
+        followPoints = points
+        drawFollow(points.size)
+    }
+
+    /** Splits the route into traveled ("done") and remaining at [nearestIndex] when progress is on. */
+    fun updateFollowProgress(nearestIndex: Int) {
+        if (followProgress && followPoints.isNotEmpty()) drawFollow(nearestIndex.coerceIn(0, followPoints.size))
+    }
+
+    private fun drawFollow(splitIndex: Int) {
+        val points = followPoints
+        if (points.size < 2) {
+            followSource?.setGeoJson(FeatureCollection.fromFeatures(emptyList<Feature>()))
+            followDoneSource?.setGeoJson(FeatureCollection.fromFeatures(emptyList<Feature>()))
+            return
+        }
+        fun line(sub: List<GeoPoint>) = if (sub.size >= 2) {
+            listOf(Feature.fromGeometry(LineString.fromLngLats(sub.map { Point.fromLngLat(it.longitude, it.latitude) })))
         } else {
             emptyList()
         }
-        followSource?.setGeoJson(FeatureCollection.fromFeatures(features))
+        if (followProgress && splitIndex in 1 until points.size) {
+            followDoneSource?.setGeoJson(FeatureCollection.fromFeatures(line(points.subList(0, splitIndex + 1))))
+            followSource?.setGeoJson(FeatureCollection.fromFeatures(line(points.subList(splitIndex, points.size))))
+        } else {
+            followDoneSource?.setGeoJson(FeatureCollection.fromFeatures(emptyList<Feature>()))
+            followSource?.setGeoJson(FeatureCollection.fromFeatures(line(points)))
+        }
     }
 
     fun updateWaypoints(waypoints: List<Waypoint>) {

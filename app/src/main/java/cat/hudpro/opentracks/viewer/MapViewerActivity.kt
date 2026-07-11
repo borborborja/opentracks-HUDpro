@@ -58,6 +58,12 @@ class MapViewerActivity : ComponentActivity() {
     private var lastSegments: List<Segment> = emptyList()
     private val speedBuffer = ArrayDeque<Float>()
 
+    private val offRouteAlerter = cat.hudpro.opentracks.viewer.follow.OffRouteAlerter()
+    private var following = false
+    private var offRouteThreshold = 40
+    private var offRouteSound = true
+    private var offRouteVibrate = true
+
     private var wasRecording = false
     private var uploadedThisSession = false
 
@@ -155,6 +161,11 @@ class MapViewerActivity : ComponentActivity() {
                 val geo = gpx.map { it.toGeoPoint() }
                 followEngine = FollowRouteEngine(geo, gpx.map { it.elevation })
                 ctrl.setFollowRoute(geo)
+                ctrl.setFollowRouteStyle(prefs.followColor, prefs.followWidth, prefs.followArrows, prefs.followProgress)
+                offRouteThreshold = prefs.offRouteThresholdM
+                offRouteSound = prefs.offRouteSound
+                offRouteVibrate = prefs.offRouteVibrate
+                following = true
             }
         }
     }
@@ -169,15 +180,35 @@ class MapViewerActivity : ComponentActivity() {
                 ctrl.updateWaypoints(wps)
                 if (followMode && reader.isRecording) ctrl.follow(segs)
 
-                val metrics = mergeFollow(MetricsCalculator.compute(segs, stats, reader.isRecording), segs)
+                var metrics = MetricsCalculator.compute(segs, stats, reader.isRecording)
+
+                // Follow-route: compute state once, drive metrics + progress split + off-route alert.
+                val current = segs.lastOrNull()?.lastOrNull { it.latLong != null }?.latLong
+                val state = current?.let { followEngine?.update(it) }
+                if (state != null) {
+                    metrics = metrics.copy(
+                        remainingDistanceKm = state.remainingKm,
+                        offRouteMeters = state.offRouteMeters,
+                        bearingToRouteDeg = state.bearingToRouteDeg,
+                    )
+                    ctrl.updateFollowProgress(state.nearestIndex)
+                    if (offRouteAlerter.update(state.offRouteMeters, offRouteThreshold) == cat.hudpro.opentracks.viewer.follow.OffRouteAlerter.Event.ENTERED) {
+                        if (offRouteVibrate) AlertFeedback.vibrate(this@MapViewerActivity)
+                        if (offRouteSound) AlertFeedback.beep()
+                    }
+                }
+
                 pushSpeed(metrics.speedKmh)
                 val routeProfile = followEngine?.elevationProfile
+                val nPoints = (followEngine?.points?.size ?: 1)
                 hudDataFlow.value = HudData(
                     metrics = metrics,
                     speedSeries = speedBuffer.toList(),
                     // Prefer the followed route's profile; else the recorded track's own altitude.
                     elevationProfile = if (!routeProfile.isNullOrEmpty()) routeProfile else recordedElevation(segs),
-                    routeProgress = if (!routeProfile.isNullOrEmpty()) routeProgress(segs) else 1f,
+                    routeProgress = if (state != null && nPoints > 1) state.nearestIndex.toFloat() / (nPoints - 1) else 1f,
+                    following = following,
+                    offRouteThresholdM = offRouteThreshold,
                 )
 
                 handleRecordingStopped(reader, segs)
@@ -197,25 +228,6 @@ class MapViewerActivity : ComponentActivity() {
         if (alts.size < 2) return emptyList()
         val step = (alts.size / 120 + 1).coerceAtLeast(1)
         return alts.filterIndexed { i, _ -> i % step == 0 }
-    }
-
-    private fun routeProgress(segments: List<Segment>): Float {
-        val engine = followEngine ?: return 0f
-        val current = segments.lastOrNull()?.lastOrNull { it.latLong != null }?.latLong ?: return 0f
-        val state = engine.update(current) ?: return 0f
-        val n = (engine.points.size - 1).coerceAtLeast(1)
-        return state.nearestIndex.toFloat() / n
-    }
-
-    private fun mergeFollow(metrics: LiveMetrics, segments: List<Segment>): LiveMetrics {
-        val engine = followEngine ?: return metrics
-        val current = segments.lastOrNull()?.lastOrNull { it.latLong != null }?.latLong ?: return metrics
-        val state = engine.update(current) ?: return metrics
-        return metrics.copy(
-            remainingDistanceKm = state.remainingKm,
-            offRouteMeters = state.offRouteMeters,
-            bearingToRouteDeg = state.bearingToRouteDeg,
-        )
     }
 
     /** When OpenTracks stops recording, auto-enqueue an Endurain upload of the reconstructed GPX. */

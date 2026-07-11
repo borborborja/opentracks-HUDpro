@@ -11,4 +11,12 @@ data class HudData(
     val speedSeries: List<Float> = emptyList(),
     val elevationProfile: List<Float> = emptyList(),
     val routeProgress: Float = 0f,
-)
+    /** True when a route is being followed (enables the off-route warning). */
+    val following: Boolean = false,
+    /** Deviation (m) above which the off-route warning shows. */
+    val offRouteThresholdM: Int = 40,
+) {
+    /** Whether the off-route warning banner should be shown right now. */
+    val isOffRoute: Boolean
+        get() = following && (metrics.offRouteMeters ?: 0.0) > offRouteThresholdM
+}
