@@ -27,6 +27,7 @@ class MapLibreController(private val map: MapLibreMap) {
 
     private var trackSource: GeoJsonSource? = null
     private var waypointSource: GeoJsonSource? = null
+    private var followSource: GeoJsonSource? = null
     private var hasFramedTrack = false
 
     private companion object {
@@ -34,7 +35,10 @@ class MapLibreController(private val map: MapLibreMap) {
         const val TRACK_LAYER = "track-layer"
         const val WAYPOINT_SOURCE = "waypoint-source"
         const val WAYPOINT_LAYER = "waypoint-layer"
+        const val FOLLOW_SOURCE = "follow-source"
+        const val FOLLOW_LAYER = "follow-layer"
         const val TRACK_COLOR = "#E63946"
+        const val FOLLOW_COLOR = "#3A86FF"
     }
 
     fun setBaseMap(source: MapSource, onReady: () -> Unit = {}) {
@@ -51,6 +55,20 @@ class MapLibreController(private val map: MapLibreMap) {
     }
 
     private fun addOverlayLayers(style: Style) {
+        // Follow route drawn first, so the live recorded track renders on top of it.
+        val follow = GeoJsonSource(FOLLOW_SOURCE, FeatureCollection.fromFeatures(emptyList()))
+        style.addSource(follow)
+        style.addLayer(
+            LineLayer(FOLLOW_LAYER, FOLLOW_SOURCE).withProperties(
+                PropertyFactory.lineColor(FOLLOW_COLOR),
+                PropertyFactory.lineWidth(6f),
+                PropertyFactory.lineOpacity(0.7f),
+                PropertyFactory.lineCap("round"),
+                PropertyFactory.lineJoin("round"),
+            ),
+        )
+        followSource = follow
+
         val track = GeoJsonSource(TRACK_SOURCE, FeatureCollection.fromFeatures(emptyList()))
         style.addSource(track)
         style.addLayer(
@@ -86,6 +104,16 @@ class MapLibreController(private val map: MapLibreMap) {
         if (frame && !hasFramedTrack) {
             frameTrack(segments)
         }
+    }
+
+    /** Draws the preloaded route to follow (static). Pass an empty list to clear it. */
+    fun setFollowRoute(points: List<cat.hudpro.opentracks.data.opentracks.model.GeoPoint>) {
+        val features = if (points.size >= 2) {
+            listOf(Feature.fromGeometry(LineString.fromLngLats(points.map { Point.fromLngLat(it.longitude, it.latitude) })))
+        } else {
+            emptyList()
+        }
+        followSource?.setGeoJson(FeatureCollection.fromFeatures(features))
     }
 
     fun updateWaypoints(waypoints: List<Waypoint>) {
