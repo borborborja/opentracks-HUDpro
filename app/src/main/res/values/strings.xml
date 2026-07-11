@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HUD Pro</string>
+    <string name="viewer_title">Visor HUD Pro</string>
+    <string name="attribution_icgc">© Institut Cartogràfic i Geològic de Catalunya (ICGC)</string>
+    <string name="attribution_osm">© OpenStreetMap contributors</string>
+</resources>

@@ -1,0 +1,13 @@
+OpenTracks HUD Pro
+Copyright 2026 HUD Pro contributors
+
+This product is a fork of "OSM Dashboard for OpenTracks" (OSMDashboard),
+Copyright the OSMDashboard authors, licensed under the Apache License 2.0.
+https://codeberg.org/OpenTracksApp/OSMDashboard
+
+The OpenTracks Dashboard API integration (data/opentracks package) is derived
+from OSMDashboard's map/reader package.
+
+Map data:
+ - © OpenStreetMap contributors (ODbL)
+ - © Institut Cartogràfic i Geològic de Catalunya (ICGC), CC-BY
