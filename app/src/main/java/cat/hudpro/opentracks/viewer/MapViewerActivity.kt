@@ -77,14 +77,23 @@ class MapViewerActivity : ComponentActivity() {
         )
         mapView.onCreate(savedInstanceState)
 
-        val source = MapSource.byId(prefs.baseMapId)
+        val baseMapId = prefs.baseMapId
         wasRecording = reader?.isRecording == true
         mapView.getMapAsync { map ->
             val ctrl = MapLibreController(map)
             controller = ctrl
-            ctrl.setBaseMap(source) {
+            val onReady: () -> Unit = {
                 loadFollowRoute(prefs, ctrl)
                 reader?.let { observe(it, ctrl) }
+                Unit
+            }
+            val offline = baseMapId
+                ?.takeIf { it.startsWith(cat.hudpro.opentracks.data.map.OfflineMap.OFFLINE_PREFIX) }
+                ?.let { cat.hudpro.opentracks.data.map.OfflineMapStore.get(this).bySelectionId(it) }
+            if (offline != null) {
+                ctrl.setOfflineMbtiles(offline.path, offline.attribution, onReady)
+            } else {
+                ctrl.setBaseMap(MapSource.byId(baseMapId), onReady)
             }
         }
 

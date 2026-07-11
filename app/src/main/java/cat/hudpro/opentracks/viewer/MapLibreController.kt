@@ -48,6 +48,15 @@ class MapLibreController(private val map: MapLibreMap) {
         } else {
             Style.Builder().fromJson(MapStyleFactory.rasterStyleJson(source))
         }
+        applyStyle(builder, onReady)
+    }
+
+    /** Sets an offline base map backed by a local MBTiles archive. */
+    fun setOfflineMbtiles(path: String, attribution: String, onReady: () -> Unit = {}) {
+        applyStyle(Style.Builder().fromJson(MapStyleFactory.rasterStyleForMbtiles(path, attribution)), onReady)
+    }
+
+    private fun applyStyle(builder: Style.Builder, onReady: () -> Unit) {
         map.setStyle(builder) { style ->
             addOverlayLayers(style)
             onReady()

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.Card
@@ -42,6 +43,7 @@ fun HomeScreen(onOpenViewer: () -> Unit, onNavigate: (String) -> Unit) {
     val tiles = listOf(
         Tile("Diseñar HUD", "Widgets i disposició", Icons.Filled.Dashboard, Routes.HUD),
         Tile("Capas de mapa", "OSM · ICGC", Icons.Filled.Layers, Routes.LAYERS),
+        Tile("Mapes offline", "MBTiles ICGC/OSM", Icons.Filled.Download, Routes.OFFLINE),
         Tile("Tracks a seguir", "GPX i col·leccions", Icons.AutoMirrored.Filled.DirectionsRun, Routes.TRACKS),
         Tile("Endurain", "Pujar i sincronitzar", Icons.Filled.CloudUpload, Routes.ENDURAIN),
     )
