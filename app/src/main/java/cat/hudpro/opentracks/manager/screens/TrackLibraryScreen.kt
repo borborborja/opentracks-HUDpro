@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -45,7 +46,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TrackLibraryScreen(onBack: () -> Unit) {
+fun TrackLibraryScreen(onBack: () -> Unit, onCreateRoute: () -> Unit = {}) {
     val context = LocalContext.current
     val app = remember { HudProApplication.from(context) }
     val prefs = remember { ViewerPreferences.get(context) }
@@ -76,11 +77,19 @@ fun TrackLibraryScreen(onBack: () -> Unit) {
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { importLauncher.launch(arrayOf("application/gpx+xml", "application/xml", "text/xml", "*/*")) },
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Importar GPX") },
-            )
+            androidx.compose.foundation.layout.Column(
+                horizontalAlignment = androidx.compose.ui.Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                androidx.compose.material3.SmallFloatingActionButton(onClick = onCreateRoute) {
+                    Icon(Icons.Filled.Edit, contentDescription = "Crear ruta")
+                }
+                ExtendedFloatingActionButton(
+                    onClick = { importLauncher.launch(arrayOf("application/gpx+xml", "application/xml", "text/xml", "*/*")) },
+                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                    text = { Text("Importar GPX") },
+                )
+            }
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {

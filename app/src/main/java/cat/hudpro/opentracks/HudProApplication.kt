@@ -24,6 +24,9 @@ class HudProApplication : Application() {
     val endurainRepository: EndurainRepository by lazy {
         EndurainRepository(EndurainPreferences.get(this))
     }
+    val routingRepository: cat.hudpro.opentracks.data.routing.RoutingRepository by lazy {
+        cat.hudpro.opentracks.data.routing.RoutingRepository(this)
+    }
 
     override fun onCreate() {
         super.onCreate()

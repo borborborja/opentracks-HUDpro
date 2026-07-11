@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,7 +40,7 @@ private data class Tile(val title: String, val subtitle: String, val icon: Image
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onOpenViewer: () -> Unit, onNavigate: (String) -> Unit) {
+fun HomeScreen(onOpenViewer: () -> Unit, onNavigate: (String) -> Unit, onOpenSettings: () -> Unit = {}) {
     val tiles = listOf(
         Tile("Diseñar HUD", "Widgets i disposició", Icons.Filled.Dashboard, Routes.HUD),
         Tile("Capas de mapa", "OSM · ICGC", Icons.Filled.Layers, Routes.LAYERS),
@@ -47,7 +48,18 @@ fun HomeScreen(onOpenViewer: () -> Unit, onNavigate: (String) -> Unit) {
         Tile("Tracks a seguir", "GPX i col·leccions", Icons.AutoMirrored.Filled.DirectionsRun, Routes.TRACKS),
         Tile("Endurain", "Pujar i sincronitzar", Icons.Filled.CloudUpload, Routes.ENDURAIN),
     )
-    Scaffold(topBar = { TopAppBar(title = { Text("HUD Pro") }) }) { padding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("HUD Pro") },
+                actions = {
+                    androidx.compose.material3.IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Ajustos")
+                    }
+                },
+            )
+        },
+    ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
             ElevatedButton(
                 onClick = onOpenViewer,
