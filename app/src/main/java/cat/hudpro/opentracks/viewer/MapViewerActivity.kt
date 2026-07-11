@@ -4,12 +4,22 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.lifecycleScope
 import cat.hudpro.opentracks.data.map.MapSource
 import cat.hudpro.opentracks.data.opentracks.DashboardReader
 import cat.hudpro.opentracks.data.opentracks.isDashboardAction
 import cat.hudpro.opentracks.data.prefs.ViewerPreferences
+import cat.hudpro.opentracks.viewer.hud.HudLayout
+import cat.hudpro.opentracks.viewer.hud.HudLayoutStore
+import cat.hudpro.opentracks.viewer.hud.HudOverlay
+import cat.hudpro.opentracks.viewer.hud.LiveMetrics
+import cat.hudpro.opentracks.viewer.hud.MetricsCalculator
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import org.maplibre.android.maps.MapView
@@ -24,21 +34,38 @@ class MapViewerActivity : ComponentActivity() {
     private var controller: MapLibreController? = null
     private var reader: DashboardReader? = null
 
+    private val metricsFlow = MutableStateFlow(LiveMetrics())
+    private lateinit var hudLayout: HudLayout
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (intent.isDashboardAction()) {
             reader = runCatching { DashboardReader(intent, contentResolver) }
-                .onFailure { Log.e("MapViewerActivity", "Failed to init DashboardReader", it) }
+                .onFailure { Log.e(TAG, "Failed to init DashboardReader", it) }
                 .getOrNull()
         }
         applyWindowFlags()
 
+        val prefs = ViewerPreferences.get(this)
+        hudLayout = HudLayoutStore.load(prefs)
+
         mapView = MapView(this)
-        setContentView(mapView)
+        val hud = ComposeView(this).apply {
+            setContent {
+                val metrics by metricsFlow.collectAsState()
+                HudOverlay(metrics, hudLayout)
+            }
+        }
+        setContentView(
+            FrameLayout(this).apply {
+                addView(mapView)
+                addView(hud)
+            },
+        )
         mapView.onCreate(savedInstanceState)
 
-        val source = MapSource.byId(ViewerPreferences.get(this).baseMapId)
+        val source = MapSource.byId(prefs.baseMapId)
         mapView.getMapAsync { map ->
             val ctrl = MapLibreController(map)
             controller = ctrl
@@ -52,12 +79,14 @@ class MapViewerActivity : ComponentActivity() {
 
     private fun observe(reader: DashboardReader, ctrl: MapLibreController) {
         lifecycleScope.launch {
-            reader.segments.combine(reader.waypoints) { segs, wps -> segs to wps }
-                .collect { (segs, wps) ->
-                    ctrl.updateTrack(segs, frame = true)
-                    ctrl.updateWaypoints(wps)
-                    if (reader.isRecording) ctrl.follow(segs)
-                }
+            combine(reader.segments, reader.waypoints, reader.statistics) { segs, wps, stats ->
+                Triple(segs, wps, stats)
+            }.collect { (segs, wps, stats) ->
+                ctrl.updateTrack(segs, frame = true)
+                ctrl.updateWaypoints(wps)
+                if (reader.isRecording) ctrl.follow(segs)
+                metricsFlow.value = MetricsCalculator.compute(segs, stats, reader.isRecording)
+            }
         }
     }
 
@@ -88,4 +117,6 @@ class MapViewerActivity : ComponentActivity() {
         mapView.onDestroy()
         super.onDestroy()
     }
+
+    private companion object { const val TAG = "MapViewerActivity" }
 }
