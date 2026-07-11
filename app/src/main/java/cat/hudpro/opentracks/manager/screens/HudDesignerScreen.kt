@@ -53,9 +53,6 @@ private val SAMPLE = HudData(
     routeProgress = 0.55f,
 )
 
-/** Snap threshold (fraction of the canvas) for aligning widgets to edges. */
-private const val SNAP = 0.03f
-
 @Composable
 fun HudDesignerScreen(onBack: () -> Unit) {
     val context = LocalContext.current
@@ -81,7 +78,8 @@ fun HudDesignerScreen(onBack: () -> Unit) {
                     data = SAMPLE,
                     selectedIndex = selected,
                     onSelect = { selected = it },
-                    onMove = { i, x, y -> layout = layout.moveTo(i, snap(x), snap(y)) },
+                    onMove = { i, x, y -> layout = layout.moveTo(i, x, y) }, // free drag
+                    onDragEnd = { i -> layout = snapWidgetToZone(layout, i) }, // magnetize on release
                     onRemove = { i ->
                         layout = layout.copy(widgets = layout.widgets.toMutableList().also { it.removeAt(i) })
                         selected = null
@@ -164,9 +162,14 @@ private fun TrackAppearanceSection(prefs: ViewerPreferences) {
     }
 }
 
-/** Soft snapping to the canvas edges/center so widgets align cleanly. */
-private fun snap(v: Float): Float {
-    val targets = listOf(0.03f, 0.5f, 0.88f, 0.97f)
-    val hit = targets.firstOrNull { abs(it - v) < SNAP }
-    return (hit ?: v).coerceIn(0f, 1f)
+// Magnetized zones: 3 columns × 6 rows. On release a widget snaps to the nearest zone so the HUD
+// stays tidy while dragging remains completely free.
+private val ZONE_COLS = listOf(0.02f, 0.36f, 0.70f)
+private val ZONE_ROWS = listOf(0.03f, 0.20f, 0.37f, 0.54f, 0.70f, 0.85f)
+
+private fun snapWidgetToZone(layout: HudLayout, index: Int): HudLayout {
+    val w = layout.widgets.getOrNull(index) ?: return layout
+    val x = ZONE_COLS.minByOrNull { abs(it - w.x) } ?: w.x
+    val y = ZONE_ROWS.minByOrNull { abs(it - w.y) } ?: w.y
+    return layout.moveTo(index, x, y)
 }

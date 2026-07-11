@@ -49,6 +49,13 @@
             tools:node="merge"
             xmlns:tools="http://schemas.android.com/tools" />
 
+        <!-- Declare the foreground-service type for WorkManager's foreground worker (offline map download). -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge"
+            xmlns:tools="http://schemas.android.com/tools" />
+
         <!-- Serves the downloaded APK to the system installer via a content:// URI. -->
         <provider
             android:name="androidx.core.content.FileProvider"

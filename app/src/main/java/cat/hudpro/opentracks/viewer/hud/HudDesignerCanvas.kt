@@ -38,6 +38,7 @@ fun HudDesignerCanvas(
     selectedIndex: Int?,
     onSelect: (Int?) -> Unit,
     onMove: (index: Int, x: Float, y: Float) -> Unit,
+    onDragEnd: (index: Int) -> Unit,
     onRemove: (index: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -63,8 +64,10 @@ fun HudDesignerCanvas(
                             onDrag = { change, drag ->
                                 change.consume()
                                 val cw = current
+                                // Free movement while dragging; magnetize to a zone on release.
                                 onMove(index, cw.x + drag.x / maxWpx, cw.y + drag.y / maxHpx)
                             },
+                            onDragEnd = { onDragEnd(index) },
                         )
                     }
                     .pointerInput(index) { detectTapGestures(onTap = { onSelect(index) }) },
