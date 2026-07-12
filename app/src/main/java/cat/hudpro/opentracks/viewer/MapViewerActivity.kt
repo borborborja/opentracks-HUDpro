@@ -1,6 +1,7 @@
 package cat.hudpro.opentracks.viewer
 
 import android.os.Build
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
@@ -36,6 +37,7 @@ import cat.hudpro.opentracks.viewer.hud.HudLayout
 import cat.hudpro.opentracks.viewer.hud.HudLayoutStore
 import cat.hudpro.opentracks.viewer.hud.LiveMetrics
 import cat.hudpro.opentracks.viewer.hud.MetricsCalculator
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -52,6 +54,11 @@ class MapViewerActivity : ComponentActivity() {
     private lateinit var mapView: MapView
     private var controller: MapLibreController? = null
     private var reader: DashboardReader? = null
+    private var observeJob: Job? = null
+
+    // Optimistic recording state: flipped the instant the user taps start/stop so the HUD reacts
+    // immediately, until OpenTracks pushes an authoritative dashboard intent (which clears it).
+    private var recordingOverride: Boolean? = null
 
     private val hudDataFlow = MutableStateFlow(HudData())
     private val controlsFlow = MutableStateFlow(HudControls.disabled)
@@ -231,9 +238,47 @@ class MapViewerActivity : ComponentActivity() {
             onNorth = { ctrl.northUp() },
             onZoomIn = { ctrl.zoomIn() },
             onZoomOut = { ctrl.zoomOut() },
-            onStartRecording = { cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.start(this) },
-            onStopRecording = { cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.stop(this) },
+            onStartRecording = {
+                if (cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.start(this)) {
+                    recordingOverride = true
+                    refreshRecordingHud()
+                }
+            },
+            onStopRecording = {
+                if (cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.stop(this)) {
+                    recordingOverride = false
+                    refreshRecordingHud()
+                }
+            },
         )
+    }
+
+    /** Re-emit the HUD data so the record button flips immediately after an optimistic start/stop. */
+    private fun refreshRecordingHud() {
+        val current = hudDataFlow.value
+        hudDataFlow.value = current.copy(metrics = current.metrics.copy(isRecording = isRecordingNow()))
+    }
+
+    /**
+     * OpenTracks re-pushes the dashboard intent (via STATS_TARGET_*) when recording state changes —
+     * e.g. right after we start recording, now with isRecording=true. Since this activity is
+     * singleTask, that arrives here. Rebuild the reader so the HUD reflects the live recording.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (!intent.isDashboardAction()) return
+        observeJob?.cancel()
+        reader?.stop()
+        reader = runCatching { DashboardReader(intent, contentResolver) }
+            .onFailure { Log.e(TAG, "Failed to init DashboardReader from new intent", it) }
+            .getOrNull()
+        // The authoritative push supersedes any optimistic guess. Leave `wasRecording` untouched so
+        // observe()'s handleRecordingStopped still detects the recording→stopped transition (Endurain).
+        recordingOverride = null
+        val ctrl = controller ?: return // map still loading; onCreate's onReady will observe+start
+        reader?.let { observe(it, ctrl); it.start() }
+        refreshRecordingHud()
     }
 
     private fun setupAnnouncements(prefs: ViewerPreferences) {
@@ -300,17 +345,21 @@ class MapViewerActivity : ComponentActivity() {
         }
     }
 
+    /** True recording state: the user's optimistic tap wins until OpenTracks pushes a fresh intent. */
+    private fun isRecordingNow(): Boolean = recordingOverride ?: (reader?.isRecording == true)
+
     private fun observe(reader: DashboardReader, ctrl: MapLibreController) {
-        lifecycleScope.launch {
+        observeJob = lifecycleScope.launch {
             combine(reader.segments, reader.waypoints, reader.statistics) { segs, wps, stats ->
                 Triple(segs, wps, stats)
             }.collect { (segs, wps, stats) ->
                 lastSegments = segs
                 ctrl.updateTrack(segs, frame = true)
                 ctrl.updateWaypoints(wps)
-                if (followMode && reader.isRecording) ctrl.follow(segs)
+                val recording = isRecordingNow()
+                if (followMode && recording) ctrl.follow(segs)
 
-                var metrics = MetricsCalculator.compute(segs, stats, reader.isRecording)
+                var metrics = MetricsCalculator.compute(segs, stats, recording)
 
                 // Follow-route: compute state once, drive metrics + progress split + off-route alert.
                 val current = segs.lastOrNull()?.lastOrNull { it.latLong != null }?.latLong
@@ -333,7 +382,7 @@ class MapViewerActivity : ComponentActivity() {
                     }
                 }
 
-                if (reader.isRecording) handleAnnouncements(metrics)
+                if (recording) handleAnnouncements(metrics)
 
                 pushSpeed(metrics.speedKmh)
                 val routeProfile = followEngine?.elevationProfile
