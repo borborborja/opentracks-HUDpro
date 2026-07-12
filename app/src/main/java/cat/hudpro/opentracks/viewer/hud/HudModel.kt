@@ -84,20 +84,30 @@ object HudCatalog {
 }
 
 /**
- * A placed HUD element. [x],[y] are fractions [0,1] of the safe area for the widget's top-left
- * corner, so the layout scales across screen sizes. [elementId] resolves via [HudCatalog].
+ * Screen zone where a widget is placed. Widgets in the same zone auto-stack (no overlap). No
+ * center-center zone so the map middle stays clear.
  */
+@Serializable
+enum class HudZone(val label: String) {
+    TOP_LEFT("↖"), TOP_CENTER("↑"), TOP_RIGHT("↗"),
+    MIDDLE_LEFT("←"), MIDDLE_RIGHT("→"),
+    BOTTOM_LEFT("↙"), BOTTOM_CENTER("↓"), BOTTOM_RIGHT("↘"),
+    ;
+
+    val isCenter: Boolean get() = this == TOP_CENTER || this == BOTTOM_CENTER
+}
+
+/** A placed HUD element assigned to a [zone]. Stacking order follows the list order. */
 @Serializable
 data class HudWidget(
     val elementId: String,
-    val x: Float,
-    val y: Float,
+    val zone: HudZone,
     val scale: Float = 1f,
 ) {
     val element: HudElement? get() = HudCatalog.byId(elementId)
 }
 
-/** The full HUD configuration: freely-positioned widgets + a global size scale. */
+/** The full HUD configuration: zone-placed widgets + a global size scale. */
 @Serializable
 data class HudLayout(
     val widgets: List<HudWidget> = emptyList(),
@@ -105,53 +115,55 @@ data class HudLayout(
 ) {
     fun contains(elementId: String) = widgets.any { it.elementId == elementId }
 
-    fun add(elementId: String, x: Float = 0.4f, y: Float = 0.45f): HudLayout =
-        if (contains(elementId)) this else copy(widgets = widgets + HudWidget(elementId, x, y))
+    fun byZone(zone: HudZone): List<HudWidget> = widgets.filter { it.zone == zone }
+
+    fun add(elementId: String, zone: HudZone = HudZone.TOP_LEFT): HudLayout =
+        if (contains(elementId)) this else copy(widgets = widgets + HudWidget(elementId, zone))
 
     fun remove(elementId: String): HudLayout =
         copy(widgets = widgets.filterNot { it.elementId == elementId })
 
-    fun moveTo(index: Int, x: Float, y: Float): HudLayout {
+    fun moveToZone(index: Int, zone: HudZone): HudLayout {
         if (index !in widgets.indices) return this
-        val w = widgets[index].copy(x = x.coerceIn(0f, 1f), y = y.coerceIn(0f, 1f))
+        val w = widgets[index].copy(zone = zone)
         return copy(widgets = widgets.toMutableList().also { it[index] = w })
     }
 
     companion object {
-        private fun m(metric: HudMetric, x: Float, y: Float) = HudWidget(HudCatalog.idOf(metric), x, y)
+        private fun m(metric: HudMetric, zone: HudZone) = HudWidget(HudCatalog.idOf(metric), zone)
 
         val CYCLING = HudLayout(
             widgets = listOf(
-                m(HudMetric.SPEED, 0.03f, 0.80f),
-                m(HudMetric.AVG_SPEED, 0.03f, 0.66f),
-                m(HudMetric.DISTANCE, 0.64f, 0.80f),
-                m(HudMetric.DURATION, 0.64f, 0.66f),
-                m(HudMetric.ELEV_GAIN, 0.64f, 0.04f),
-                HudWidget(HudCatalog.CHART_SPEED, 0.03f, 0.05f),
-                HudWidget(HudCatalog.CONTROL_RECENTER, 0.88f, 0.44f),
-                HudWidget(HudCatalog.CONTROL_RECORD, 0.88f, 0.60f),
+                m(HudMetric.SPEED, HudZone.BOTTOM_LEFT),
+                m(HudMetric.AVG_SPEED, HudZone.BOTTOM_LEFT),
+                m(HudMetric.DISTANCE, HudZone.BOTTOM_RIGHT),
+                m(HudMetric.DURATION, HudZone.BOTTOM_RIGHT),
+                m(HudMetric.ELEV_GAIN, HudZone.TOP_RIGHT),
+                HudWidget(HudCatalog.CHART_SPEED, HudZone.TOP_LEFT),
+                HudWidget(HudCatalog.CONTROL_RECENTER, HudZone.MIDDLE_RIGHT),
+                HudWidget(HudCatalog.CONTROL_RECORD, HudZone.MIDDLE_RIGHT),
             ),
         )
         val TRAIL = HudLayout(
             widgets = listOf(
-                m(HudMetric.PACE, 0.03f, 0.80f),
-                m(HudMetric.DISTANCE, 0.03f, 0.66f),
-                m(HudMetric.MOVING_TIME, 0.64f, 0.80f),
-                m(HudMetric.ELEV_GAIN, 0.64f, 0.66f),
-                m(HudMetric.REMAINING, 0.64f, 0.04f),
-                HudWidget(HudCatalog.CHART_ELEVATION, 0.03f, 0.05f),
-                HudWidget(HudCatalog.CONTROL_RECENTER, 0.88f, 0.44f),
+                m(HudMetric.PACE, HudZone.BOTTOM_LEFT),
+                m(HudMetric.DISTANCE, HudZone.BOTTOM_LEFT),
+                m(HudMetric.MOVING_TIME, HudZone.BOTTOM_RIGHT),
+                m(HudMetric.ELEV_GAIN, HudZone.BOTTOM_RIGHT),
+                m(HudMetric.REMAINING, HudZone.TOP_RIGHT),
+                HudWidget(HudCatalog.CHART_ELEVATION, HudZone.TOP_LEFT),
+                HudWidget(HudCatalog.CONTROL_RECENTER, HudZone.MIDDLE_RIGHT),
             ),
         )
         val SKI = HudLayout(
             widgets = listOf(
-                m(HudMetric.SPEED, 0.03f, 0.80f),
-                m(HudMetric.MAX_SPEED, 0.03f, 0.66f),
-                m(HudMetric.ALTITUDE, 0.64f, 0.80f),
-                m(HudMetric.SLOPE, 0.64f, 0.66f),
-                HudWidget(HudCatalog.CONTROL_COMPASS, 0.88f, 0.06f),
-                HudWidget(HudCatalog.CONTROL_ZOOM, 0.88f, 0.30f),
-                HudWidget(HudCatalog.CONTROL_RECENTER, 0.88f, 0.60f),
+                m(HudMetric.SPEED, HudZone.BOTTOM_LEFT),
+                m(HudMetric.MAX_SPEED, HudZone.BOTTOM_LEFT),
+                m(HudMetric.ALTITUDE, HudZone.BOTTOM_RIGHT),
+                m(HudMetric.SLOPE, HudZone.BOTTOM_RIGHT),
+                HudWidget(HudCatalog.CONTROL_COMPASS, HudZone.MIDDLE_RIGHT),
+                HudWidget(HudCatalog.CONTROL_ZOOM, HudZone.MIDDLE_RIGHT),
+                HudWidget(HudCatalog.CONTROL_RECENTER, HudZone.MIDDLE_RIGHT),
             ),
         )
         val DEFAULT = CYCLING

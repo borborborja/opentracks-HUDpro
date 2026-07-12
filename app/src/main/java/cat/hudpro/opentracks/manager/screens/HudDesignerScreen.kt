@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
@@ -41,7 +42,6 @@ import cat.hudpro.opentracks.viewer.hud.HudData
 import cat.hudpro.opentracks.viewer.hud.HudDesignerCanvas
 import cat.hudpro.opentracks.viewer.hud.HudLayout
 import cat.hudpro.opentracks.viewer.hud.HudLayoutStore
-import kotlin.math.abs
 import kotlin.time.Duration.Companion.minutes
 
 private val SAMPLE = HudData(
@@ -82,8 +82,6 @@ fun HudDesignerScreen(onBack: () -> Unit) {
                     data = SAMPLE,
                     selectedIndex = selected,
                     onSelect = { selected = it },
-                    onMove = { i, x, y -> layout = layout.moveTo(i, x, y) }, // free drag
-                    onDragEnd = { i -> layout = snapWidgetToZone(layout, i) }, // magnetize on release
                     onRemove = { i ->
                         layout = layout.copy(widgets = layout.widgets.toMutableList().also { it.removeAt(i) })
                         selected = null
@@ -111,8 +109,19 @@ fun HudDesignerScreen(onBack: () -> Unit) {
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                     )
                 }
-                Text("Toca per afegir · arrossega per moure · toca la ✕ per treure",
-                    style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                // Zone picker for the selected widget (reliable placement, no drag).
+                val sel = selected
+                if (sel != null && sel in layout.widgets.indices) {
+                    val current = layout.widgets[sel].zone
+                    Text("Mou «${layout.widgets[sel].element?.label ?: ""}» a una zona:",
+                        style = MaterialTheme.typography.labelLarge)
+                    ZonePicker(current) { zone -> layout = layout.moveToZone(sel, zone) }
+                } else {
+                    Text("Toca un widget per seleccionar-lo i moure'l a una zona.",
+                        style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                }
+
+                Text("Afegir / treure widgets", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp))
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     HudCatalog.elements.forEach { element ->
                         val placed = layout.contains(element.id)
@@ -130,6 +139,42 @@ fun HudDesignerScreen(onBack: () -> Unit) {
                 TrackAppearanceSection(prefs)
                 FollowRouteSection(prefs)
                 AudioAnnouncementsSection(prefs)
+            }
+        }
+    }
+}
+
+/** 3×3 grid of zone buttons (center-center is inactive) for placing the selected widget. */
+@Composable
+private fun ZonePicker(current: cat.hudpro.opentracks.viewer.hud.HudZone, onPick: (cat.hudpro.opentracks.viewer.hud.HudZone) -> Unit) {
+    val grid = listOf(
+        listOf(cat.hudpro.opentracks.viewer.hud.HudZone.TOP_LEFT, cat.hudpro.opentracks.viewer.hud.HudZone.TOP_CENTER, cat.hudpro.opentracks.viewer.hud.HudZone.TOP_RIGHT),
+        listOf(cat.hudpro.opentracks.viewer.hud.HudZone.MIDDLE_LEFT, null, cat.hudpro.opentracks.viewer.hud.HudZone.MIDDLE_RIGHT),
+        listOf(cat.hudpro.opentracks.viewer.hud.HudZone.BOTTOM_LEFT, cat.hudpro.opentracks.viewer.hud.HudZone.BOTTOM_CENTER, cat.hudpro.opentracks.viewer.hud.HudZone.BOTTOM_RIGHT),
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        grid.forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                row.forEach { zone ->
+                    if (zone == null) {
+                        Box(Modifier.size(56.dp))
+                    } else {
+                        val isSel = zone == current
+                        Box(
+                            Modifier
+                                .size(56.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                                .clickable { onPick(zone) },
+                            contentAlignment = androidx.compose.ui.Alignment.Center,
+                        ) {
+                            Text(
+                                zone.label,
+                                color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -275,16 +320,4 @@ private fun TrackAppearanceSection(prefs: ViewerPreferences) {
             }
         }
     }
-}
-
-// Magnetized zones: 3 columns × 6 rows. On release a widget snaps to the nearest zone so the HUD
-// stays tidy while dragging remains completely free.
-private val ZONE_COLS = listOf(0.02f, 0.36f, 0.70f)
-private val ZONE_ROWS = listOf(0.03f, 0.20f, 0.37f, 0.54f, 0.70f, 0.85f)
-
-private fun snapWidgetToZone(layout: HudLayout, index: Int): HudLayout {
-    val w = layout.widgets.getOrNull(index) ?: return layout
-    val x = ZONE_COLS.minByOrNull { abs(it - w.x) } ?: w.x
-    val y = ZONE_ROWS.minByOrNull { abs(it - w.y) } ?: w.y
-    return layout.moveTo(index, x, y)
 }

@@ -44,19 +44,50 @@ fun HudOverlay(
     controls: HudControls = HudControls.disabled,
     modifier: Modifier = Modifier,
 ) {
-    BoxWithConstraints(modifier.fillMaxSize()) {
-        val maxW = maxWidth
-        val maxH = maxHeight
-        layout.widgets.forEach { widget ->
-            val element = widget.element ?: return@forEach
-            Box(Modifier.offset(x = maxW * widget.x, y = maxH * widget.y)) {
-                HudWidgetContent(element, data, controls, layout.scale * widget.scale)
-            }
+    Box(modifier.fillMaxSize().padding(12.dp)) {
+        HudZone.entries.forEach { zone ->
+            ZoneGroup(zone, layout, data, controls)
         }
         if (data.isOffRoute) {
-            OffRouteBanner(data.metrics, Modifier.align(Alignment.TopCenter).padding(top = 8.dp))
+            OffRouteBanner(data.metrics, Modifier.align(Alignment.TopCenter).padding(top = 44.dp))
         }
     }
+}
+
+/** Auto-stacked group of the widgets in one zone, aligned to that corner/edge (never overlaps). */
+@Composable
+fun androidx.compose.foundation.layout.BoxScope.ZoneGroup(
+    zone: HudZone,
+    layout: HudLayout,
+    data: HudData,
+    controls: HudControls,
+) {
+    val widgets = layout.byZone(zone)
+    if (widgets.isEmpty()) return
+    val content: @Composable () -> Unit = {
+        widgets.forEach { w ->
+            w.element?.let { HudWidgetContent(it, data, controls, layout.scale * w.scale) }
+        }
+    }
+    Box(Modifier.align(zoneAlignment(zone))) {
+        if (zone.isCenter) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { content() }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { content() }
+        }
+    }
+}
+
+/** Maps a [HudZone] to a Compose [Alignment]. Pure. */
+fun zoneAlignment(zone: HudZone): Alignment = when (zone) {
+    HudZone.TOP_LEFT -> Alignment.TopStart
+    HudZone.TOP_CENTER -> Alignment.TopCenter
+    HudZone.TOP_RIGHT -> Alignment.TopEnd
+    HudZone.MIDDLE_LEFT -> Alignment.CenterStart
+    HudZone.MIDDLE_RIGHT -> Alignment.CenterEnd
+    HudZone.BOTTOM_LEFT -> Alignment.BottomStart
+    HudZone.BOTTOM_CENTER -> Alignment.BottomCenter
+    HudZone.BOTTOM_RIGHT -> Alignment.BottomEnd
 }
 
 /** Prominent warning shown while off the followed route, with an arrow pointing back to it. */
