@@ -86,6 +86,11 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_REC_BAROMETER, true)
         set(value) = prefs.edit().putBoolean(KEY_REC_BAROMETER, value).apply()
 
+    /** MAC addresses of paired BLE fitness sensors (heart rate / cadence / power). */
+    var bleSensorAddrs: Set<String>
+        get() = prefs.getStringSet(KEY_BLE_SENSORS, emptySet()) ?: emptySet()
+        set(value) = prefs.edit().putStringSet(KEY_BLE_SENSORS, value).apply()
+
     /** Name of the selected [cat.hudpro.opentracks.data.map.TrackColorMode]. */
     var trackColorMode: String?
         get() = prefs.getString(KEY_TRACK_COLOR_MODE, null)
@@ -196,6 +201,7 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_REC_MAX_ACCURACY = "rec_max_accuracy"
         private const val KEY_REC_AUTO_PAUSE = "rec_auto_pause"
         private const val KEY_REC_BAROMETER = "rec_barometer"
+        private const val KEY_BLE_SENSORS = "ble_sensors"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"
         private const val KEY_TRACK_COLOR_MODE = "track_color_mode"
         private const val KEY_TRACK_COLOR = "track_color"

@@ -36,6 +36,7 @@ class RecordingService : Service() {
     private var recorder: TrackRecorder? = null
     private val gps = GpsSource(this)
     private val pressure = PressureSource(this)
+    private var ble: cat.hudpro.opentracks.data.recording.ble.BleSensorManager? = null
     private var autoPause: AutoPause? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var lastNotifiedAt = 0L
@@ -142,7 +143,16 @@ class RecordingService : Service() {
         if (prefs.recBarometer) {
             pressure.start { hPa -> recorder?.onPressure(hPa) }
         }
-        DebugLog.i("Record", "sensors · gps=$gpsOk · interval=${prefs.recGpsIntervalSec}s")
+        val sensors = prefs.bleSensorAddrs
+        if (sensors.isNotEmpty()) {
+            ble = cat.hudpro.opentracks.data.recording.ble.BleSensorManager(
+                this,
+                onHeartRate = { recorder?.onHeartRate(it) },
+                onCadence = { recorder?.onCadence(it) },
+                onPower = { recorder?.onPower(it) },
+            ).also { it.start(sensors) }
+        }
+        DebugLog.i("Record", "sensors · gps=$gpsOk · interval=${prefs.recGpsIntervalSec}s · ble=${sensors.size}")
     }
 
     private fun doPause(manual: Boolean) {
@@ -168,6 +178,7 @@ class RecordingService : Service() {
     private fun finish() {
         gps.stop()
         pressure.stop()
+        ble?.stop(); ble = null
         recorder?.let {
             it.stop(Instant.now())
             publish()
@@ -220,6 +231,7 @@ class RecordingService : Service() {
     override fun onDestroy() {
         gps.stop()
         pressure.stop()
+        ble?.stop(); ble = null
         flushPoints()
         releaseWakeLock()
         scope.cancel()

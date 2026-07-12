@@ -16,6 +16,7 @@ import cat.hudpro.opentracks.manager.screens.DownloadAreaScreen
 import cat.hudpro.opentracks.manager.screens.MapLayersScreen
 import cat.hudpro.opentracks.manager.screens.OfflineSectorsScreen
 import cat.hudpro.opentracks.manager.screens.RouteDetailScreen
+import cat.hudpro.opentracks.manager.screens.SensorsScreen
 import cat.hudpro.opentracks.manager.screens.RouteEditorScreen
 import cat.hudpro.opentracks.manager.screens.SettingsScreen
 import cat.hudpro.opentracks.manager.screens.TrackLibraryScreen
@@ -30,6 +31,7 @@ object Routes {
     const val ENDURAIN = "endurain"
     const val SETTINGS = "settings"
     const val DEBUG_LOG = "debug_log"
+    const val SENSORS = "sensors"
     const val CREATE_ROUTE = "create_route"
     const val ROUTE_DETAIL = "route_detail"
     const val EDIT_ROUTE = "edit_route"
@@ -51,8 +53,10 @@ fun ManagerApp(onOpenViewer: () -> Unit) {
             SettingsScreen(
                 onBack = { nav.popBackStack() },
                 onOpenDebugLog = { nav.navigate(Routes.DEBUG_LOG) },
+                onOpenSensors = { nav.navigate(Routes.SENSORS) },
             )
         }
+        composable(Routes.SENSORS) { SensorsScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.DEBUG_LOG) { DebugLogScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.HUD) { HudDesignerScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.DATA) { DataDesignerScreen(onBack = { nav.popBackStack() }) }

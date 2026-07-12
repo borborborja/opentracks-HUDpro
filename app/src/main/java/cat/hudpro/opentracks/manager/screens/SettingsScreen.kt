@@ -60,7 +60,7 @@ private sealed interface UpdateState {
 private val TABS = listOf("Unitats", "Gravació", "Aparença", "Ruta", "Àudio", "App")
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}) {
+fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}, onOpenSensors: () -> Unit = {}) {
     val context = LocalContext.current
     val prefs = remember { ViewerPreferences.get(context) }
     var tab by remember { mutableIntStateOf(0) }
@@ -78,7 +78,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}) {
             ) {
                 when (tab) {
                     0 -> UnitsSection(prefs)
-                    1 -> RecordingSection(prefs)
+                    1 -> RecordingSection(prefs, onOpenSensors)
                     2 -> TrackAppearanceSection(prefs)
                     3 -> FollowRouteSection(prefs)
                     4 -> AudioAnnouncementsSection(prefs)
@@ -123,7 +123,7 @@ private fun UnitsSection(prefs: ViewerPreferences) {
 // --- Native recording engine ---
 
 @Composable
-private fun RecordingSection(prefs: ViewerPreferences) {
+private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit) {
     var interval by remember { mutableIntStateOf(prefs.recGpsIntervalSec) }
     var minDist by remember { mutableFloatStateOf(prefs.recMinDistanceM) }
     var accuracy by remember { mutableFloatStateOf(prefs.recMaxAccuracyM) }
@@ -156,6 +156,15 @@ private fun RecordingSection(prefs: ViewerPreferences) {
 
     ToggleRow("Auto-pausa quan estàs aturat", autoPause) { autoPause = it; prefs.recAutoPause = it }
     ToggleRow("Usar baròmetre per al desnivell", barometer) { barometer = it; prefs.recBarometer = it }
+
+    OutlinedButton(onClick = onOpenSensors, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        Text("Sensors BLE (FC · cadència · potència)")
+    }
+    Text(
+        "Sensors emparellats: ${prefs.bleSensorAddrs.size}",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
+    )
     Text(
         "Els canvis s'apliquen a la propera gravació.",
         style = MaterialTheme.typography.bodySmall,
