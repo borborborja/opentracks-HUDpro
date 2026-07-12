@@ -122,8 +122,9 @@ class MapViewerActivity : ComponentActivity() {
 
         if (intent.isDashboardAction()) {
             reader = runCatching { DashboardReader(intent, contentResolver) }
-                .onFailure { Log.e(TAG, "Failed to init DashboardReader", it) }
+                .onFailure { Log.e(TAG, "Failed to init DashboardReader", it); DebugLog.e("Viewer", "DashboardReader onCreate fallit", it) }
                 .getOrNull()
+            DebugLog.i("Viewer", "reader onCreate · isRecording=${reader?.isRecording}")
         }
         applyWindowFlags()
 
@@ -391,12 +392,17 @@ class MapViewerActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        DebugLog.i(
+            "Viewer",
+            "onNewIntent · action=${intent.action} · dashboard=${intent.isDashboardAction()} · extras=${intent.extras?.keySet()?.joinToString()}",
+        )
         if (!intent.isDashboardAction()) return
         observeJob?.cancel()
         reader?.stop()
         reader = runCatching { DashboardReader(intent, contentResolver) }
-            .onFailure { Log.e(TAG, "Failed to init DashboardReader from new intent", it) }
+            .onFailure { Log.e(TAG, "Failed to init DashboardReader from new intent", it); DebugLog.e("Viewer", "DashboardReader onNewIntent fallit", it) }
             .getOrNull()
+        DebugLog.i("Viewer", "reader onNewIntent · isRecording=${reader?.isRecording}")
         // The authoritative push supersedes any optimistic guess. Leave `wasRecording` untouched so
         // observe()'s handleRecordingStopped still detects the recording→stopped transition (Endurain).
         recordingOverride = null

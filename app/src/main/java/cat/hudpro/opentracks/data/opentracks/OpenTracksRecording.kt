@@ -42,7 +42,13 @@ object OpenTracksRecording {
     fun isInstalled(context: Context) = discover(context) != null
 
     fun start(context: Context): Boolean {
-        val api = discover(context) ?: run { notFound(context); return false }
+        val api = discover(context) ?: run {
+            cat.hudpro.opentracks.data.debug.DebugLog.w("Record", "start · cap API pública trobada")
+            notFound(context); return false
+        }
+        cat.hudpro.opentracks.data.debug.DebugLog.i(
+            "Record", "start · ${api.pkg}/${api.startClass} · statsTarget=${context.packageName}/MapViewerActivity",
+        )
         return launch(context, api.pkg, api.startClass) {
             putExtra(EXTRA_STATS_PACKAGE, context.packageName)
             putExtra(EXTRA_STATS_CLASS, "cat.hudpro.opentracks.viewer.MapViewerActivity")
@@ -50,7 +56,11 @@ object OpenTracksRecording {
     }
 
     fun stop(context: Context): Boolean {
-        val api = discover(context) ?: run { notFound(context); return false }
+        val api = discover(context) ?: run {
+            cat.hudpro.opentracks.data.debug.DebugLog.w("Record", "stop · cap API pública trobada")
+            notFound(context); return false
+        }
+        cat.hudpro.opentracks.data.debug.DebugLog.i("Record", "stop · ${api.pkg}/${api.stopClass}")
         return launch(context, api.pkg, api.stopClass) {}
     }
 
