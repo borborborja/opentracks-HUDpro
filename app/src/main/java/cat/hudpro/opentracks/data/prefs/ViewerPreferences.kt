@@ -18,6 +18,11 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getString(KEY_HUD_LAYOUT, null)
         set(value) = prefs.edit().putString(KEY_HUD_LAYOUT, value).apply()
 
+    /** JSON blob describing the "Dades" screen layout (see data.DataLayout). */
+    var dataLayoutJson: String?
+        get() = prefs.getString(KEY_DATA_LAYOUT, null)
+        set(value) = prefs.edit().putString(KEY_DATA_LAYOUT, value).apply()
+
     /** Id of the track the user has chosen to follow, or null. */
     var activeFollowTrackId: Long
         get() = prefs.getLong(KEY_FOLLOW_TRACK, -1L)
@@ -120,6 +125,7 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
     companion object {
         private const val KEY_BASE_MAP = "base_map_id"
         private const val KEY_HUD_LAYOUT = "hud_layout_json"
+        private const val KEY_DATA_LAYOUT = "data_layout_json"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"
         private const val KEY_TRACK_COLOR_MODE = "track_color_mode"
         private const val KEY_TRACK_COLOR = "track_color"

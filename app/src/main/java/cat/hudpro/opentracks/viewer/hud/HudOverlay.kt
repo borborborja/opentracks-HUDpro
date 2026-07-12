@@ -49,7 +49,7 @@ fun HudOverlay(
             ZoneGroup(zone, layout, data, controls)
         }
         if (data.isOffRoute) {
-            OffRouteBanner(data.metrics, Modifier.align(Alignment.TopCenter).padding(top = 44.dp))
+            OffRouteBanner(data.metrics, Modifier.align(Alignment.TopCenter).padding(top = SWITCHER_BAND))
         }
     }
 }
@@ -69,7 +69,10 @@ fun androidx.compose.foundation.layout.BoxScope.ZoneGroup(
             w.element?.let { HudWidgetContent(it, data, controls, layout.scale * w.scale) }
         }
     }
-    Box(Modifier.align(zoneAlignment(zone))) {
+    // Top zones start below the floating "Mapa / Dades" switcher so its pill never covers a widget.
+    val zoneModifier = Modifier.align(zoneAlignment(zone))
+        .then(if (zone.isTop) Modifier.padding(top = SWITCHER_BAND) else Modifier)
+    Box(zoneModifier) {
         if (zone.isCenter) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { content() }
         } else {
@@ -77,6 +80,9 @@ fun androidx.compose.foundation.layout.BoxScope.ZoneGroup(
         }
     }
 }
+
+/** Height reserved at the top for the floating switcher (see ViewerSwitcher). */
+val SWITCHER_BAND = 44.dp
 
 /** Maps a [HudZone] to a Compose [Alignment]. Pure. */
 fun zoneAlignment(zone: HudZone): Alignment = when (zone) {

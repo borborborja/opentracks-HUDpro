@@ -8,6 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cat.hudpro.opentracks.data.map.BoundingBox
 import cat.hudpro.opentracks.manager.screens.EndurainScreen
+import cat.hudpro.opentracks.manager.screens.DataDesignerScreen
 import cat.hudpro.opentracks.manager.screens.HomeScreen
 import cat.hudpro.opentracks.manager.screens.HudDesignerScreen
 import cat.hudpro.opentracks.manager.screens.DownloadAreaScreen
@@ -20,6 +21,7 @@ import cat.hudpro.opentracks.manager.screens.TrackLibraryScreen
 object Routes {
     const val HOME = "home"
     const val HUD = "hud"
+    const val DATA = "data"
     const val LAYERS = "layers"
     const val OFFLINE = "offline"
     const val TRACKS = "tracks"
@@ -42,6 +44,7 @@ fun ManagerApp(onOpenViewer: () -> Unit) {
         }
         composable(Routes.SETTINGS) { SettingsScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.HUD) { HudDesignerScreen(onBack = { nav.popBackStack() }) }
+        composable(Routes.DATA) { DataDesignerScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.LAYERS) { MapLayersScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.OFFLINE) {
             OfflineMapsScreen(

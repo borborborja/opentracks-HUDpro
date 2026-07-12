@@ -34,9 +34,13 @@ private data class DataCell(val label: String, val value: String, val unit: Stri
  */
 @Composable
 fun DataView(data: HudData, modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val layout = remember {
+        DataLayoutStore.load(cat.hudpro.opentracks.data.prefs.ViewerPreferences.get(context))
+    }
     val followOnly = setOf(HudMetric.REMAINING, HudMetric.OFF_ROUTE)
-    val metrics = HudMetric.entries.filter { data.following || it !in followOnly }
-    val cells = remember(data) {
+    val metrics = layout.metrics().filter { data.following || it !in followOnly }
+    val cells = remember(data, layout) {
         metrics.map { DataCell(it.label, it.value(data.metrics), it.unit) }
     }
 
@@ -51,14 +55,14 @@ fun DataView(data: HudData, modifier: Modifier = Modifier) {
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+            columns = GridCells.Fixed(layout.columns.coerceIn(1, 3)),
             // Extra top padding clears the floating "Mapa / Dades" switcher.
             contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 60.dp, bottom = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(cells) { cell -> DataTile(cell) }
-            item { DataTile(DataCell("Rellotge", clock, "")) }
+            if (layout.showClock) item { DataTile(DataCell("Rellotge", clock, "")) }
         }
     }
 }

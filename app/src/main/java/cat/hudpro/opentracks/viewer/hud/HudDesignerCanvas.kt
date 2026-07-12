@@ -59,7 +59,9 @@ fun HudDesignerCanvas(
                     }
                 }
             }
-            Box(Modifier.align(zoneAlignment(zone))) {
+            val zoneModifier = Modifier.align(zoneAlignment(zone))
+                .then(if (zone.isTop) Modifier.padding(top = SWITCHER_BAND) else Modifier)
+            Box(zoneModifier) {
                 if (zone.isCenter) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { content() }
                 } else {

@@ -95,6 +95,7 @@ enum class HudZone(val label: String) {
     ;
 
     val isCenter: Boolean get() = this == TOP_CENTER || this == BOTTOM_CENTER
+    val isTop: Boolean get() = this == TOP_LEFT || this == TOP_CENTER || this == TOP_RIGHT
 }
 
 /** A placed HUD element assigned to a [zone]. Stacking order follows the list order. */
