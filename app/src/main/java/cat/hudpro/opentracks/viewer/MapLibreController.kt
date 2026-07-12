@@ -257,10 +257,10 @@ class MapLibreController(private val map: MapLibreMap) {
         val followLyr = style?.getLayer(FOLLOW_LAYER)
         val vis = (followLyr as? LineLayer)?.visibility?.value ?: "?"
         val idx = ids.indexOf(FOLLOW_LAYER)
-        val baseIdx = ids.indexOf("base-raster")
-        val styleSrc = style?.getSource(FOLLOW_SOURCE)
-        val same = styleSrc != null && styleSrc === followSource
-        return "pts=${followPoints.size} lyr=${followLyr != null} vis=$vis idx=$idx base=$baseIdx styleSrc=${styleSrc != null} same=$same"
+        val rendered = runCatching {
+            map.queryRenderedFeatures(android.graphics.RectF(0f, 0f, map.width, map.height), FOLLOW_LAYER).size
+        }.getOrDefault(-1)
+        return "pts=${followPoints.size} lyr=${followLyr != null} vis=$vis idx=$idx n=${ids.size} rendered=$rendered"
     }
 
     /** Frames the camera to enclose the current followed route (used when the user picks one). */

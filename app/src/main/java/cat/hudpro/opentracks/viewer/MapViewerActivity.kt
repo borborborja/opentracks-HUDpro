@@ -129,8 +129,9 @@ class MapViewerActivity : ComponentActivity() {
         units = cat.hudpro.opentracks.viewer.hud.UnitsStore.load(prefs)
         setupAnnouncements(prefs)
 
-        // textureMode so the map behaves well when hosted in a scrolling container.
-        mapView = MapView(this, org.maplibre.android.maps.MapLibreMapOptions().textureMode(true))
+        // SurfaceView (default): renders GeoJSON overlays reliably. textureMode was a leftover from the
+        // old Compose pager and broke the follow-route line rendering.
+        mapView = MapView(this)
         mapView.onCreate(savedInstanceState)
 
         // Page 0: map + HUD overlay. Page 1: full data grid. Real views in a ViewPager2 so the
