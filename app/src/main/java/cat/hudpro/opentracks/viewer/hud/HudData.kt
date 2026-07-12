@@ -17,6 +17,8 @@ data class HudData(
     val offRouteThresholdM: Int = 40,
     /** Display units chosen by the user. */
     val units: Units = Units(),
+    /** True while a native recording is paused (drives the record control's play button). */
+    val isPaused: Boolean = false,
 ) {
     /** Whether the off-route warning banner should be shown right now. */
     val isOffRoute: Boolean

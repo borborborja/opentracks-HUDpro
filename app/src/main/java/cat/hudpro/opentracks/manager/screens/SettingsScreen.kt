@@ -57,7 +57,7 @@ private sealed interface UpdateState {
     data class Error(val message: String) : UpdateState
 }
 
-private val TABS = listOf("Unitats", "Aparença", "Ruta", "Àudio", "App")
+private val TABS = listOf("Unitats", "Gravació", "Aparença", "Ruta", "Àudio", "App")
 
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}) {
@@ -78,9 +78,10 @@ fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}) {
             ) {
                 when (tab) {
                     0 -> UnitsSection(prefs)
-                    1 -> TrackAppearanceSection(prefs)
-                    2 -> FollowRouteSection(prefs)
-                    3 -> AudioAnnouncementsSection(prefs)
+                    1 -> RecordingSection(prefs)
+                    2 -> TrackAppearanceSection(prefs)
+                    3 -> FollowRouteSection(prefs)
+                    4 -> AudioAnnouncementsSection(prefs)
                     else -> AppSection(onOpenDebugLog)
                 }
             }
@@ -113,6 +114,50 @@ private fun UnitsSection(prefs: ViewerPreferences) {
     }
     Text(
         "El ritme usa la unitat de distància (min/km o min/mi); VAM i desviació, la d'altitud.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
+        modifier = Modifier.padding(top = 8.dp),
+    )
+}
+
+// --- Native recording engine ---
+
+@Composable
+private fun RecordingSection(prefs: ViewerPreferences) {
+    var interval by remember { mutableIntStateOf(prefs.recGpsIntervalSec) }
+    var minDist by remember { mutableFloatStateOf(prefs.recMinDistanceM) }
+    var accuracy by remember { mutableFloatStateOf(prefs.recMaxAccuracyM) }
+    var autoPause by remember { mutableStateOf(prefs.recAutoPause) }
+    var barometer by remember { mutableStateOf(prefs.recBarometer) }
+
+    Text("Interval GPS", style = MaterialTheme.typography.labelLarge)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(1, 2, 5).forEach { s ->
+            FilterChip(interval == s, { interval = s; prefs.recGpsIntervalSec = s }, label = { Text("${s}s") })
+        }
+    }
+
+    Text("Distància mínima entre punts: ${minDist.toInt()} m", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    Slider(
+        value = minDist,
+        onValueChange = { minDist = it; prefs.recMinDistanceM = it },
+        valueRange = 1f..15f,
+        steps = 13,
+    )
+
+    Text("Precisió GPS màxima: ${accuracy.toInt()} m", style = MaterialTheme.typography.labelLarge)
+    Text("Es descarten les posicions amb pitjor precisió.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+    Slider(
+        value = accuracy,
+        onValueChange = { accuracy = it; prefs.recMaxAccuracyM = it },
+        valueRange = 10f..100f,
+        steps = 8,
+    )
+
+    ToggleRow("Auto-pausa quan estàs aturat", autoPause) { autoPause = it; prefs.recAutoPause = it }
+    ToggleRow("Usar baròmetre per al desnivell", barometer) { barometer = it; prefs.recBarometer = it }
+    Text(
+        "Els canvis s'apliquen a la propera gravació.",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
         modifier = Modifier.padding(top = 8.dp),

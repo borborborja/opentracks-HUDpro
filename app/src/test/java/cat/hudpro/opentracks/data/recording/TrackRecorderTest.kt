@@ -33,8 +33,8 @@ class TrackRecorderTest {
     fun rejectsInaccurateFixes() {
         val r = TrackRecorder()
         r.start(t0)
-        assertThat(r.onLocation(41.0, 2.0, null, null, null, 80f, at(0))).isFalse() // accuracy 80 m > 25 m
-        assertThat(r.onLocation(41.0, 2.0, null, null, null, 10f, at(1))).isTrue()
+        assertThat(r.onLocation(41.0, 2.0, null, null, null, 80f, at(0))).isNull() // accuracy 80 m > 25 m
+        assertThat(r.onLocation(41.0, 2.0, null, null, null, 10f, at(1))).isNotNull()
     }
 
     @Test
@@ -43,7 +43,7 @@ class TrackRecorderTest {
         r.start(t0)
         r.onLocation(41.0, 2.0, null, null, null, 5f, at(0))
         // 0.01° ≈ 1113 m in 1 s → >50 m/s → GPS jump, rejected.
-        assertThat(r.onLocation(41.01, 2.0, null, null, null, 5f, at(1))).isFalse()
+        assertThat(r.onLocation(41.01, 2.0, null, null, null, 5f, at(1))).isNull()
         assertThat(r.snapshot(at(2)).points()).hasSize(1)
     }
 
@@ -53,7 +53,7 @@ class TrackRecorderTest {
         r.start(t0)
         r.onLocation(41.0, 2.0, null, null, null, 5f, at(0))
         // ~1 m away → below the 3 m minimum → skipped.
-        assertThat(r.onLocation(41.00001, 2.0, null, null, null, 5f, at(1))).isFalse()
+        assertThat(r.onLocation(41.00001, 2.0, null, null, null, 5f, at(1))).isNull()
         assertThat(r.snapshot(at(1)).points()).hasSize(1)
     }
 
@@ -132,6 +132,42 @@ class TrackRecorderTest {
         assertThat(s.isFinished).isTrue()
         assertThat(s.isRecording).isFalse()
         assertThat(s.statistics.totalTime.inWholeSeconds).isEqualTo(3) // frozen at stop
-        assertThat(r.onLocation(41.1, 2.0, null, null, null, 5f, at(101))).isFalse()
+        assertThat(r.onLocation(41.1, 2.0, null, null, null, 5f, at(101))).isNull()
+    }
+
+    @Test
+    fun barometricGainOverridesGpsGain() {
+        val r = TrackRecorder(RecorderConfig(altitudeSmoothing = 1.0))
+        r.start(t0)
+        // Prime the barometer: steady climb of ~8.4 m per hPa near sea level.
+        r.onPressure(1013.25f)
+        r.onPressure(1012.25f) // ≈ +8.4 m
+        r.onPressure(1011.25f) // ≈ +8.4 m more (smoothed EMA, partial)
+        // GPS altitude wildly noisy — must NOT count once barometric mode is on.
+        r.onLocation(41.0, 2.0, 100.0, null, null, 5f, at(0))
+        r.onLocation(41.0001, 2.0, 150.0, null, null, 5f, at(1))
+        val s = r.snapshot(at(2))
+        // Gain comes from pressure only (a few metres), not the +50 m GPS spike.
+        assertThat(s.statistics.elevationGainMeter).isLessThan(20.0)
+        assertThat(s.statistics.elevationGainMeter).isGreaterThan(0.0)
+    }
+
+    @Test
+    fun restoreRebuildsStatsAndContinues() {
+        val original = recorderWithLegs(5) // 6 points, ~55.7 m
+        val persisted = original.snapshot(at(5)).segments
+
+        val restored = TrackRecorder()
+        restored.restore(persisted, t0, resumeAt = at(120))
+        val s0 = restored.snapshot(at(120))
+        assertThat(s0.points()).hasSize(6)
+        assertThat(s0.statistics.totalDistanceMeter).isEqualTo(55.7, within(2.0))
+
+        // Continue recording: the crash gap adds no distance (baseline reset).
+        restored.onLocation(41.01, 2.0, 100.0, null, null, 5f, at(121))
+        restored.onLocation(41.0101, 2.0, 100.0, null, null, 5f, at(122))
+        val s1 = restored.snapshot(at(122))
+        assertThat(s1.points()).hasSize(8)
+        assertThat(s1.statistics.totalDistanceMeter).isEqualTo(55.7 + 11.1, within(3.0))
     }
 }

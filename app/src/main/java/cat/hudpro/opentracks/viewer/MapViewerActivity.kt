@@ -416,6 +416,8 @@ class MapViewerActivity : ComponentActivity() {
                     if (ok) { recordingOverride = false; refreshRecordingHud() }
                 }
             },
+            onPauseRecording = { if (NativeRecording.isActive) RecordingService.pause(this) },
+            onResumeRecording = { if (NativeRecording.isActive) RecordingService.resume(this) },
         )
     }
 
@@ -446,7 +448,12 @@ class MapViewerActivity : ComponentActivity() {
         lifecycleScope.launch {
             val pts = state.points()
                 .filter { it.latLong != null && !it.isPause }
-                .map { GpxPoint(it.latLong!!.latitude, it.latLong.longitude, it.altitude, it.time) }
+                .map {
+                    GpxPoint(
+                        it.latLong!!.latitude, it.latLong.longitude, it.altitude, it.time,
+                        heartRate = it.heartRate, cadence = it.cadence, power = it.power,
+                    )
+                }
             if (pts.size >= 2) {
                 HudProApplication.from(this@MapViewerActivity).trackRepository.insertRoute(
                     name, pts, cat.hudpro.opentracks.data.tracks.TrackSource.RECORDED, remoteId = null,
@@ -596,7 +603,7 @@ class MapViewerActivity : ComponentActivity() {
         observeJob = lifecycleScope.launch {
             cat.hudpro.opentracks.data.recording.NativeRecording.state.collect { s ->
                 if (s == null) return@collect
-                processUpdate(s.segments, emptyList(), s.statistics, s.isRecording, ctrl)
+                processUpdate(s.segments, emptyList(), s.statistics, s.isRecording, ctrl, isPaused = s.isPaused)
                 if (s.isFinished && saveDialogFlow.value == null) {
                     DebugLog.i("Record", "finalitzada · ${s.points().size} punts → diàleg de desar")
                     if (s.points().any { it.latLong != null }) {
@@ -618,6 +625,7 @@ class MapViewerActivity : ComponentActivity() {
         stats: TrackStatistics?,
         recording: Boolean,
         ctrl: MapLibreController,
+        isPaused: Boolean = false,
     ) {
         lastSegments = segs
         lastWaypoints = wps
@@ -667,6 +675,7 @@ class MapViewerActivity : ComponentActivity() {
             routeProgress = if (state != null && nPoints > 1) state.nearestIndex.toFloat() / (nPoints - 1) else 1f,
             following = following,
             offRouteThresholdM = offRouteThreshold,
+            isPaused = isPaused,
         )
     }
 

@@ -89,7 +89,67 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
     fun onCadence(rpm: Double?) { cadence = rpm }
     fun onPower(watts: Double?) { power = watts }
 
-    /** Feeds a GPS fix. Returns true if the point was accepted (passed all filters). */
+    // Barometric gain/loss (much steadier than GPS): once pressure samples arrive, they own
+    // elevation gain/loss and the GPS-altitude path stops accumulating (it keeps min/max/points).
+    private var barometric = false
+    private var smoothedPressureAlt: Double? = null
+    private var pendingPressureDelta = 0.0
+
+    /** Feeds a barometric pressure sample (hPa). */
+    fun onPressure(hPa: Float) {
+        if (paused || finished) return
+        // Standard-atmosphere pressure altitude; only DELTAS are used, so no calibration needed.
+        val alt = 44330.0 * (1.0 - Math.pow(hPa / 1013.25, 0.190284))
+        val prev = smoothedPressureAlt
+        val sm = if (prev == null) alt else prev + PRESSURE_SMOOTHING * (alt - prev)
+        smoothedPressureAlt = sm
+        if (prev != null) {
+            barometric = true
+            pendingPressureDelta += sm - prev
+            if (abs(pendingPressureDelta) >= PRESSURE_HYSTERESIS_M) {
+                if (pendingPressureDelta > 0) gainM += pendingPressureDelta else lossM += -pendingPressureDelta
+                pendingPressureDelta = 0.0
+            }
+        }
+    }
+
+    /**
+     * Rebuilds the recorder from persisted points (crash recovery). Filters are not re-applied
+     * (points were already accepted); statistics are recomputed from the data.
+     */
+    fun restore(segments: List<Segment>, startedAt: Instant, resumeAt: Instant) {
+        check(this.startedAt == null) { "already started" }
+        this.startedAt = startedAt
+        closedSegments.addAll(segments.filter { it.isNotEmpty() })
+        val all = closedSegments.flatten()
+        seq = (all.maxOfOrNull { it.id } ?: -1L) + 1
+        for (segment in closedSegments) {
+            for (i in 1 until segment.size) {
+                val a = segment[i - 1]; val b = segment[i]
+                if (a.latLong != null && b.latLong != null) {
+                    distanceM += MetricsCalculator.distanceMeters(a.latLong, b.latLong)
+                    val dt = java.time.Duration.between(a.time, b.time).toKotlinDuration()
+                    if (b.speed >= config.idleSpeedMs) movingTime += dt
+                }
+            }
+        }
+        maxSpeedMs = all.maxOfOrNull { it.speed } ?: 0.0
+        all.mapNotNull { it.altitude }.let { alts ->
+            if (alts.isNotEmpty()) {
+                minElevM = alts.min(); maxElevM = alts.max(); smoothedAlt = alts.last()
+            }
+        }
+        lastPointTime = all.lastOrNull()?.time
+        // Active time before the crash ≈ span of recorded points (pauses within it are unknown).
+        accumulatedActive = all.lastOrNull()?.let { java.time.Duration.between(startedAt, it.time).toKotlinDuration() }
+            ?: Duration.ZERO
+        activeSince = resumeAt
+        // New segment after the gap; reset the leg baseline so the crash gap adds no distance.
+        lastLatLong = null
+        lastPointTime = all.lastOrNull()?.time
+    }
+
+    /** Feeds a GPS fix. Returns the accepted [Trackpoint], or null if a filter rejected it. */
     fun onLocation(
         latitude: Double,
         longitude: Double,
@@ -98,9 +158,9 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         bearingDeg: Double?,
         accuracyM: Float,
         time: Instant,
-    ): Boolean {
-        if (paused || finished || startedAt == null) return false
-        if (accuracyM > config.maxAccuracyM) return false
+    ): Trackpoint? {
+        if (paused || finished || startedAt == null) return null
+        if (accuracyM > config.maxAccuracyM) return null
 
         val here = GeoPoint(latitude, longitude)
         val prevLatLong = lastLatLong
@@ -111,18 +171,18 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
             legDistance = MetricsCalculator.distanceMeters(prevLatLong, here)
             dt = java.time.Duration.between(prevTime, time).toKotlinDuration()
             val dtSec = dt.inWholeMilliseconds / 1000.0
-            if (dtSec > 0 && legDistance / dtSec > config.maxImpliedSpeedMs) return false // GPS jump
-            if (legDistance < config.minDistanceM) return false // idle jitter
+            if (dtSec > 0 && legDistance / dtSec > config.maxImpliedSpeedMs) return null // GPS jump
+            if (legDistance < config.minDistanceM) return null // idle jitter
         }
 
         val dtSec = dt.inWholeMilliseconds / 1000.0
         val speed = speedMs ?: if (dtSec > 0) legDistance / dtSec else 0.0
 
-        // Altitude: EMA smoothing + hysteresis gate for gain/loss.
+        // Altitude: EMA smoothing + hysteresis gate for gain/loss (skipped once the barometer owns it).
         val alt = altitude?.let { raw ->
             val prev = smoothedAlt
             val sm = if (prev == null) raw else prev + config.altitudeSmoothing * (raw - prev)
-            if (prev != null) {
+            if (prev != null && !barometric) {
                 pendingElevDelta += sm - prev
                 if (abs(pendingElevDelta) >= config.elevationHysteresisM) {
                     if (pendingElevDelta > 0) gainM += pendingElevDelta else lossM += -pendingElevDelta
@@ -139,24 +199,23 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         if (speed >= config.idleSpeedMs) movingTime += dt
         maxSpeedMs = maxOf(maxSpeedMs, speed)
 
-        currentSegment.add(
-            Trackpoint(
-                trackId = 0L,
-                id = seq++,
-                latLong = here,
-                type = TRACKPOINT_TYPE_TRACKPOINT,
-                speed = speed,
-                time = time,
-                altitude = alt,
-                heartRate = heartRate,
-                cadence = cadence,
-                power = power,
-                bearing = bearingDeg,
-            ),
+        val point = Trackpoint(
+            trackId = 0L,
+            id = seq++,
+            latLong = here,
+            type = TRACKPOINT_TYPE_TRACKPOINT,
+            speed = speed,
+            time = time,
+            altitude = alt,
+            heartRate = heartRate,
+            cadence = cadence,
+            power = power,
+            bearing = bearingDeg,
         )
+        currentSegment.add(point)
         lastLatLong = here
         lastPointTime = time
-        return true
+        return point
     }
 
     fun pause(time: Instant) {
@@ -218,5 +277,10 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
             closedSegments.add(currentSegment.toList())
             currentSegment.clear()
         }
+    }
+
+    private companion object {
+        const val PRESSURE_SMOOTHING = 0.3
+        const val PRESSURE_HYSTERESIS_M = 1.5
     }
 }

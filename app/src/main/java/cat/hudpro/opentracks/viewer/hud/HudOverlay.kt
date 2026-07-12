@@ -18,6 +18,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -137,7 +139,7 @@ fun HudWidgetContent(element: HudElement, data: HudData, controls: HudControls, 
             HudCatalog.CONTROL_RECENTER -> RecenterControl(controls, scale)
             HudCatalog.CONTROL_COMPASS -> CompassControl(controls, data.metrics.bearingDeg, scale)
             HudCatalog.CONTROL_ZOOM -> ZoomControl(controls, scale)
-            HudCatalog.CONTROL_RECORD -> RecordControl(controls, data.metrics.isRecording, scale)
+            HudCatalog.CONTROL_RECORD -> RecordControl(controls, data.metrics.isRecording, data.isPaused, scale)
         }
     }
 }
@@ -198,18 +200,41 @@ private fun CompassControl(controls: HudControls, bearingDeg: Double?, scale: Fl
 }
 
 @Composable
-private fun RecordControl(controls: HudControls, isRecording: Boolean, scale: Float) {
-    RoundButton(
-        scale = scale,
-        onClick = { if (isRecording) controls.onStopRecording() else controls.onStartRecording() },
-    ) {
-        // Filled red circle = start; red square = stop (recording in progress).
-        Box(
-            Modifier
-                .size((20 * scale).dp)
-                .clip(if (isRecording) RoundedCornerShape(4.dp) else CircleShape)
-                .background(Color(0xFFE63946)),
-        )
+private fun RecordControl(controls: HudControls, isRecording: Boolean, isPaused: Boolean, scale: Float) {
+    if (!isRecording) {
+        // Filled red circle = start recording.
+        RoundButton(scale = scale, onClick = controls.onStartRecording) {
+            Box(
+                Modifier
+                    .size((20 * scale).dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE63946)),
+            )
+        }
+        return
+    }
+    // Recording: pause/resume + stop, stacked like the zoom control.
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        RoundButton(
+            scale = scale,
+            onClick = { if (isPaused) controls.onResumeRecording() else controls.onPauseRecording() },
+        ) {
+            Icon(
+                if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                contentDescription = if (isPaused) "Reprendre" else "Pausa",
+                tint = if (isPaused) Color(0xFFFFD166) else Color.White,
+                modifier = Modifier.size((22 * scale).dp),
+            )
+        }
+        RoundButton(scale = scale, onClick = controls.onStopRecording) {
+            // Red square = stop.
+            Box(
+                Modifier
+                    .size((20 * scale).dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFFE63946)),
+            )
+        }
     }
 }
 

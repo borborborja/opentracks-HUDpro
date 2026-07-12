@@ -11,9 +11,11 @@ data class HudControls(
     val onNorth: () -> Unit = {},
     val onZoomIn: () -> Unit = {},
     val onZoomOut: () -> Unit = {},
-    // Recording control via OpenTracks' public API (start / stop only).
+    // Recording control (native engine): start/stop plus pause/resume while recording.
     val onStartRecording: () -> Unit = {},
     val onStopRecording: () -> Unit = {},
+    val onPauseRecording: () -> Unit = {},
+    val onResumeRecording: () -> Unit = {},
 ) {
     companion object {
         val disabled = HudControls()

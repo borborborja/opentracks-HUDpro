@@ -11,70 +11,206 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
+import cat.hudpro.opentracks.HudProApplication
 import cat.hudpro.opentracks.data.debug.DebugLog
+import cat.hudpro.opentracks.data.opentracks.model.GeoPoint
+import cat.hudpro.opentracks.data.prefs.ViewerPreferences
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.util.Locale
 
 /**
  * Foreground service (type=location) hosting the native [TrackRecorder]: keeps GPS alive with the
- * screen off, shows a live-stats notification with pause/stop actions, and publishes every update to
- * [NativeRecording] for the viewer. Modeled on OpenTracks' TrackRecordingService (Apache-2.0).
+ * screen off, shows a live-stats notification with pause/stop actions, publishes every update to
+ * [NativeRecording] for the viewer, and persists points to Room so a killed process resumes the
+ * recording (START_STICKY). Modeled on OpenTracks' TrackRecordingService (Apache-2.0).
  */
 class RecordingService : Service() {
 
     private var recorder: TrackRecorder? = null
     private val gps = GpsSource(this)
+    private val pressure = PressureSource(this)
+    private var autoPause: AutoPause? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var lastNotifiedAt = 0L
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var recordingId: Long? = null
+    private var segmentIndex = 0
+    private val pendingPoints = ArrayList<RecordingPointEntity>()
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> begin()
-            ACTION_PAUSE -> recorder?.let { it.pause(Instant.now()); publish(); updateNotification(force = true); DebugLog.i("Record", "pausa") }
-            ACTION_RESUME -> recorder?.let { it.resume(Instant.now()); publish(); updateNotification(force = true); DebugLog.i("Record", "reprendre") }
+            ACTION_PAUSE -> doPause(manual = true)
+            ACTION_RESUME -> doResume(manual = true)
             ACTION_STOP -> finish()
+            // null action = sticky restart after process death: resume the persisted recording.
+            null -> restoreAfterDeath()
         }
         return START_STICKY
     }
 
     private fun begin() {
         if (recorder != null) return // already recording
-        val r = TrackRecorder()
+        val prefs = ViewerPreferences.get(this)
+        val r = TrackRecorder(configFrom(prefs))
         r.start(Instant.now())
         recorder = r
+        autoPause = if (prefs.recAutoPause) AutoPause() else null
+        segmentIndex = 0
         publish()
         startForegroundWithType()
         acquireWakeLock()
-        val ok = gps.start { loc ->
+        startSensors(prefs)
+        scope.launch {
+            val dao = HudProApplication.from(this@RecordingService).database.recordingDao()
+            // Only one recording at a time: clear stale leftovers (e.g. a crash the user ignored).
+            dao.activeRecording()?.let { stale -> dao.deletePoints(stale.id); dao.deleteRecording(stale.id) }
+            recordingId = dao.insertRecording(RecordingEntity(startedAt = System.currentTimeMillis()))
+            startPeriodicFlush()
+        }
+        DebugLog.i("Record", "gravació nativa iniciada · autoPausa=${prefs.recAutoPause}")
+    }
+
+    private fun restoreAfterDeath() {
+        if (recorder != null) return
+        startForegroundWithType() // must enter foreground promptly after onStartCommand
+        scope.launch {
+            val prefs = ViewerPreferences.get(this@RecordingService)
+            val dao = HudProApplication.from(this@RecordingService).database.recordingDao()
+            val active = dao.activeRecording()
+            if (active == null) {
+                DebugLog.i("Record", "sticky restart sense gravació activa · aturant")
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                return@launch
+            }
+            val stored = dao.points(active.id)
+            val r = TrackRecorder(configFrom(prefs))
+            r.restore(stored.toSegments(), Instant.ofEpochMilli(active.startedAt), Instant.now())
+            recorder = r
+            recordingId = active.id
+            segmentIndex = (stored.maxOfOrNull { it.segment } ?: 0) + 1
+            autoPause = if (prefs.recAutoPause) AutoPause() else null
+            publish()
+            acquireWakeLock()
+            startSensors(prefs)
+            startPeriodicFlush()
+            DebugLog.w("Record", "gravació restaurada després de mort del procés · ${stored.size} punts")
+        }
+    }
+
+    private fun startSensors(prefs: ViewerPreferences) {
+        val gpsOk = gps.start(intervalMs = prefs.recGpsIntervalSec.coerceAtLeast(1) * 1000L) { loc ->
             val rec = recorder ?: return@start
-            rec.onLocation(
+            val time = Instant.ofEpochMilli(loc.time)
+            val speed = if (loc.hasSpeed()) loc.speed.toDouble() else 0.0
+            val point = rec.onLocation(
                 latitude = loc.latitude,
                 longitude = loc.longitude,
                 altitude = if (loc.hasAltitude()) loc.altitude else null,
                 speedMs = if (loc.hasSpeed()) loc.speed.toDouble() else null,
                 bearingDeg = if (loc.hasBearing()) loc.bearing.toDouble() else null,
                 accuracyM = if (loc.hasAccuracy()) loc.accuracy else Float.MAX_VALUE,
-                time = Instant.ofEpochMilli(loc.time),
+                time = time,
             )
+            if (point != null) {
+                recordingId?.let { id ->
+                    synchronized(pendingPoints) { pendingPoints.add(RecordingPointEntity.from(id, segmentIndex, point)) }
+                }
+            }
+            // Auto-pause: feed every fix (also while paused, to detect movement again).
+            autoPause?.let { ap ->
+                when (ap.onFix(GeoPoint(loc.latitude, loc.longitude), speed, time, rec.snapshot(time).isPaused)) {
+                    AutoPause.Command.PAUSE -> { doPause(manual = false); DebugLog.i("Record", "auto-pausa") }
+                    AutoPause.Command.RESUME -> { doResume(manual = false); DebugLog.i("Record", "auto-reprendre") }
+                    AutoPause.Command.NONE -> {}
+                }
+            }
             publish()
             updateNotification(force = false)
         }
-        DebugLog.i("Record", "gravació nativa iniciada · gps=$ok")
+        if (prefs.recBarometer) {
+            pressure.start { hPa -> recorder?.onPressure(hPa) }
+        }
+        DebugLog.i("Record", "sensors · gps=$gpsOk · interval=${prefs.recGpsIntervalSec}s")
+    }
+
+    private fun doPause(manual: Boolean) {
+        val r = recorder ?: return
+        if (manual) autoPause?.onManualOverride()
+        r.pause(Instant.now())
+        segmentIndex++
+        flushPoints()
+        publish()
+        updateNotification(force = true)
+        if (manual) DebugLog.i("Record", "pausa manual")
+    }
+
+    private fun doResume(manual: Boolean) {
+        val r = recorder ?: return
+        if (manual) autoPause?.onManualOverride()
+        r.resume(Instant.now())
+        publish()
+        updateNotification(force = true)
+        if (manual) DebugLog.i("Record", "reprendre manual")
     }
 
     private fun finish() {
         gps.stop()
+        pressure.stop()
         recorder?.let {
             it.stop(Instant.now())
             publish()
             DebugLog.i("Record", "gravació nativa aturada · ${it.snapshot(Instant.now()).points().size} punts")
         }
+        flushPoints()
+        recordingId?.let { id ->
+            scope.launch {
+                val dao = HudProApplication.from(this@RecordingService).database.recordingDao()
+                // The recording is finished; the crash-safety copy is no longer needed (the viewer
+                // holds the final snapshot for the save dialog).
+                dao.deletePoints(id)
+                dao.deleteRecording(id)
+            }
+        }
         recorder = null
+        recordingId = null
         releaseWakeLock()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    private fun startPeriodicFlush() {
+        scope.launch {
+            while (isActive && recorder != null) {
+                delay(5000)
+                flushPoints()
+            }
+        }
+    }
+
+    private fun flushPoints() {
+        val batch = synchronized(pendingPoints) {
+            if (pendingPoints.isEmpty()) return
+            val copy = pendingPoints.toList()
+            pendingPoints.clear()
+            copy
+        }
+        scope.launch {
+            runCatching {
+                HudProApplication.from(this@RecordingService).database.recordingDao().insertPoints(batch)
+            }.onFailure { DebugLog.e("Record", "flush de punts fallit", it) }
+        }
     }
 
     private fun publish() {
@@ -83,9 +219,17 @@ class RecordingService : Service() {
 
     override fun onDestroy() {
         gps.stop()
+        pressure.stop()
+        flushPoints()
         releaseWakeLock()
+        scope.cancel()
         super.onDestroy()
     }
+
+    private fun configFrom(prefs: ViewerPreferences) = RecorderConfig(
+        maxAccuracyM = prefs.recMaxAccuracyM,
+        minDistanceM = prefs.recMinDistanceM.toDouble(),
+    )
 
     // --- Notification ---
 
@@ -137,7 +281,7 @@ class RecordingService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL)
-            .setContentTitle("Gravant activitat")
+            .setContentTitle(if (paused) "Gravació en pausa" else "Gravant activitat")
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setOngoing(true)

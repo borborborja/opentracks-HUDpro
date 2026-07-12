@@ -18,7 +18,9 @@ import org.maplibre.android.module.http.HttpRequestUtil
 class HudProApplication : Application() {
 
     val database: HudProDatabase by lazy {
-        Room.databaseBuilder(this, HudProDatabase::class.java, "hudpro.db").build()
+        Room.databaseBuilder(this, HudProDatabase::class.java, "hudpro.db")
+            .addMigrations(HudProDatabase.MIGRATION_1_2)
+            .build()
     }
     val trackRepository: TrackRepository by lazy {
         TrackRepository(database.followTrackDao(), contentResolver)

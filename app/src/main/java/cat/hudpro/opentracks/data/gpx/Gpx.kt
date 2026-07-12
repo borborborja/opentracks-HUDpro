@@ -8,14 +8,20 @@ import java.time.Instant
 import java.util.Locale
 import javax.xml.parsers.DocumentBuilderFactory
 
-/** A single GPX track point with optional elevation/time. */
+/** A single GPX track point with optional elevation/time and sensor extensions. */
 data class GpxPoint(
     val latitude: Double,
     val longitude: Double,
     val elevation: Double? = null,
     val time: Instant? = null,
+    // Garmin TrackPointExtension sensor data (written as gpxtpx extensions when present).
+    val heartRate: Double? = null,
+    val cadence: Double? = null,
+    val power: Double? = null,
 ) {
     fun toGeoPoint() = GeoPoint(latitude, longitude)
+
+    val hasExtensions: Boolean get() = heartRate != null || cadence != null || power != null
 }
 
 /** An imported/exported route: an ordered list of points and a name. */
@@ -57,17 +63,32 @@ object Gpx {
         return if (nodes.length > 0) nodes.item(0).textContent?.trim() else null
     }
 
-    /** Serializes points to a GPX 1.1 track document. */
+    /**
+     * Serializes points to a GPX 1.1 track document. Sensor data (heart rate, cadence, power), when
+     * present, is written as Garmin TrackPointExtension elements — the de-facto standard consumed by
+     * Strava/Garmin/Endurain.
+     */
     fun write(name: String, points: List<GpxPoint>): String {
+        val hasExt = points.any { it.hasExtensions }
         val sw = StringWriter()
         sw.append("""<?xml version="1.0" encoding="UTF-8"?>""").append('\n')
-        sw.append("""<gpx version="1.1" creator="OpenTracks HUD Pro" xmlns="http://www.topografix.com/GPX/1/1">""").append('\n')
+        sw.append("""<gpx version="1.1" creator="OpenTracks HUD Pro" xmlns="http://www.topografix.com/GPX/1/1"""")
+        if (hasExt) sw.append(""" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1"""")
+        sw.append(">").append('\n')
         sw.append("  <trk>\n    <name>").append(escape(name)).append("</name>\n    <trkseg>\n")
         for (p in points) {
             sw.append(String.format(Locale.US, "      <trkpt lat=\"%.7f\" lon=\"%.7f\">", p.latitude, p.longitude))
             sw.append('\n')
             p.elevation?.let { sw.append(String.format(Locale.US, "        <ele>%.1f</ele>%n", it)) }
             p.time?.let { sw.append("        <time>").append(it.toString()).append("</time>\n") }
+            if (p.hasExtensions) {
+                sw.append("        <extensions>\n          <gpxtpx:TrackPointExtension>\n")
+                p.heartRate?.let { sw.append("            <gpxtpx:hr>").append(it.toInt().toString()).append("</gpxtpx:hr>\n") }
+                p.cadence?.let { sw.append("            <gpxtpx:cad>").append(it.toInt().toString()).append("</gpxtpx:cad>\n") }
+                sw.append("          </gpxtpx:TrackPointExtension>\n")
+                p.power?.let { sw.append("          <power>").append(it.toInt().toString()).append("</power>\n") }
+                sw.append("        </extensions>\n")
+            }
             sw.append("      </trkpt>\n")
         }
         sw.append("    </trkseg>\n  </trk>\n</gpx>\n")

@@ -65,6 +65,27 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_ADAPTIVE_ZOOM, false)
         set(value) = prefs.edit().putBoolean(KEY_ADAPTIVE_ZOOM, value).apply()
 
+    // --- Native recording engine ---
+    var recGpsIntervalSec: Int
+        get() = prefs.getInt(KEY_REC_GPS_INTERVAL, 1)
+        set(value) = prefs.edit().putInt(KEY_REC_GPS_INTERVAL, value).apply()
+
+    var recMinDistanceM: Float
+        get() = prefs.getFloat(KEY_REC_MIN_DISTANCE, 3f)
+        set(value) = prefs.edit().putFloat(KEY_REC_MIN_DISTANCE, value).apply()
+
+    var recMaxAccuracyM: Float
+        get() = prefs.getFloat(KEY_REC_MAX_ACCURACY, 25f)
+        set(value) = prefs.edit().putFloat(KEY_REC_MAX_ACCURACY, value).apply()
+
+    var recAutoPause: Boolean
+        get() = prefs.getBoolean(KEY_REC_AUTO_PAUSE, false)
+        set(value) = prefs.edit().putBoolean(KEY_REC_AUTO_PAUSE, value).apply()
+
+    var recBarometer: Boolean
+        get() = prefs.getBoolean(KEY_REC_BAROMETER, true)
+        set(value) = prefs.edit().putBoolean(KEY_REC_BAROMETER, value).apply()
+
     /** Name of the selected [cat.hudpro.opentracks.data.map.TrackColorMode]. */
     var trackColorMode: String?
         get() = prefs.getString(KEY_TRACK_COLOR_MODE, null)
@@ -170,6 +191,11 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
         private const val KEY_FULLSCREEN = "fullscreen"
         private const val KEY_ADAPTIVE_ZOOM = "adaptive_zoom"
+        private const val KEY_REC_GPS_INTERVAL = "rec_gps_interval"
+        private const val KEY_REC_MIN_DISTANCE = "rec_min_distance"
+        private const val KEY_REC_MAX_ACCURACY = "rec_max_accuracy"
+        private const val KEY_REC_AUTO_PAUSE = "rec_auto_pause"
+        private const val KEY_REC_BAROMETER = "rec_barometer"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"
         private const val KEY_TRACK_COLOR_MODE = "track_color_mode"
         private const val KEY_TRACK_COLOR = "track_color"

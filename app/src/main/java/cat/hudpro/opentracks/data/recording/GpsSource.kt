@@ -18,9 +18,9 @@ class GpsSource(private val context: Context) {
     private var manager: LocationManager? = null
     private var listener: LocationListener? = null
 
-    /** Starts 1 Hz updates; returns false if no provider is available or permission is missing. */
+    /** Starts updates every [intervalMs]; returns false if no provider or permission is missing. */
     @SuppressLint("MissingPermission")
-    fun start(onLocation: (Location) -> Unit): Boolean {
+    fun start(intervalMs: Long = INTERVAL_MS, onLocation: (Location) -> Unit): Boolean {
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
         val provider = when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
@@ -30,7 +30,7 @@ class GpsSource(private val context: Context) {
         }
         val l = LocationListener { onLocation(it) }
         return runCatching {
-            lm.requestLocationUpdates(provider, INTERVAL_MS, 0f, l, Looper.getMainLooper())
+            lm.requestLocationUpdates(provider, intervalMs, 0f, l, Looper.getMainLooper())
             manager = lm
             listener = l
             DebugLog.i("Record", "GPS actiu · provider=$provider")

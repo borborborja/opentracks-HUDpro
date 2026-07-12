@@ -59,8 +59,38 @@ interface FollowTrackDao {
     suspend fun knownRemoteIds(): List<Long>
 }
 
-@Database(entities = [FollowTrackEntity::class], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        FollowTrackEntity::class,
+        cat.hudpro.opentracks.data.recording.RecordingEntity::class,
+        cat.hudpro.opentracks.data.recording.RecordingPointEntity::class,
+    ],
+    version = 2,
+    exportSchema = false,
+)
 @TypeConverters(Converters::class)
 abstract class HudProDatabase : RoomDatabase() {
     abstract fun followTrackDao(): FollowTrackDao
+    abstract fun recordingDao(): cat.hudpro.opentracks.data.recording.RecordingDao
+
+    companion object {
+        /** v2: crash-safe native recording tables. */
+        val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `recordings` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`started_at` INTEGER NOT NULL, `state` TEXT NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `recording_points` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`recording_id` INTEGER NOT NULL, `seq` INTEGER NOT NULL, " +
+                        "`segment` INTEGER NOT NULL, `lat` REAL NOT NULL, `lng` REAL NOT NULL, " +
+                        "`alt` REAL, `time_ms` INTEGER NOT NULL, `speed` REAL NOT NULL, " +
+                        "`bearing` REAL, `hr` REAL, `cad` REAL, `power` REAL)",
+                )
+            }
+        }
+    }
 }
