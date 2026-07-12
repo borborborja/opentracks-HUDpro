@@ -29,6 +29,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Native activity recording: GPS keeps running with the screen off. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Off-route haptic alert. -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
@@ -70,6 +73,12 @@
             android:exported="false"
             tools:node="merge"
             xmlns:tools="http://schemas.android.com/tools" />
+
+        <!-- Native activity recording engine (GPS foreground service). -->
+        <service
+            android:name=".data.recording.RecordingService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
 
         <!-- Declare the foreground-service type for WorkManager's foreground worker (offline map download). -->
         <service

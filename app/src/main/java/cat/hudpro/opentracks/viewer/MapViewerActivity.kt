@@ -40,7 +40,11 @@ import cat.hudpro.opentracks.data.debug.DebugLog
 import cat.hudpro.opentracks.data.opentracks.DashboardReader
 import cat.hudpro.opentracks.data.opentracks.isDashboardAction
 import cat.hudpro.opentracks.data.opentracks.model.Segment
+import cat.hudpro.opentracks.data.opentracks.model.TrackStatistics
 import cat.hudpro.opentracks.data.prefs.ViewerPreferences
+import cat.hudpro.opentracks.data.recording.NativeRecording
+import cat.hudpro.opentracks.data.recording.RecorderState
+import cat.hudpro.opentracks.data.recording.RecordingService
 import cat.hudpro.opentracks.viewer.follow.FollowRouteEngine
 import cat.hudpro.opentracks.viewer.hud.HudControls
 import cat.hudpro.opentracks.viewer.hud.HudData
@@ -75,6 +79,8 @@ class MapViewerActivity : ComponentActivity() {
     private val controlsFlow = MutableStateFlow(HudControls.disabled)
     private val currentPageFlow = MutableStateFlow(0)
     private val settingsOpenFlow = MutableStateFlow(false)
+    /** Finished native recording awaiting the save/discard dialog. */
+    private val saveDialogFlow = MutableStateFlow<RecorderState?>(null)
     private var units = cat.hudpro.opentracks.viewer.hud.Units()
     private var lastWaypoints: List<cat.hudpro.opentracks.data.opentracks.model.Waypoint> = emptyList()
     private var adaptiveZoom = false
@@ -83,6 +89,20 @@ class MapViewerActivity : ComponentActivity() {
         androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions(),
     ) { result ->
         if (result.values.any { it }) controller?.enableLocation(this)
+    }
+
+    private val notifPermLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) {}
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.POST_NOTIFICATIONS,
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            notifPermLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 
     private fun hasLocationPermission(): Boolean =
@@ -210,6 +230,19 @@ class MapViewerActivity : ComponentActivity() {
                                 onDismiss = { settingsOpenFlow.value = false },
                             )
                         }
+                        val pendingSave by saveDialogFlow.collectAsState()
+                        pendingSave?.let { snap ->
+                            SaveRecordingDialog(
+                                state = snap,
+                                onSave = { name -> saveNativeRecording(snap, name) },
+                                onDiscard = {
+                                    DebugLog.i("Record", "descartada")
+                                    NativeRecording.clear()
+                                    saveDialogFlow.value = null
+                                    refreshRecordingHud()
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -236,8 +269,12 @@ class MapViewerActivity : ComponentActivity() {
             setupControls(ctrl)
             val onReady: () -> Unit = {
                 // Frame the active route when not recording (no live track to follow yet) so it's visible.
-                loadFollowRoute(prefs, ctrl, frame = reader?.isRecording != true)
-                reader?.let { observe(it, ctrl) }
+                loadFollowRoute(prefs, ctrl, frame = reader?.isRecording != true && !NativeRecording.isActive)
+                when {
+                    reader != null -> observe(reader!!, ctrl)
+                    // Reconnect to an ongoing (or just-finished, unsaved) native recording.
+                    NativeRecording.state.value != null -> observeNative(ctrl)
+                }
                 // Show the user's location; request the permission if we don't have it yet.
                 if (hasLocationPermission()) {
                     ctrl.enableLocation(this)
@@ -365,29 +402,65 @@ class MapViewerActivity : ComponentActivity() {
             onNorth = { ctrl.northUp() },
             onZoomIn = { ctrl.zoomIn() },
             onZoomOut = { ctrl.zoomOut() },
-            onStartRecording = {
-                val ok = cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.start(this)
-                DebugLog.i("Record", "start() → $ok · reader=${reader != null}")
-                if (ok) {
-                    recordingOverride = true
-                    refreshRecordingHud()
-                    // Standalone viewer: OpenTracks won't push live data here unless HUD Pro is opened
-                    // as its dashboard. Tell the user how to see live stats.
-                    if (reader == null) {
-                        android.widget.Toast.makeText(
-                            this,
-                            "Gravació iniciada. Per veure les dades en viu, obre HUD Pro des del botó de mapa/tauler d'OpenTracks.",
-                            android.widget.Toast.LENGTH_LONG,
-                        ).show()
-                    }
+            // The viewer's record button ALWAYS drives the native engine. OpenTracks is only the data
+            // source when HUD Pro was opened from its dashboard (and then its own UI controls it).
+            onStartRecording = { startNativeRecording(ctrl) },
+            onStopRecording = {
+                if (NativeRecording.isActive) {
+                    DebugLog.i("Record", "native stop demanat")
+                    RecordingService.stop(this)
+                } else if (reader?.isRecording == true || recordingOverride == true) {
+                    // Companion session started by OpenTracks: stop it there.
+                    val ok = cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.stop(this)
+                    DebugLog.i("Record", "companion stop() → $ok")
+                    if (ok) { recordingOverride = false; refreshRecordingHud() }
                 }
             },
-            onStopRecording = {
-                val ok = cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.stop(this)
-                DebugLog.i("Record", "stop() → $ok")
-                if (ok) { recordingOverride = false; refreshRecordingHud() }
-            },
         )
+    }
+
+    /** Starts the native recording engine (permissions → service → pipeline). */
+    private fun startNativeRecording(ctrl: MapLibreController) {
+        if (NativeRecording.isActive) return
+        if (!hasLocationPermission()) {
+            locationPermLauncher.launch(
+                arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION,
+                ),
+            )
+            android.widget.Toast.makeText(this, "Cal el permís d'ubicació per gravar", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        requestNotificationPermission()
+        DebugLog.i("Record", "native start")
+        RecordingService.start(this)
+        observeNative(ctrl)
+        followMode = true
+        refreshRecordingHud()
+        emitControls()
+    }
+
+    /** Persists a finished native recording: library entry + GPX + Endurain upload. */
+    private fun saveNativeRecording(state: RecorderState, name: String) {
+        lifecycleScope.launch {
+            val pts = state.points()
+                .filter { it.latLong != null && !it.isPause }
+                .map { GpxPoint(it.latLong!!.latitude, it.latLong.longitude, it.altitude, it.time) }
+            if (pts.size >= 2) {
+                HudProApplication.from(this@MapViewerActivity).trackRepository.insertRoute(
+                    name, pts, cat.hudpro.opentracks.data.tracks.TrackSource.RECORDED, remoteId = null,
+                )
+                val gpx = Gpx.write(name, pts)
+                val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "activitat" }
+                EndurainUploadWorker.enqueue(this@MapViewerActivity, gpx, "$safe.gpx")
+                DebugLog.i("Record", "desada «$name» · ${pts.size} punts · Endurain encuat")
+                android.widget.Toast.makeText(this@MapViewerActivity, "Activitat desada", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            NativeRecording.clear()
+            saveDialogFlow.value = null
+            refreshRecordingHud()
+        }
     }
 
     /** Re-emit the HUD data so the record button flips immediately after an optimistic start/stop. */
@@ -409,6 +482,12 @@ class MapViewerActivity : ComponentActivity() {
             "onNewIntent · action=${intent.action} · dashboard=${intent.isDashboardAction()} · extras=${intent.extras?.keySet()?.joinToString()}",
         )
         if (!intent.isDashboardAction()) return
+        if (NativeRecording.isActive) {
+            // The native engine is recording: don't let an OpenTracks dashboard steal the pipeline.
+            DebugLog.w("Viewer", "dashboard ignorat: gravació nativa en curs")
+            android.widget.Toast.makeText(this, "Gravació pròpia en curs; tauler d'OpenTracks ignorat", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
         observeJob?.cancel()
         reader?.stop()
         reader = runCatching { DashboardReader(intent, contentResolver) }
@@ -494,68 +573,101 @@ class MapViewerActivity : ComponentActivity() {
         }
     }
 
-    /** True recording state: the user's optimistic tap wins until OpenTracks pushes a fresh intent. */
-    private fun isRecordingNow(): Boolean = recordingOverride ?: (reader?.isRecording == true)
+    /** True recording state: native engine wins; else the user's optimistic tap; else OpenTracks. */
+    private fun isRecordingNow(): Boolean =
+        if (cat.hudpro.opentracks.data.recording.NativeRecording.isActive) true
+        else recordingOverride ?: (reader?.isRecording == true)
 
+    /** OpenTracks companion source: consumes the dashboard reader (when opened from OpenTracks). */
     private fun observe(reader: DashboardReader, ctrl: MapLibreController) {
         observeJob = lifecycleScope.launch {
             combine(reader.segments, reader.waypoints, reader.statistics) { segs, wps, stats ->
                 Triple(segs, wps, stats)
             }.collect { (segs, wps, stats) ->
-                lastSegments = segs
-                lastWaypoints = wps
-                ctrl.updateTrack(segs, frame = true)
-                ctrl.updateWaypoints(wps)
-                val recording = isRecordingNow()
-                var metrics = MetricsCalculator.compute(segs, stats, recording)
-
-                // Follow-route: compute state once, drive metrics + progress split + off-route alert.
-                val current = segs.lastOrNull()?.lastOrNull { it.latLong != null }?.latLong
-                val state = current?.let { followEngine?.update(it) }
-
-                if (followMode && recording) {
-                    // Adaptive zoom: closer to a route turn/junction → zoom in; straights → zoom out.
-                    val zoom = if (adaptiveZoom) adaptiveZoomFor(state?.distanceToNextTurnM, ctrl.currentZoom) else null
-                    ctrl.follow(segs, if (ctrl.headingUp) metrics.bearingDeg else null, zoom)
-                }
-
-                if (state != null) {
-                    metrics = metrics.copy(
-                        remainingDistanceKm = state.remainingKm,
-                        offRouteMeters = state.offRouteMeters,
-                        bearingToRouteDeg = state.bearingToRouteDeg,
-                    )
-                    ctrl.updateFollowProgress(state.nearestIndex)
-                    if (offRouteAlerter.update(state.offRouteMeters, offRouteThreshold) == cat.hudpro.opentracks.viewer.follow.OffRouteAlerter.Event.ENTERED) {
-                        if (offRouteVibrate) AlertFeedback.vibrate(this@MapViewerActivity)
-                        val spoken = offRouteSpoken && announceVoice && announcer != null
-                        if (spoken) {
-                            announcer?.speak(cat.hudpro.opentracks.viewer.audio.AnnouncementText.offRoute(announceLang))
-                        } else if (offRouteSound) {
-                            AlertFeedback.beep()
-                        }
-                    }
-                }
-
-                if (recording) handleAnnouncements(metrics)
-
-                pushSpeed(metrics.speedKmh)
-                val routeProfile = followEngine?.elevationProfile
-                val nPoints = (followEngine?.points?.size ?: 1)
-                hudDataFlow.value = HudData(
-                    metrics = metrics,
-                    units = units,
-                    speedSeries = speedBuffer.toList(),
-                    // Prefer the followed route's profile; else the recorded track's own altitude.
-                    elevationProfile = if (!routeProfile.isNullOrEmpty()) routeProfile else recordedElevation(segs),
-                    routeProgress = if (state != null && nPoints > 1) state.nearestIndex.toFloat() / (nPoints - 1) else 1f,
-                    following = following,
-                    offRouteThresholdM = offRouteThreshold,
-                )
-
+                processUpdate(segs, wps, stats, isRecordingNow(), ctrl)
                 handleRecordingStopped(reader, segs)
             }
         }
+    }
+
+    /** Native engine source: consumes the in-process recording service. */
+    private fun observeNative(ctrl: MapLibreController) {
+        observeJob?.cancel()
+        observeJob = lifecycleScope.launch {
+            cat.hudpro.opentracks.data.recording.NativeRecording.state.collect { s ->
+                if (s == null) return@collect
+                processUpdate(s.segments, emptyList(), s.statistics, s.isRecording, ctrl)
+                if (s.isFinished && saveDialogFlow.value == null) {
+                    DebugLog.i("Record", "finalitzada · ${s.points().size} punts → diàleg de desar")
+                    if (s.points().any { it.latLong != null }) {
+                        saveDialogFlow.value = s
+                    } else {
+                        android.widget.Toast.makeText(this@MapViewerActivity, "Activitat sense punts, descartada", android.widget.Toast.LENGTH_SHORT).show()
+                        cat.hudpro.opentracks.data.recording.NativeRecording.clear()
+                        refreshRecordingHud()
+                    }
+                }
+            }
+        }
+    }
+
+    /** Shared pipeline: track/waypoints on the map, metrics, follow-route, announcements, HUD. */
+    private fun processUpdate(
+        segs: List<Segment>,
+        wps: List<cat.hudpro.opentracks.data.opentracks.model.Waypoint>,
+        stats: TrackStatistics?,
+        recording: Boolean,
+        ctrl: MapLibreController,
+    ) {
+        lastSegments = segs
+        lastWaypoints = wps
+        ctrl.updateTrack(segs, frame = true)
+        ctrl.updateWaypoints(wps)
+        var metrics = MetricsCalculator.compute(segs, stats, recording)
+
+        // Follow-route: compute state once, drive metrics + progress split + off-route alert.
+        val current = segs.lastOrNull()?.lastOrNull { it.latLong != null }?.latLong
+        val state = current?.let { followEngine?.update(it) }
+
+        if (followMode && recording) {
+            // Adaptive zoom: closer to a route turn/junction → zoom in; straights → zoom out.
+            val zoom = if (adaptiveZoom) adaptiveZoomFor(state?.distanceToNextTurnM, ctrl.currentZoom) else null
+            ctrl.follow(segs, if (ctrl.headingUp) metrics.bearingDeg else null, zoom)
+        }
+
+        if (state != null) {
+            metrics = metrics.copy(
+                remainingDistanceKm = state.remainingKm,
+                offRouteMeters = state.offRouteMeters,
+                bearingToRouteDeg = state.bearingToRouteDeg,
+            )
+            ctrl.updateFollowProgress(state.nearestIndex)
+            if (offRouteAlerter.update(state.offRouteMeters, offRouteThreshold) == cat.hudpro.opentracks.viewer.follow.OffRouteAlerter.Event.ENTERED) {
+                if (offRouteVibrate) AlertFeedback.vibrate(this@MapViewerActivity)
+                val spoken = offRouteSpoken && announceVoice && announcer != null
+                if (spoken) {
+                    announcer?.speak(cat.hudpro.opentracks.viewer.audio.AnnouncementText.offRoute(announceLang))
+                } else if (offRouteSound) {
+                    AlertFeedback.beep()
+                }
+            }
+        }
+
+        if (recording) handleAnnouncements(metrics)
+
+        pushSpeed(metrics.speedKmh)
+        val routeProfile = followEngine?.elevationProfile
+        val nPoints = (followEngine?.points?.size ?: 1)
+        hudDataFlow.value = HudData(
+            metrics = metrics,
+            units = units,
+            speedSeries = speedBuffer.toList(),
+            // Prefer the followed route's profile; else the recorded track's own altitude.
+            elevationProfile = if (!routeProfile.isNullOrEmpty()) routeProfile else recordedElevation(segs),
+            routeProgress = if (state != null && nPoints > 1) state.nearestIndex.toFloat() / (nPoints - 1) else 1f,
+            following = following,
+            offRouteThresholdM = offRouteThreshold,
+        )
     }
 
     private fun pushSpeed(speedKmh: Double?) {
@@ -625,6 +737,44 @@ class MapViewerActivity : ComponentActivity() {
         const val TAG = "MapViewerActivity"
         const val SPEED_HISTORY = 60
     }
+}
+
+/** Save/discard dialog for a finished native recording. */
+@Composable
+private fun SaveRecordingDialog(state: RecorderState, onSave: (String) -> Unit, onDiscard: () -> Unit) {
+    val defaultName = androidx.compose.runtime.remember {
+        "Activitat " + java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm")
+            .withZone(java.time.ZoneId.systemDefault())
+            .format(state.statistics.startTime ?: java.time.Instant.now())
+    }
+    val name = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(defaultName) }
+    val km = state.statistics.totalDistanceMeter / 1000.0
+    val secs = state.statistics.totalTime.inWholeSeconds
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = {}, // force an explicit choice; the data is gone otherwise
+        title = { androidx.compose.material3.Text("Desar activitat") },
+        text = {
+            androidx.compose.foundation.layout.Column {
+                androidx.compose.material3.Text(
+                    String.format(java.util.Locale.US, "%.2f km · %d:%02d:%02d", km, secs / 3600, (secs % 3600) / 60, secs % 60),
+                )
+                androidx.compose.material3.OutlinedTextField(
+                    value = name.value,
+                    onValueChange = { name.value = it },
+                    singleLine = true,
+                    label = { androidx.compose.material3.Text("Nom") },
+                )
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = { onSave(name.value.trim().ifBlank { defaultName }) }) {
+                androidx.compose.material3.Text("Desar")
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDiscard) { androidx.compose.material3.Text("Descartar") }
+        },
+    )
 }
 
 /** A subtle dark→transparent gradient covering the status bar, giving its icons contrast on light maps. */

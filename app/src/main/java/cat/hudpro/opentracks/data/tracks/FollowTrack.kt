@@ -13,7 +13,7 @@ import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import kotlinx.coroutines.flow.Flow
 
-enum class TrackSource { GPX_IMPORT, ENDURAIN }
+enum class TrackSource { GPX_IMPORT, ENDURAIN, RECORDED }
 
 class Converters {
     @TypeConverter fun sourceToString(s: TrackSource): String = s.name

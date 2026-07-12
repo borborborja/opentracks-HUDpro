@@ -8,6 +8,11 @@ https://codeberg.org/OpenTracksApp/OSMDashboard
 The OpenTracks Dashboard API integration (data/opentracks package) is derived
 from OSMDashboard's map/reader package.
 
+The native activity-recording engine (data/recording package: GPS filtering,
+track statistics and the foreground recording service) is derived from and
+inspired by OpenTracks, Copyright the OpenTracks contributors, licensed under
+the Apache License 2.0. https://github.com/OpenTracksApp/OpenTracks
+
 Map data:
  - © OpenStreetMap contributors (ODbL)
  - © Institut Cartogràfic i Geològic de Catalunya (ICGC), CC-BY
