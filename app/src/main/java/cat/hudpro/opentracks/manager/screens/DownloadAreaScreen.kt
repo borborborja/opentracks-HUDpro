@@ -50,20 +50,20 @@ import cat.hudpro.opentracks.data.map.TileMath
 import java.util.Locale
 import kotlin.math.roundToLong
 
-private enum class AreaMode { PROVINCE, VISIBLE, DRAW }
+private enum class AreaMode { PROVINCE, VISIBLE, DRAW, ROUTE }
 
 private const val TILE_LIMIT = 60_000L
 private const val KB_PER_TILE = 25.0
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DownloadAreaScreen(onBack: () -> Unit) {
+fun DownloadAreaScreen(onBack: () -> Unit, initialBbox: BoundingBox? = null) {
     val context = LocalContext.current
     val mapView = rememberMapViewWithLifecycle()
 
     var controller by remember { mutableStateOf<AreaSelectController?>(null) }
-    var mode by remember { mutableStateOf(AreaMode.PROVINCE) }
-    var bbox by remember { mutableStateOf<BoundingBox?>(null) }
+    var mode by remember { mutableStateOf(if (initialBbox != null) AreaMode.ROUTE else AreaMode.PROVINCE) }
+    var bbox by remember { mutableStateOf(initialBbox) }
     var source by remember { mutableStateOf(MapSource.ICGC_TOPO) }
     var zoom by remember { mutableStateOf(9f..14f) }
 
@@ -100,7 +100,10 @@ fun DownloadAreaScreen(onBack: () -> Unit) {
                         mapView.getMapAsync { map ->
                             val c = AreaSelectController(map)
                             controller = c
-                            c.init { }
+                            c.init {
+                                // Pre-select and frame the route's area when opened from a route.
+                                initialBbox?.let { c.showSelection(it); c.fitBounds(it) }
+                            }
                         }
                         mapView
                     },
@@ -144,6 +147,12 @@ fun DownloadAreaScreen(onBack: () -> Unit) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     // Selection mode.
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        if (initialBbox != null) {
+                            FilterChip(mode == AreaMode.ROUTE, {
+                                mode = AreaMode.ROUTE; bbox = initialBbox
+                                controller?.let { it.showSelection(initialBbox); it.fitBounds(initialBbox) }
+                            }, label = { Text("Ruta") })
+                        }
                         FilterChip(mode == AreaMode.PROVINCE, { mode = AreaMode.PROVINCE }, label = { Text("Província") })
                         FilterChip(mode == AreaMode.VISIBLE, {
                             mode = AreaMode.VISIBLE
@@ -152,6 +161,10 @@ fun DownloadAreaScreen(onBack: () -> Unit) {
                         FilterChip(mode == AreaMode.DRAW, { mode = AreaMode.DRAW }, label = { Text("Dibuixar") })
                     }
                     controller?.setGesturesEnabled(mode != AreaMode.DRAW)
+                    if (mode == AreaMode.ROUTE) {
+                        Text("Àrea de la ruta seleccionada. Tria font i zoom i descarrega.",
+                            style = MaterialTheme.typography.bodySmall)
+                    }
 
                     if (mode == AreaMode.PROVINCE) {
                         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {

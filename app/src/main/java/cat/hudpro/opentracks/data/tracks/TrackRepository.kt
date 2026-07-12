@@ -57,6 +57,12 @@ class TrackRepository(
         entity.gpx.byteInputStream().use { Gpx.read(it) }.points
     }
 
+    /** Bounding box (with margin) enclosing the route, for the "download this route's map" flow. */
+    suspend fun routeBoundingBox(id: Long): cat.hudpro.opentracks.data.map.BoundingBox? =
+        withContext(Dispatchers.IO) {
+            cat.hudpro.opentracks.data.map.RouteCoverageCalculator.boundingBox(loadRoute(id))
+        }
+
     suspend fun delete(id: Long) = withContext(Dispatchers.IO) { dao.delete(id) }
 
     suspend fun knownEndurainIds(): Set<Long> = withContext(Dispatchers.IO) { dao.knownRemoteIds().toSet() }

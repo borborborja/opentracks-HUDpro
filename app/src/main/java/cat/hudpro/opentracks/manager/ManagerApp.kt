@@ -1,9 +1,12 @@
 package cat.hudpro.opentracks.manager
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import cat.hudpro.opentracks.data.map.BoundingBox
 import cat.hudpro.opentracks.manager.screens.EndurainScreen
 import cat.hudpro.opentracks.manager.screens.HomeScreen
 import cat.hudpro.opentracks.manager.screens.HudDesignerScreen
@@ -46,11 +49,34 @@ fun ManagerApp(onOpenViewer: () -> Unit) {
                 onDownloadArea = { nav.navigate(Routes.DOWNLOAD_AREA) },
             )
         }
-        composable(Routes.DOWNLOAD_AREA) { DownloadAreaScreen(onBack = { nav.popBackStack() }) }
+        composable(
+            route = "${Routes.DOWNLOAD_AREA}?w={w}&s={s}&e={e}&n={n}",
+            arguments = listOf(
+                navArgument("w") { type = NavType.FloatType; defaultValue = Float.NaN },
+                navArgument("s") { type = NavType.FloatType; defaultValue = Float.NaN },
+                navArgument("e") { type = NavType.FloatType; defaultValue = Float.NaN },
+                navArgument("n") { type = NavType.FloatType; defaultValue = Float.NaN },
+            ),
+        ) { entry ->
+            val a = entry.arguments
+            val w = a?.getFloat("w") ?: Float.NaN
+            val s = a?.getFloat("s") ?: Float.NaN
+            val e = a?.getFloat("e") ?: Float.NaN
+            val n = a?.getFloat("n") ?: Float.NaN
+            val initial = if (!w.isNaN() && !s.isNaN() && !e.isNaN() && !n.isNaN()) {
+                BoundingBox(w.toDouble(), s.toDouble(), e.toDouble(), n.toDouble())
+            } else {
+                null
+            }
+            DownloadAreaScreen(onBack = { nav.popBackStack() }, initialBbox = initial)
+        }
         composable(Routes.TRACKS) {
             TrackLibraryScreen(
                 onBack = { nav.popBackStack() },
                 onCreateRoute = { nav.navigate(Routes.CREATE_ROUTE) },
+                onDownloadRouteMap = { bbox ->
+                    nav.navigate("${Routes.DOWNLOAD_AREA}?w=${bbox.west}&s=${bbox.south}&e=${bbox.east}&n=${bbox.north}")
+                },
             )
         }
         composable(Routes.CREATE_ROUTE) {
