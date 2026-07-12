@@ -447,6 +447,11 @@ class MapViewerActivity : ComponentActivity() {
                 // Always bring the route into view on (re)load so it can't stay off-screen. During
                 // recording, the live-follow camera takes over on the next update (followMode intact).
                 ctrl.frameFollowRoute()
+                if (frame) {
+                    android.widget.Toast.makeText(
+                        this@MapViewerActivity, "Ruta: ${geo.size}p · ${ctrl.followDebug()}", android.widget.Toast.LENGTH_LONG,
+                    ).show()
+                }
             } else if (frame) {
                 android.widget.Toast.makeText(
                     this@MapViewerActivity, "Ruta a seguir buida (id=$id)", android.widget.Toast.LENGTH_LONG,

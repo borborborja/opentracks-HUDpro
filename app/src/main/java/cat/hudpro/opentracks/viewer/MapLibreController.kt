@@ -241,8 +241,12 @@ class MapLibreController(private val map: MapLibreMap) {
     /** Draws the preloaded route to follow. Pass an empty list to clear it. */
     fun setFollowRoute(points: List<GeoPoint>) {
         followPoints = points
-        drawFollow(points.size)
+        // Draw once the style is ready so the source update isn't dropped on a not-yet-loaded style.
+        map.getStyle { drawFollow(points.size) }
     }
+
+    /** Debug string describing the follow-route render state. */
+    fun followDebug(): String = "src=${followSource != null} lyr=${followLayer != null} pts=${followPoints.size}"
 
     /** Frames the camera to enclose the current followed route (used when the user picks one). */
     fun frameFollowRoute() {
