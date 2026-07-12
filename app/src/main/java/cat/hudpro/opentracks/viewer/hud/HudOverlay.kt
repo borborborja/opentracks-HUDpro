@@ -128,7 +128,7 @@ private fun OffRouteBanner(metrics: LiveMetrics, modifier: Modifier = Modifier) 
 @Composable
 fun HudWidgetContent(element: HudElement, data: HudData, controls: HudControls, scale: Float) {
     when (element.category) {
-        HudCategory.METRIC -> element.metric?.let { HudTile(it, data.metrics, scale) }
+        HudCategory.METRIC -> element.metric?.let { HudTile(it, data.metrics, data.units, scale) }
         HudCategory.CHART -> when (element.id) {
             HudCatalog.CHART_SPEED -> SpeedSparkline(data.speedSeries, scale)
             HudCatalog.CHART_ELEVATION -> ElevationProfile(data.elevationProfile, data.routeProgress, scale)
@@ -143,7 +143,8 @@ fun HudWidgetContent(element: HudElement, data: HudData, controls: HudControls, 
 }
 
 @Composable
-private fun HudTile(metric: HudMetric, metrics: LiveMetrics, scale: Float) {
+private fun HudTile(metric: HudMetric, metrics: LiveMetrics, units: Units, scale: Float) {
+    val unitLabel = metric.unit(units)
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(14.dp))
@@ -158,15 +159,15 @@ private fun HudTile(metric: HudMetric, metrics: LiveMetrics, scale: Float) {
         )
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                text = metric.value(metrics),
+                text = metric.value(metrics, units),
                 color = Color.White,
                 fontSize = (30 * scale).sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.SansSerif,
             )
-            if (metric.unit.isNotEmpty()) {
+            if (unitLabel.isNotEmpty()) {
                 Text(
-                    text = " ${metric.unit}",
+                    text = " $unitLabel",
                     color = Color(0xFFB8C4CE),
                     fontSize = (13 * scale).sp,
                     modifier = Modifier.padding(bottom = 4.dp),

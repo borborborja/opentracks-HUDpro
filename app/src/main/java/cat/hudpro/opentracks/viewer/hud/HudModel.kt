@@ -5,33 +5,72 @@ import java.util.Locale
 import kotlin.math.roundToInt
 import kotlin.time.Duration
 
-/** A single displayable metric. Each knows its label, unit and how to format a [LiveMetrics]. */
-enum class HudMetric(val label: String, val unit: String, val format: (LiveMetrics) -> String) {
-    SPEED("Velocitat", "km/h", { fmt1(it.speedKmh) }),
-    AVG_SPEED("Vel. mitjana", "km/h", { fmt1(it.avgMovingSpeedKmh) }),
-    MAX_SPEED("Vel. màx", "km/h", { fmt1(it.maxSpeedKmh) }),
-    DISTANCE("Distància", "km", { fmt2(it.distanceKm) }),
-    DURATION("Temps", "", { fmtDuration(it.totalTime) }),
-    MOVING_TIME("Temps mov.", "", { fmtDuration(it.movingTime) }),
-    PACE("Ritme", "/km", { fmtPace(it.paceMinPerKm) }),
-    HEADING("Rumb", "°", { fmt0(it.bearingDeg) }),
-    ELEV_GAIN("Desnivell +", "m", { fmt0(it.elevationGainM) }),
-    ALTITUDE("Altitud", "m", { fmt0(it.altitudeM) }),
-    SLOPE("Pendent", "%", { fmt1(it.slopePercent) }),
-    VAM("VAM", "m/h", { fmt0(it.vamMeterPerHour) }),
-    HEART_RATE("FC", "bpm", { fmt0(it.heartRateBpm) }),
-    CADENCE("Cadència", "rpm", { fmt0(it.cadenceRpm) }),
-    POWER("Potència", "W", { fmt0(it.powerW) }),
-    REMAINING("Restant", "km", { fmt2(it.remainingDistanceKm) }),
-    OFF_ROUTE("Desviació", "m", { fmt0(it.offRouteMeters) }),
+/** A single displayable metric. Formats a [LiveMetrics] value and its unit label under the chosen [Units]. */
+enum class HudMetric(val label: String) {
+    SPEED("Velocitat"),
+    AVG_SPEED("Vel. mitjana"),
+    MAX_SPEED("Vel. màx"),
+    DISTANCE("Distància"),
+    DURATION("Temps"),
+    MOVING_TIME("Temps mov."),
+    PACE("Ritme"),
+    HEADING("Rumb"),
+    ELEV_GAIN("Desnivell +"),
+    ALTITUDE("Altitud"),
+    SLOPE("Pendent"),
+    VAM("VAM"),
+    HEART_RATE("FC"),
+    CADENCE("Cadència"),
+    POWER("Potència"),
+    REMAINING("Restant"),
+    OFF_ROUTE("Desviació"),
     ;
 
-    fun value(m: LiveMetrics): String = format(m)
+    /** Formatted value string for [m] under [u] (defaults to metric). */
+    fun value(m: LiveMetrics, u: Units = Units()): String = when (this) {
+        SPEED -> fmt1(m.speedKmh?.let { u.speed.fromKmh(it) })
+        AVG_SPEED -> fmt1(m.avgMovingSpeedKmh?.let { u.speed.fromKmh(it) })
+        MAX_SPEED -> fmt1(m.maxSpeedKmh?.let { u.speed.fromKmh(it) })
+        DISTANCE -> fmt2(u.distance.fromKm(m.distanceKm))
+        DURATION -> fmtDuration(m.totalTime)
+        MOVING_TIME -> fmtDuration(m.movingTime)
+        PACE -> fmtPace(pacePerUnit(m.paceMinPerKm, u.distance))
+        HEADING -> fmt0(m.bearingDeg)
+        ELEV_GAIN -> fmt0(m.elevationGainM?.let { u.elevation.fromMeters(it) })
+        ALTITUDE -> fmt0(m.altitudeM?.let { u.elevation.fromMeters(it) })
+        SLOPE -> fmt1(m.slopePercent)
+        VAM -> fmt0(m.vamMeterPerHour?.let { u.elevation.fromMeters(it) })
+        HEART_RATE -> fmt0(m.heartRateBpm)
+        CADENCE -> fmt0(m.cadenceRpm)
+        POWER -> fmt0(m.powerW)
+        REMAINING -> fmt2(m.remainingDistanceKm?.let { u.distance.fromKm(it) })
+        OFF_ROUTE -> fmt0(m.offRouteMeters?.let { u.elevation.fromMeters(it) })
+    }
+
+    /** Unit label under [u] (defaults to metric). Empty for unit-less metrics (durations). */
+    fun unit(u: Units = Units()): String = when (this) {
+        SPEED, AVG_SPEED, MAX_SPEED -> u.speed.label
+        DISTANCE, REMAINING -> u.distance.label
+        DURATION, MOVING_TIME -> ""
+        PACE -> "/${u.distance.label}"
+        HEADING -> "°"
+        ELEV_GAIN, ALTITUDE, OFF_ROUTE -> u.elevation.label
+        SLOPE -> "%"
+        VAM -> "${u.elevation.label}/h"
+        HEART_RATE -> "bpm"
+        CADENCE -> "rpm"
+        POWER -> "W"
+    }
 
     companion object {
         private fun fmt0(v: Double?) = v?.roundToInt()?.toString() ?: "—"
         private fun fmt1(v: Double?) = v?.let { String.format(Locale.US, "%.1f", it) } ?: "—"
         private fun fmt2(v: Double?) = v?.let { String.format(Locale.US, "%.2f", it) } ?: "—"
+
+        /** Minutes per selected distance unit, from a pace in min/km. */
+        private fun pacePerUnit(paceMinPerKm: Double?, distance: DistanceUnit): Double? =
+            paceMinPerKm?.let { it * distance.kmPerUnit }
+
         private fun fmtPace(v: Double?): String {
             if (v == null) return "—"
             val totalSec = (v * 60).roundToInt()

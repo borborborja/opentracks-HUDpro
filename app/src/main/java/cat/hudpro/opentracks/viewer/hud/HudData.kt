@@ -15,6 +15,8 @@ data class HudData(
     val following: Boolean = false,
     /** Deviation (m) above which the off-route warning shows. */
     val offRouteThresholdM: Int = 40,
+    /** Display units chosen by the user. */
+    val units: Units = Units(),
 ) {
     /** Whether the off-route warning banner should be shown right now. */
     val isOffRoute: Boolean

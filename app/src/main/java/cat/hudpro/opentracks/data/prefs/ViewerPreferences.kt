@@ -23,6 +23,22 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getString(KEY_DATA_LAYOUT, null)
         set(value) = prefs.edit().putString(KEY_DATA_LAYOUT, value).apply()
 
+    // --- Display units (see hud.Units) ---
+    /** DistanceUnit name: "KM" or "MILE". */
+    var distanceUnit: String
+        get() = prefs.getString(KEY_UNIT_DISTANCE, "KM") ?: "KM"
+        set(value) = prefs.edit().putString(KEY_UNIT_DISTANCE, value).apply()
+
+    /** ElevationUnit name: "METER" or "FOOT". */
+    var elevationUnit: String
+        get() = prefs.getString(KEY_UNIT_ELEVATION, "METER") ?: "METER"
+        set(value) = prefs.edit().putString(KEY_UNIT_ELEVATION, value).apply()
+
+    /** SpeedUnit name: "KMH" or "MPH". */
+    var speedUnit: String
+        get() = prefs.getString(KEY_UNIT_SPEED, "KMH") ?: "KMH"
+        set(value) = prefs.edit().putString(KEY_UNIT_SPEED, value).apply()
+
     /** Id of the track the user has chosen to follow, or null. */
     var activeFollowTrackId: Long
         get() = prefs.getLong(KEY_FOLLOW_TRACK, -1L)
@@ -126,6 +142,9 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_BASE_MAP = "base_map_id"
         private const val KEY_HUD_LAYOUT = "hud_layout_json"
         private const val KEY_DATA_LAYOUT = "data_layout_json"
+        private const val KEY_UNIT_DISTANCE = "unit_distance"
+        private const val KEY_UNIT_ELEVATION = "unit_elevation"
+        private const val KEY_UNIT_SPEED = "unit_speed"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"
         private const val KEY_TRACK_COLOR_MODE = "track_color_mode"
         private const val KEY_TRACK_COLOR = "track_color"

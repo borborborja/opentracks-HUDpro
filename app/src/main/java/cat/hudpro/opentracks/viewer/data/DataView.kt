@@ -41,7 +41,7 @@ fun DataView(data: HudData, modifier: Modifier = Modifier) {
     val followOnly = setOf(HudMetric.REMAINING, HudMetric.OFF_ROUTE)
     val metrics = layout.metrics().filter { data.following || it !in followOnly }
     val cells = remember(data, layout) {
-        metrics.map { DataCell(it.label, it.value(data.metrics), it.unit) }
+        metrics.map { DataCell(it.label, it.value(data.metrics, data.units), it.unit(data.units)) }
     }
 
     // Live wall clock tile (updates every second).

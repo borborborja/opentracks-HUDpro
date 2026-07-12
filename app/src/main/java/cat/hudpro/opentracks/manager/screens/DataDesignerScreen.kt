@@ -59,6 +59,7 @@ private val SAMPLE_METRICS = LiveMetrics(
 fun DataDesignerScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { ViewerPreferences.get(context) }
+    val units = remember { cat.hudpro.opentracks.viewer.hud.UnitsStore.load(prefs) }
     var layout by remember { mutableStateOf(DataLayoutStore.load(prefs)) }
 
     DetailScaffold(
@@ -76,7 +77,7 @@ fun DataDesignerScreen(onBack: () -> Unit) {
         ) {
             // Live preview of the resulting grid.
             Text("Vista prèvia", style = MaterialTheme.typography.labelLarge)
-            PreviewGrid(layout)
+            PreviewGrid(layout, units)
 
             // Columns + clock.
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -102,6 +103,7 @@ fun DataDesignerScreen(onBack: () -> Unit) {
             layout.metrics().forEachIndexed { index, metric ->
                 SelectedRow(
                     metric = metric,
+                    units = units,
                     canUp = index > 0,
                     canDown = index < layout.metrics().size - 1,
                     onUp = { layout = layout.move(index, -1) },
@@ -134,6 +136,7 @@ fun DataDesignerScreen(onBack: () -> Unit) {
 @Composable
 private fun SelectedRow(
     metric: HudMetric,
+    units: cat.hudpro.opentracks.viewer.hud.Units,
     canUp: Boolean,
     canDown: Boolean,
     onUp: () -> Unit,
@@ -148,7 +151,7 @@ private fun SelectedRow(
             Column(Modifier.weight(1f)) {
                 Text(metric.label, fontWeight = FontWeight.Bold)
                 Text(
-                    "${metric.value(SAMPLE_METRICS)} ${metric.unit}".trim(),
+                    "${metric.value(SAMPLE_METRICS, units)} ${metric.unit(units)}".trim(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -167,8 +170,8 @@ private fun SelectedRow(
 }
 
 @Composable
-private fun PreviewGrid(layout: DataLayout) {
-    val cells = layout.metrics().map { Triple(it.label, it.value(SAMPLE_METRICS), it.unit) }.toMutableList()
+private fun PreviewGrid(layout: DataLayout, units: cat.hudpro.opentracks.viewer.hud.Units) {
+    val cells = layout.metrics().map { Triple(it.label, it.value(SAMPLE_METRICS, units), it.unit(units)) }.toMutableList()
     if (layout.showClock) cells.add(Triple("Rellotge", "12:34:56", ""))
     LazyVerticalGrid(
         columns = GridCells.Fixed(layout.columns.coerceIn(1, 3)),

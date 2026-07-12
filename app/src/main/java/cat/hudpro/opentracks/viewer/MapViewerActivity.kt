@@ -73,6 +73,7 @@ class MapViewerActivity : ComponentActivity() {
     private val hudDataFlow = MutableStateFlow(HudData())
     private val controlsFlow = MutableStateFlow(HudControls.disabled)
     private val currentPageFlow = MutableStateFlow(0)
+    private var units = cat.hudpro.opentracks.viewer.hud.Units()
 
     private val locationPermLauncher = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions(),
@@ -123,6 +124,7 @@ class MapViewerActivity : ComponentActivity() {
 
         val prefs = ViewerPreferences.get(this)
         hudLayout = HudLayoutStore.load(prefs)
+        units = cat.hudpro.opentracks.viewer.hud.UnitsStore.load(prefs)
         setupAnnouncements(prefs)
 
         // textureMode so the map behaves well when hosted in a scrolling container.
@@ -404,6 +406,7 @@ class MapViewerActivity : ComponentActivity() {
                 val nPoints = (followEngine?.points?.size ?: 1)
                 hudDataFlow.value = HudData(
                     metrics = metrics,
+                    units = units,
                     speedSeries = speedBuffer.toList(),
                     // Prefer the followed route's profile; else the recorded track's own altitude.
                     elevationProfile = if (!routeProfile.isNullOrEmpty()) routeProfile else recordedElevation(segs),
