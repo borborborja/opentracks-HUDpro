@@ -48,11 +48,13 @@ fun ViewerQuickSettings(
     orientation: String,
     keepScreenOn: Boolean,
     fullscreen: Boolean,
+    adaptiveZoom: Boolean,
     onSelectBaseMap: (String) -> Unit,
     onSelectFollow: (Long) -> Unit,
     onOrientation: (String) -> Unit,
     onKeepScreenOn: (Boolean) -> Unit,
     onFullscreen: (Boolean) -> Unit,
+    onAdaptiveZoom: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -62,6 +64,7 @@ fun ViewerQuickSettings(
     var orient by remember { mutableStateOf(orientation) }
     var keep by remember { mutableStateOf(keepScreenOn) }
     var full by remember { mutableStateOf(fullscreen) }
+    var autoZoom by remember { mutableStateOf(adaptiveZoom) }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         ScrollableTabRow(selectedTabIndex = tab, edgePadding = 8.dp) {
@@ -78,10 +81,11 @@ fun ViewerQuickSettings(
                 0 -> MapTab(selBase, offlineMaps) { id -> selBase = id; onSelectBaseMap(id) }
                 1 -> FollowTab(selFollow, tracks) { id -> selFollow = id; onSelectFollow(id) }
                 else -> OptionsTab(
-                    orient, keep, full,
+                    orient, keep, full, autoZoom,
                     onOrientation = { orient = it; onOrientation(it) },
                     onKeepScreenOn = { keep = it; onKeepScreenOn(it) },
                     onFullscreen = { full = it; onFullscreen(it) },
+                    onAdaptiveZoom = { autoZoom = it; onAdaptiveZoom(it) },
                 )
             }
         }
@@ -125,15 +129,24 @@ private fun OptionsTab(
     orientation: String,
     keepScreenOn: Boolean,
     fullscreen: Boolean,
+    adaptiveZoom: Boolean,
     onOrientation: (String) -> Unit,
     onKeepScreenOn: (Boolean) -> Unit,
     onFullscreen: (Boolean) -> Unit,
+    onAdaptiveZoom: (Boolean) -> Unit,
 ) {
     Text("Orientació del mapa", style = MaterialTheme.typography.labelLarge)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         FilterChip(orientation == "NORTH_UP", { onOrientation("NORTH_UP") }, label = { Text("Nord amunt") })
         FilterChip(orientation == "HEADING_UP", { onOrientation("HEADING_UP") }, label = { Text("Segons direcció") })
     }
+    HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    ToggleRow("Zoom automàtic als girs de la ruta", adaptiveZoom, onAdaptiveZoom)
+    Text(
+        "En seguiment: apropa el mapa en acostar-te a un gir/cruïlla de la ruta i l'allunya als trams rectes.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
+    )
     HorizontalDivider(Modifier.padding(vertical = 8.dp))
     ToggleRow("Mantenir la pantalla encesa", keepScreenOn, onKeepScreenOn)
     ToggleRow("Pantalla completa", fullscreen, onFullscreen)

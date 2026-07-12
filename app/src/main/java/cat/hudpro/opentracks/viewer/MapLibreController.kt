@@ -320,17 +320,22 @@ class MapLibreController(private val map: MapLibreMap) {
      * Recenter on the most recent point (used while recording to follow the user). When [bearingDeg]
      * is provided and heading-up is on, the camera also rotates so the travel direction points up.
      */
-    fun follow(segments: List<Segment>, bearingDeg: Double? = null) {
+    fun follow(segments: List<Segment>, bearingDeg: Double? = null, zoom: Double? = null) {
         val last = segments.lastOrNull()?.lastOrNull { it.latLong != null }?.latLong ?: return
         val target = LatLng(last.latitude, last.longitude)
-        if (headingUp && bearingDeg != null) {
-            val pos = org.maplibre.android.camera.CameraPosition.Builder(map.cameraPosition)
-                .target(target).bearing(bearingDeg).build()
-            map.animateCamera(CameraUpdateFactory.newCameraPosition(pos))
+        val needsPos = (headingUp && bearingDeg != null) || zoom != null
+        if (needsPos) {
+            val builder = org.maplibre.android.camera.CameraPosition.Builder(map.cameraPosition).target(target)
+            if (headingUp && bearingDeg != null) builder.bearing(bearingDeg)
+            if (zoom != null) builder.zoom(zoom)
+            map.animateCamera(CameraUpdateFactory.newCameraPosition(builder.build()))
         } else {
             map.animateCamera(CameraUpdateFactory.newLatLng(target))
         }
     }
+
+    /** Current camera zoom (for adaptive-zoom hysteresis). */
+    val currentZoom: Double get() = map.cameraPosition.zoom
 
     /** Whether the camera rotates to the travel direction (heading-up) instead of staying north-up. */
     var headingUp: Boolean = false

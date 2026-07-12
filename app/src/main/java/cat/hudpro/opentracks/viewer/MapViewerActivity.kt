@@ -77,6 +77,7 @@ class MapViewerActivity : ComponentActivity() {
     private val settingsOpenFlow = MutableStateFlow(false)
     private var units = cat.hudpro.opentracks.viewer.hud.Units()
     private var lastWaypoints: List<cat.hudpro.opentracks.data.opentracks.model.Waypoint> = emptyList()
+    private var adaptiveZoom = false
 
     private val locationPermLauncher = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions(),
@@ -129,6 +130,7 @@ class MapViewerActivity : ComponentActivity() {
         val prefs = ViewerPreferences.get(this)
         hudLayout = HudLayoutStore.load(prefs)
         units = cat.hudpro.opentracks.viewer.hud.UnitsStore.load(prefs)
+        adaptiveZoom = prefs.adaptiveZoom
         setupAnnouncements(prefs)
 
         // SurfaceView (default): renders GeoJSON overlays reliably. textureMode was a leftover from the
@@ -191,6 +193,7 @@ class MapViewerActivity : ComponentActivity() {
                                 orientation = prefs.mapOrientation,
                                 keepScreenOn = prefs.keepScreenOn,
                                 fullscreen = prefs.fullscreen,
+                                adaptiveZoom = prefs.adaptiveZoom,
                                 onSelectBaseMap = { id ->
                                     prefs.baseMapId = id
                                     controller?.let { c -> applyBaseMap(c, frame = false) { reapplyOverlays(c) } }
@@ -202,6 +205,7 @@ class MapViewerActivity : ComponentActivity() {
                                 onOrientation = { m -> prefs.mapOrientation = m; controller?.let { applyOrientation(it) } },
                                 onKeepScreenOn = { b -> prefs.keepScreenOn = b; applyKeepScreenOn(b) },
                                 onFullscreen = { b -> prefs.fullscreen = b; applyFullscreen(b) },
+                                onAdaptiveZoom = { b -> prefs.adaptiveZoom = b; adaptiveZoom = b },
                                 onDismiss = { settingsOpenFlow.value = false },
                             )
                         }
@@ -309,6 +313,21 @@ class MapViewerActivity : ComponentActivity() {
         } else if (followMode) {
             ctrl.follow(lastSegments, hudDataFlow.value.metrics.bearingDeg)
         }
+    }
+
+    /**
+     * Target zoom for adaptive zoom: nearer to the next route turn → higher zoom. Returns null when
+     * the change from [currentZoom] is too small to bother (hysteresis, avoids constant re-animating).
+     */
+    private fun adaptiveZoomFor(distToTurnM: Double?, currentZoom: Double): Double? {
+        val target = when {
+            distToTurnM == null -> 14.0        // no turn ahead (or no route) → wide
+            distToTurnM < 60 -> 17.0           // right at the junction
+            distToTurnM < 150 -> 16.0
+            distToTurnM < 350 -> 15.0
+            else -> 14.0                       // long straight
+        }
+        return if (kotlin.math.abs(target - currentZoom) >= 0.4) target else null
     }
 
     private fun applyKeepScreenOn(on: Boolean) {
@@ -471,13 +490,17 @@ class MapViewerActivity : ComponentActivity() {
                 ctrl.updateWaypoints(wps)
                 val recording = isRecordingNow()
                 var metrics = MetricsCalculator.compute(segs, stats, recording)
-                if (followMode && recording) {
-                    ctrl.follow(segs, if (ctrl.headingUp) metrics.bearingDeg else null)
-                }
 
                 // Follow-route: compute state once, drive metrics + progress split + off-route alert.
                 val current = segs.lastOrNull()?.lastOrNull { it.latLong != null }?.latLong
                 val state = current?.let { followEngine?.update(it) }
+
+                if (followMode && recording) {
+                    // Adaptive zoom: closer to a route turn/junction → zoom in; straights → zoom out.
+                    val zoom = if (adaptiveZoom) adaptiveZoomFor(state?.distanceToNextTurnM, ctrl.currentZoom) else null
+                    ctrl.follow(segs, if (ctrl.headingUp) metrics.bearingDeg else null, zoom)
+                }
+
                 if (state != null) {
                     metrics = metrics.copy(
                         remainingDistanceKm = state.remainingKm,

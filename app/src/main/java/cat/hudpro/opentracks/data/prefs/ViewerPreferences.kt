@@ -60,6 +60,11 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_FULLSCREEN, false)
         set(value) = prefs.edit().putBoolean(KEY_FULLSCREEN, value).apply()
 
+    /** Auto-zoom the map in near a route turn/junction and out on straights (while following). */
+    var adaptiveZoom: Boolean
+        get() = prefs.getBoolean(KEY_ADAPTIVE_ZOOM, false)
+        set(value) = prefs.edit().putBoolean(KEY_ADAPTIVE_ZOOM, value).apply()
+
     /** Name of the selected [cat.hudpro.opentracks.data.map.TrackColorMode]. */
     var trackColorMode: String?
         get() = prefs.getString(KEY_TRACK_COLOR_MODE, null)
@@ -164,6 +169,7 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_MAP_ORIENTATION = "map_orientation"
         private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
         private const val KEY_FULLSCREEN = "fullscreen"
+        private const val KEY_ADAPTIVE_ZOOM = "adaptive_zoom"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"
         private const val KEY_TRACK_COLOR_MODE = "track_color_mode"
         private const val KEY_TRACK_COLOR = "track_color"

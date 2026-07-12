@@ -8,6 +8,8 @@ data class FollowState(
     val remainingKm: Double,
     val bearingToRouteDeg: Double?,
     val nearestIndex: Int,
+    /** Distance (m) along the route to the next sharp turn ahead, or null if none. */
+    val distanceToNextTurnM: Double? = null,
 ) {
     fun isOffRoute(thresholdMeters: Double = 40.0) = offRouteMeters > thresholdMeters
 }
@@ -31,6 +33,9 @@ class FollowRouteEngine(route: List<GeoPoint>, elevations: List<Double?> = empty
             emptyList()
         }
 
+    /** Route vertices where the heading changes sharply (turns / junctions), ascending. */
+    private val turnIndices: List<Int>
+
     init {
         var acc = 0.0
         for (i in 1 until route.size) {
@@ -38,6 +43,15 @@ class FollowRouteEngine(route: List<GeoPoint>, elevations: List<Double?> = empty
             cumulative[i] = acc
         }
         totalMeters = acc
+
+        val turns = ArrayList<Int>()
+        for (i in 1 until route.size - 1) {
+            val b1 = MetricsCalculator.bearing(route[i - 1], route[i])
+            val b2 = MetricsCalculator.bearing(route[i], route[i + 1])
+            val delta = Math.abs(((b2 - b1 + 540.0) % 360.0) - 180.0)
+            if (delta > TURN_DEG) turns.add(i)
+        }
+        turnIndices = turns
     }
 
     fun update(current: GeoPoint): FollowState? {
@@ -54,11 +68,19 @@ class FollowRouteEngine(route: List<GeoPoint>, elevations: List<Double?> = empty
         val remaining = (totalMeters - cumulative[nearest]).coerceAtLeast(0.0)
         val target = points.getOrNull(nearest + 1) ?: points[nearest]
         val bearing = if (target != current) MetricsCalculator.bearing(current, target) else null
+        val nextTurn = turnIndices.firstOrNull { it > nearest }
+            ?.let { (cumulative[it] - cumulative[nearest]).coerceAtLeast(0.0) }
         return FollowState(
             offRouteMeters = nearestDist,
             remainingKm = remaining / 1000.0,
             bearingToRouteDeg = bearing,
             nearestIndex = nearest,
+            distanceToNextTurnM = nextTurn,
         )
+    }
+
+    companion object {
+        /** Heading change (deg) above which a route vertex counts as a turn/junction. */
+        private const val TURN_DEG = 35.0
     }
 }
