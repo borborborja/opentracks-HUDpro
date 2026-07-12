@@ -225,11 +225,16 @@ class MapLibreController(private val map: MapLibreMap) {
 
     /** Applies the followed-route appearance (color, width, direction arrows, progress split). */
     fun setFollowRouteStyle(colorHex: String, width: Float, arrows: Boolean, progress: Boolean) {
-        followColorHex = colorHex
+        // Guard against a malformed stored color (would make the line fail to render).
+        followColorHex = colorHex.takeIf { it.startsWith("#") && (it.length == 7 || it.length == 9) } ?: FOLLOW_COLOR
         followWidth = width
         followArrows = arrows
         followProgress = progress
-        followLayer?.setProperties(PropertyFactory.lineColor(colorHex), PropertyFactory.lineWidth(width))
+        followLayer?.setProperties(
+            PropertyFactory.lineColor(followColorHex),
+            PropertyFactory.lineWidth(width),
+            PropertyFactory.visibility(org.maplibre.android.style.layers.Property.VISIBLE),
+        )
         followDoneLayer?.setProperties(PropertyFactory.lineWidth((width - 2f).coerceAtLeast(2f)))
         followArrowLayer?.setProperties(
             PropertyFactory.textColor(colorHex),
@@ -245,8 +250,16 @@ class MapLibreController(private val map: MapLibreMap) {
         map.getStyle { drawFollow(points.size) }
     }
 
-    /** Debug string describing the follow-route render state. */
-    fun followDebug(): String = "src=${followSource != null} lyr=${followLayer != null} pts=${followPoints.size}"
+    /** Debug string describing the follow-route render state (layer presence, order vs base raster). */
+    fun followDebug(): String {
+        val style = map.style
+        val ids = style?.layers?.map { it.id } ?: emptyList()
+        val followLyr = style?.getLayer(FOLLOW_LAYER)
+        val vis = (followLyr as? LineLayer)?.visibility?.value ?: "?"
+        val idx = ids.indexOf(FOLLOW_LAYER)
+        val baseIdx = ids.indexOf("base-raster")
+        return "pts=${followPoints.size} styleLyr=${followLyr != null} vis=$vis idx=$idx base=$baseIdx n=${ids.size}"
+    }
 
     /** Frames the camera to enclose the current followed route (used when the user picks one). */
     fun frameFollowRoute() {
