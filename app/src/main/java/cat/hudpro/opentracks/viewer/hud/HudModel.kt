@@ -65,6 +65,7 @@ object HudCatalog {
     const val CONTROL_RECENTER = "control:recenter"
     const val CONTROL_COMPASS = "control:compass"
     const val CONTROL_ZOOM = "control:zoom"
+    const val CONTROL_RECORD = "control:record"
 
     fun idOf(metric: HudMetric) = "metric:${metric.name}"
 
@@ -75,6 +76,7 @@ object HudCatalog {
         add(HudElement(CONTROL_RECENTER, "Centrar/seguir", HudCategory.CONTROL))
         add(HudElement(CONTROL_COMPASS, "Brúixola", HudCategory.CONTROL))
         add(HudElement(CONTROL_ZOOM, "Zoom", HudCategory.CONTROL))
+        add(HudElement(CONTROL_RECORD, "Gravació", HudCategory.CONTROL))
     }
 
     private val byId = elements.associateBy { it.id }
@@ -127,6 +129,7 @@ data class HudLayout(
                 m(HudMetric.ELEV_GAIN, 0.64f, 0.04f),
                 HudWidget(HudCatalog.CHART_SPEED, 0.03f, 0.05f),
                 HudWidget(HudCatalog.CONTROL_RECENTER, 0.88f, 0.44f),
+                HudWidget(HudCatalog.CONTROL_RECORD, 0.88f, 0.60f),
             ),
         )
         val TRAIL = HudLayout(

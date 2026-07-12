@@ -201,6 +201,8 @@ class MapViewerActivity : ComponentActivity() {
             onNorth = { ctrl.northUp() },
             onZoomIn = { ctrl.zoomIn() },
             onZoomOut = { ctrl.zoomOut() },
+            onStartRecording = { cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.start(this) },
+            onStopRecording = { cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.stop(this) },
         )
     }
 

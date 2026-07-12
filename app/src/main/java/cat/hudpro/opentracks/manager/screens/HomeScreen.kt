@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Settings
@@ -31,6 +32,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -61,12 +63,22 @@ fun HomeScreen(onOpenViewer: () -> Unit, onNavigate: (String) -> Unit, onOpenSet
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-            ElevatedButton(
-                onClick = onOpenViewer,
-                modifier = Modifier.fillMaxWidth().height(72.dp),
-            ) {
-                Icon(Icons.Filled.Map, contentDescription = null)
-                Text("  Abrir visor", style = MaterialTheme.typography.titleMedium)
+            val context = androidx.compose.ui.platform.LocalContext.current
+            androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ElevatedButton(
+                    onClick = onOpenViewer,
+                    modifier = Modifier.weight(1f).height(72.dp),
+                ) {
+                    Icon(Icons.Filled.Map, contentDescription = null)
+                    Text("  Visor", style = MaterialTheme.typography.titleMedium)
+                }
+                ElevatedButton(
+                    onClick = { cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.start(context) },
+                    modifier = Modifier.weight(1f).height(72.dp),
+                ) {
+                    Icon(Icons.Filled.FiberManualRecord, contentDescription = null, tint = Color(0xFFE63946))
+                    Text("  Gravar", style = MaterialTheme.typography.titleMedium)
+                }
             }
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),

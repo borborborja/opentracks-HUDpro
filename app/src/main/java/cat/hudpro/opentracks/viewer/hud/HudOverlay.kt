@@ -100,6 +100,7 @@ fun HudWidgetContent(element: HudElement, data: HudData, controls: HudControls, 
             HudCatalog.CONTROL_RECENTER -> RecenterControl(controls, scale)
             HudCatalog.CONTROL_COMPASS -> CompassControl(controls, data.metrics.bearingDeg, scale)
             HudCatalog.CONTROL_ZOOM -> ZoomControl(controls, scale)
+            HudCatalog.CONTROL_RECORD -> RecordControl(controls, data.metrics.isRecording, scale)
         }
     }
 }
@@ -154,6 +155,22 @@ private fun CompassControl(controls: HudControls, bearingDeg: Double?, scale: Fl
             contentDescription = "Nord",
             tint = Color.White,
             modifier = Modifier.size((22 * scale).dp).rotate((bearingDeg ?: 0.0).toFloat()),
+        )
+    }
+}
+
+@Composable
+private fun RecordControl(controls: HudControls, isRecording: Boolean, scale: Float) {
+    RoundButton(
+        scale = scale,
+        onClick = { if (isRecording) controls.onStopRecording() else controls.onStartRecording() },
+    ) {
+        // Filled red circle = start; red square = stop (recording in progress).
+        Box(
+            Modifier
+                .size((20 * scale).dp)
+                .clip(if (isRecording) RoundedCornerShape(4.dp) else CircleShape)
+                .background(Color(0xFFE63946)),
         )
     }
 }
