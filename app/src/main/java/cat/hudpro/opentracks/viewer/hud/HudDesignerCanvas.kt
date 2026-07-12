@@ -85,7 +85,10 @@ private fun DesignerWidget(
         } else {
             Modifier
         }
-        Box(deco.noRippleClickable(onSelect)) { content() }
+        Box(deco) { content() }
+        // Transparent overlay captures the tap for selection so interactive controls (record, recenter,
+        // compass, zoom) can be selected and moved in the designer instead of firing their action.
+        Box(Modifier.matchParentSize().noRippleClickable(onSelect))
         if (selected) {
             Box(
                 Modifier
