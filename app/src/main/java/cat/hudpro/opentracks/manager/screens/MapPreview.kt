@@ -16,11 +16,20 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 
-/** A MapLibre [MapView] whose lifecycle is driven by the current composition's lifecycle owner. */
+/**
+ * A MapLibre [MapView] whose lifecycle is driven by the current composition's lifecycle owner.
+ * [textureMode] renders on a TextureView so rounded-corner clipping works (decorative maps).
+ */
 @Composable
-fun rememberMapViewWithLifecycle(): MapView {
+fun rememberMapViewWithLifecycle(textureMode: Boolean = false): MapView {
     val context = LocalContext.current
-    val mapView = remember { MapView(context) }
+    val mapView = remember {
+        if (textureMode) {
+            MapView(context, org.maplibre.android.maps.MapLibreMapOptions.createFromAttributes(context).textureMode(true))
+        } else {
+            MapView(context)
+        }
+    }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, mapView) {
         val observer = LifecycleEventObserver { _, event ->
