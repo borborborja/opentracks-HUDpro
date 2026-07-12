@@ -45,7 +45,14 @@ class RegionDownloadWorker(context: Context, params: WorkerParameters) : Corouti
                 setProgress(workDataOf(KEY_DONE to p.done, KEY_TOTAL to p.total, KEY_FAILED to p.failed))
                 setForeground(foregroundInfo(p.done, p.total))
             }
-            store.register(OfflineMap(name = name, path = outFile.absolutePath, attribution = source.attribution))
+            store.register(
+                OfflineMap(
+                    name = name,
+                    path = outFile.absolutePath,
+                    attribution = source.attribution,
+                    bounds = listOf(bbox.west, bbox.south, bbox.east, bbox.north),
+                ),
+            )
             Result.success(workDataOf(KEY_PATH to outFile.absolutePath))
         } catch (e: Exception) {
             Result.failure(workDataOf(KEY_ERROR to (e.message ?: "Error")))

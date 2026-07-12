@@ -25,13 +25,20 @@ object MapStyleFactory {
         )
     }
 
-    /** Style backed by a local MBTiles archive (offline). [mbtilesPath] is an absolute file path. */
-    fun rasterStyleForMbtiles(mbtilesPath: String, attribution: String, maxZoom: Int = 20): String =
-        buildRasterStyle(
-            tiles = listOf("mbtiles://$mbtilesPath/{z}/{x}/{y}"),
-            attribution = attribution,
-            maxZoom = maxZoom,
-        )
+    /**
+     * Style backed by a local MBTiles archive (offline). MapLibre Native reads the archive (metadata
+     * + tiles) from the source `url` using the `mbtiles://` scheme — an absolute path, e.g.
+     * `mbtiles:///data/.../file.mbtiles`. Do NOT use a `tiles` template with {z}/{x}/{y}: MapLibre
+     * would try to open `.../file.mbtiles/z/x/y` as a database and crash natively.
+     */
+    fun rasterStyleForMbtiles(mbtilesPath: String, attribution: String, maxZoom: Int = 20): String {
+        val source = JSONObject()
+            .put("type", "raster")
+            .put("url", "mbtiles://$mbtilesPath")
+            .put("tileSize", 256)
+            .put("attribution", attribution)
+        return wrapRasterSource(source)
+    }
 
     private fun buildRasterStyle(tiles: List<String>, attribution: String, maxZoom: Int): String {
         val source = JSONObject()
@@ -40,7 +47,10 @@ object MapStyleFactory {
             .put("tileSize", 256)
             .put("attribution", attribution)
             .put("maxzoom", maxZoom)
+        return wrapRasterSource(source)
+    }
 
+    private fun wrapRasterSource(source: JSONObject): String {
         val layer = JSONObject()
             .put("id", "base-raster")
             .put("type", "raster")

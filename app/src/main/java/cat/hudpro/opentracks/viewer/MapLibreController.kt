@@ -302,6 +302,15 @@ class MapLibreController(private val map: MapLibreMap) {
     fun zoomIn() = map.animateCamera(CameraUpdateFactory.zoomIn())
     fun zoomOut() = map.animateCamera(CameraUpdateFactory.zoomOut())
 
+    /** Frames the camera on a bounding box [w,s,e,n] (used for offline map coverage). */
+    fun frameBounds(west: Double, south: Double, east: Double, north: Double) {
+        val bounds = LatLngBounds.Builder()
+            .include(LatLng(north, east))
+            .include(LatLng(south, west))
+            .build()
+        map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 40))
+    }
+
     /** Reset orientation to north-up. */
     fun northUp() {
         val pos = org.maplibre.android.camera.CameraPosition.Builder(map.cameraPosition).bearing(0.0).build()

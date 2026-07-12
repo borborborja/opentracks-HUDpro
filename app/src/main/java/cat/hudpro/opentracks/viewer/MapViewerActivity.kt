@@ -131,7 +131,13 @@ class MapViewerActivity : ComponentActivity() {
                 ?.takeIf { it.startsWith(cat.hudpro.opentracks.data.map.OfflineMap.OFFLINE_PREFIX) }
                 ?.let { cat.hudpro.opentracks.data.map.OfflineMapStore.get(this).bySelectionId(it) }
             if (offline != null) {
-                ctrl.setOfflineMbtiles(offline.path, offline.attribution, onReady)
+                ctrl.setOfflineMbtiles(offline.path, offline.attribution) {
+                    // Frame the offline coverage so it isn't lost at world zoom.
+                    offline.bounds?.takeIf { it.size == 4 }?.let { b ->
+                        ctrl.frameBounds(b[0], b[1], b[2], b[3])
+                    }
+                    onReady()
+                }
             } else {
                 ctrl.setBaseMap(MapSource.byId(baseMapId), onReady)
             }

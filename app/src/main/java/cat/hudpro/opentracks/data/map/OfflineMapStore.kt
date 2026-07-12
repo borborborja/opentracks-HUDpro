@@ -13,6 +13,8 @@ data class OfflineMap(
     val name: String,
     val path: String,
     val attribution: String = "© ICGC / © OpenStreetMap contributors",
+    /** Coverage bounds [west, south, east, north] to frame the viewer on; null if unknown. */
+    val bounds: List<Double>? = null,
 ) {
     /** Base-map id used in ViewerPreferences to select this offline map. */
     val selectionId: String get() = "$OFFLINE_PREFIX$path"

@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Save
@@ -71,8 +73,9 @@ fun HudDesignerScreen(onBack: () -> Unit) {
         },
     ) { modifier ->
         Column(modifier.fillMaxSize()) {
-            // Live preview: real map + draggable HUD, fills most of the screen.
-            Box(Modifier.fillMaxWidth().weight(1f)) {
+            // Live preview: real map + draggable HUD (fixed height so the scrollable controls below
+            // can't starve it to zero height).
+            Box(Modifier.fillMaxWidth().height(320.dp)) {
                 MapPreview(Modifier.fillMaxSize())
                 HudDesignerCanvas(
                     layout = layout,
@@ -88,8 +91,11 @@ fun HudDesignerScreen(onBack: () -> Unit) {
                 )
             }
 
-            // Controls: presets, scale, palette.
-            Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Controls: presets, scale, palette. Scrollable so it never starves the preview.
+            Column(
+                Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Presets:", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
                     HudLayout.PRESETS.forEach { (name, preset) ->
