@@ -48,6 +48,55 @@ object OpenTracksRecording {
         }
     }
 
+    /**
+     * Human-readable report of what the recording control sees: which OpenTracks packages are
+     * detected, their version, whether the public-API activities resolve, and the actual result of
+     * trying to launch StartRecording. Shown in Settings for debugging.
+     */
+    fun diagnostics(context: Context): String {
+        val pm = context.packageManager
+        val sb = StringBuilder()
+        sb.appendLine("El nostre paquet: ${context.packageName}")
+        for (pkg in PACKAGES) {
+            val info = runCatching {
+                @Suppress("DEPRECATION") pm.getPackageInfo(pkg, 0)
+            }.getOrNull()
+            if (info == null) {
+                sb.appendLine("• $pkg → NO detectat")
+                continue
+            }
+            sb.appendLine("• $pkg → instal·lat (v${info.versionName})")
+            listOf("StartRecording" to START, "StopRecording" to STOP).forEach { (name, cls) ->
+                val intent = Intent().setClassName(pkg, cls)
+                val resolved = runCatching {
+                    @Suppress("DEPRECATION") pm.resolveActivity(intent, 0)
+                }.getOrNull()
+                sb.appendLine("   - $name resol: ${if (resolved != null) "SÍ (exportat i visible)" else "NO"}")
+            }
+        }
+        // Actual launch attempt (captures the real exception).
+        sb.appendLine("Provant iniciar gravació…")
+        var launched = false
+        for (pkg in PACKAGES) {
+            val intent = Intent().apply {
+                setClassName(pkg, START)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra(EXTRA_STATS_PACKAGE, context.packageName)
+                putExtra(EXTRA_STATS_CLASS, "cat.hudpro.opentracks.viewer.MapViewerActivity")
+            }
+            val result = runCatching { context.startActivity(intent) }
+            if (result.isSuccess) {
+                sb.appendLine("   → LLANÇAT amb $pkg ✓ (si no grava, activa l'API pública a OpenTracks)")
+                launched = true
+                break
+            } else {
+                sb.appendLine("   → $pkg: ${result.exceptionOrNull()?.javaClass?.simpleName}: ${result.exceptionOrNull()?.message}")
+            }
+        }
+        if (!launched) sb.appendLine("   → No s'ha pogut llançar cap component.")
+        return sb.toString().trim()
+    }
+
     /** Tries each candidate OpenTracks package; toasts guidance if none can be launched. */
     private fun tryLaunch(context: Context, intentFor: (String) -> Intent): Boolean {
         for (pkg in PACKAGES) {

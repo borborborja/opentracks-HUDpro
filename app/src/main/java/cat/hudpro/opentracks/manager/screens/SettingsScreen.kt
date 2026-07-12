@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -108,6 +109,25 @@ fun SettingsScreen(onBack: () -> Unit) {
                     }
                 }
                 UpdateState.Idle -> {}
+            }
+
+            // Debug: OpenTracks recording diagnostics.
+            var diag by remember { mutableStateOf<String?>(null) }
+            Card {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Depuració · gravació OpenTracks", style = MaterialTheme.typography.labelMedium)
+                    OutlinedButton(
+                        onClick = { diag = cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.diagnostics(context) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Diagnòstic de gravació") }
+                    diag?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                        )
+                    }
+                }
             }
 
             Card {
