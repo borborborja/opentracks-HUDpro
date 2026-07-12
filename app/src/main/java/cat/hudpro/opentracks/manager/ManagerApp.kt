@@ -13,7 +13,7 @@ import cat.hudpro.opentracks.manager.screens.HomeScreen
 import cat.hudpro.opentracks.manager.screens.HudDesignerScreen
 import cat.hudpro.opentracks.manager.screens.DownloadAreaScreen
 import cat.hudpro.opentracks.manager.screens.MapLayersScreen
-import cat.hudpro.opentracks.manager.screens.OfflineMapsScreen
+import cat.hudpro.opentracks.manager.screens.OfflineSectorsScreen
 import cat.hudpro.opentracks.manager.screens.RouteDetailScreen
 import cat.hudpro.opentracks.manager.screens.RouteEditorScreen
 import cat.hudpro.opentracks.manager.screens.SettingsScreen
@@ -24,7 +24,7 @@ object Routes {
     const val HUD = "hud"
     const val DATA = "data"
     const val LAYERS = "layers"
-    const val OFFLINE = "offline"
+    const val OFFLINE_SECTORS = "offline_sectors"
     const val TRACKS = "tracks"
     const val ENDURAIN = "endurain"
     const val SETTINGS = "settings"
@@ -48,9 +48,22 @@ fun ManagerApp(onOpenViewer: () -> Unit) {
         composable(Routes.SETTINGS) { SettingsScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.HUD) { HudDesignerScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.DATA) { DataDesignerScreen(onBack = { nav.popBackStack() }) }
-        composable(Routes.LAYERS) { MapLayersScreen(onBack = { nav.popBackStack() }) }
-        composable(Routes.OFFLINE) {
-            OfflineMapsScreen(
+        composable(Routes.LAYERS) {
+            MapLayersScreen(
+                onBack = { nav.popBackStack() },
+                onDownloadArea = { nav.navigate(Routes.DOWNLOAD_AREA) },
+                onOpenSectors = { path ->
+                    nav.navigate("${Routes.OFFLINE_SECTORS}/${android.net.Uri.encode(path)}")
+                },
+            )
+        }
+        composable(
+            route = "${Routes.OFFLINE_SECTORS}/{path}",
+            arguments = listOf(navArgument("path") { type = NavType.StringType }),
+        ) { entry ->
+            val path = entry.arguments?.getString("path")?.let { android.net.Uri.decode(it) } ?: ""
+            OfflineSectorsScreen(
+                mapPath = path,
                 onBack = { nav.popBackStack() },
                 onDownloadArea = { nav.navigate(Routes.DOWNLOAD_AREA) },
             )

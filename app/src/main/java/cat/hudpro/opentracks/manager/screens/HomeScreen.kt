@@ -47,8 +47,7 @@ fun HomeScreen(onOpenViewer: () -> Unit, onNavigate: (String) -> Unit, onOpenSet
     val tiles = listOf(
         Tile("Diseñar HUD", "Widgets i disposició", Icons.Filled.Dashboard, Routes.HUD),
         Tile("Editar Dades", "Mètriques i ordre", Icons.Filled.GridView, Routes.DATA),
-        Tile("Capas de mapa", "OSM · ICGC", Icons.Filled.Layers, Routes.LAYERS),
-        Tile("Mapes offline", "MBTiles ICGC/OSM", Icons.Filled.Download, Routes.OFFLINE),
+        Tile("Capas de mapa", "Online i offline", Icons.Filled.Layers, Routes.LAYERS),
         Tile("Tracks a seguir", "GPX i col·leccions", Icons.AutoMirrored.Filled.DirectionsRun, Routes.TRACKS),
         Tile("Endurain", "Pujar i sincronitzar", Icons.Filled.CloudUpload, Routes.ENDURAIN),
     )

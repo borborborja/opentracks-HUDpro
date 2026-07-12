@@ -21,6 +21,7 @@ import org.maplibre.geojson.Point
 class AreaSelectController(private val map: MapLibreMap) {
 
     private var selSource: GeoJsonSource? = null
+    private var hiliteSource: GeoJsonSource? = null
 
     fun init(onReady: () -> Unit) {
         map.setStyle(Style.Builder().fromJson(MapStyleFactory.rasterStyleJson(MapSource.ICGC_TOPO))) { style ->
@@ -34,9 +35,51 @@ class AreaSelectController(private val map: MapLibreMap) {
                 ),
             )
             selSource = src
+            val hi = GeoJsonSource(HILITE_SOURCE, FeatureCollection.fromFeatures(emptyList()))
+            style.addSource(hi)
+            style.addLayer(
+                LineLayer(HILITE_LAYER, HILITE_SOURCE).withProperties(
+                    PropertyFactory.lineColor("#FFD166"),
+                    PropertyFactory.lineWidth(5f),
+                ),
+            )
+            hiliteSource = hi
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(41.7, 1.8), 7.0))
             onReady()
         }
+    }
+
+    private fun ring(b: BoundingBox) = LineString.fromLngLats(
+        listOf(
+            Point.fromLngLat(b.west, b.south),
+            Point.fromLngLat(b.east, b.south),
+            Point.fromLngLat(b.east, b.north),
+            Point.fromLngLat(b.west, b.north),
+            Point.fromLngLat(b.west, b.south),
+        ),
+    )
+
+    /** Draws one rectangle per box; [selectedIndex] (if any) is highlighted in yellow. */
+    fun showBoxes(boxes: List<BoundingBox>, selectedIndex: Int?) {
+        selSource?.setGeoJson(FeatureCollection.fromFeatures(boxes.map { Feature.fromGeometry(ring(it)) }))
+        val hi = selectedIndex?.let { boxes.getOrNull(it) }
+        hiliteSource?.setGeoJson(
+            FeatureCollection.fromFeatures(
+                if (hi != null) listOf(Feature.fromGeometry(ring(hi))) else emptyList(),
+            ),
+        )
+    }
+
+    /** Frames the camera to enclose all [boxes]. */
+    fun fitBoxes(boxes: List<BoundingBox>) {
+        if (boxes.isEmpty()) return
+        val builder = LatLngBounds.Builder()
+        boxes.forEach { builder.include(LatLng(it.north, it.east)).include(LatLng(it.south, it.west)) }
+        runCatching { map.moveCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 60)) }
+    }
+
+    fun onMapClick(listener: (latitude: Double, longitude: Double) -> Unit) {
+        map.addOnMapClickListener { ll -> listener(ll.latitude, ll.longitude); true }
     }
 
     fun showSelection(bbox: BoundingBox?) {
@@ -90,5 +133,7 @@ class AreaSelectController(private val map: MapLibreMap) {
     private companion object {
         const val SEL_SOURCE = "area-sel-source"
         const val SEL_LAYER = "area-sel-layer"
+        const val HILITE_SOURCE = "area-hilite-source"
+        const val HILITE_LAYER = "area-hilite-layer"
     }
 }

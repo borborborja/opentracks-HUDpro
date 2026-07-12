@@ -66,6 +66,12 @@ class MbtilesWriter(private val file: File) : Closeable {
         )
     }
 
+    /** Removes a tile at the given XYZ coordinate (no-op if absent). */
+    fun deleteTile(z: Int, x: Int, yXyz: Int) {
+        val row = TileMath.xyzToTmsRow(yXyz, z)
+        db.delete("tiles", "zoom_level=? AND tile_column=? AND tile_row=?", arrayOf(z.toString(), x.toString(), row.toString()))
+    }
+
     inline fun batch(block: () -> Unit) {
         beginTransaction()
         try {

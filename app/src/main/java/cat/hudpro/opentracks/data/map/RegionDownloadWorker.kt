@@ -36,8 +36,12 @@ class RegionDownloadWorker(context: Context, params: WorkerParameters) : Corouti
 
         val source = MapSource.byId(sourceId)
         val store = OfflineMapStore.get(applicationContext)
-        val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "area" }
-        val outFile = File(store.mbtilesDir, "$safe.mbtiles")
+        // One archive per map type, keyed by sourceId so every area of the type accumulates into it
+        // (reuse an existing record's file if present, e.g. legacy downloads named by display name).
+        val outFile = File(
+            store.bySourceId(source.id)?.path
+                ?: File(store.mbtilesDir, "offline_${source.id}.mbtiles").absolutePath,
+        )
 
         setForeground(foregroundInfo(0, 1))
         return try {
@@ -45,12 +49,18 @@ class RegionDownloadWorker(context: Context, params: WorkerParameters) : Corouti
                 setProgress(workDataOf(KEY_DONE to p.done, KEY_TOTAL to p.total, KEY_FAILED to p.failed))
                 setForeground(foregroundInfo(p.done, p.total))
             }
-            store.register(
-                OfflineMap(
-                    name = name,
-                    path = outFile.absolutePath,
-                    attribution = source.attribution,
+            store.addSector(
+                sourceId = source.id,
+                name = source.displayName,
+                attribution = source.attribution,
+                path = outFile.absolutePath,
+                sector = OfflineSector(
+                    id = OfflineSector.idOf(bbox, minZoom, maxZoom),
                     bounds = listOf(bbox.west, bbox.south, bbox.east, bbox.north),
+                    minZoom = minZoom,
+                    maxZoom = maxZoom,
+                    tileCount = TileMath.tileCount(bbox, minZoom, maxZoom),
+                    createdAt = System.currentTimeMillis(),
                 ),
             )
             Result.success(workDataOf(KEY_PATH to outFile.absolutePath))
