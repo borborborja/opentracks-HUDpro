@@ -1,24 +1,27 @@
 package cat.hudpro.opentracks.manager.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.Card
+import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,11 +30,21 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,6 +53,8 @@ import cat.hudpro.opentracks.viewer.data.DataLayout
 import cat.hudpro.opentracks.viewer.data.DataLayoutStore
 import cat.hudpro.opentracks.viewer.hud.HudMetric
 import cat.hudpro.opentracks.viewer.hud.LiveMetrics
+import cat.hudpro.opentracks.viewer.hud.Units
+import cat.hudpro.opentracks.viewer.hud.UnitsStore
 import kotlin.time.Duration.Companion.minutes
 
 private val SAMPLE_METRICS = LiveMetrics(
@@ -51,16 +66,17 @@ private val SAMPLE_METRICS = LiveMetrics(
 )
 
 /**
- * Editor for the full-screen "Dades" grid: pick which metrics show, reorder them (↑/↓), choose the
- * column count and whether the live clock appears. Simple list interaction (no drag), consistent with
- * the HUD designer. Live preview at the top reflects every change.
+ * Interactive editor for the "Dades" grid, Android-tiles style: the grid IS the editor —
+ * long-press & drag a tile to reorder, tap to select, then change its width (1x/2x/3x) or remove it.
  */
 @Composable
 fun DataDesignerScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { ViewerPreferences.get(context) }
-    val units = remember { cat.hudpro.opentracks.viewer.hud.UnitsStore.load(prefs) }
+    val units = remember { UnitsStore.load(prefs) }
     var layout by remember { mutableStateOf(DataLayoutStore.load(prefs)) }
+    var selected by remember { mutableStateOf<String?>(null) }
+    var dragging by remember { mutableStateOf<String?>(null) }
 
     DetailScaffold(
         title = "Editar Dades",
@@ -75,9 +91,47 @@ fun DataDesignerScreen(onBack: () -> Unit) {
             modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // Live preview of the resulting grid.
-            Text("Vista prèvia", style = MaterialTheme.typography.labelLarge)
-            PreviewGrid(layout, units)
+            Text(
+                "Mantén premut i arrossega per reordenar · toca per seleccionar",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+            )
+
+            TileGrid(
+                layout = layout,
+                units = units,
+                selected = selected,
+                dragging = dragging,
+                onSelect = { selected = if (selected == it) null else it },
+                onDragState = { dragging = it },
+                onReorder = { from, to -> layout = layout.moveTo(from, to) },
+            )
+
+            // Selected-tile actions: width + remove.
+            val sel = selected?.takeIf { layout.contains(it) }
+            if (sel != null) {
+                val metric = runCatching { HudMetric.valueOf(sel) }.getOrNull()
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("«${metric?.label ?: sel}»", style = MaterialTheme.typography.labelLarge)
+                    Text("Amplada:", style = MaterialTheme.typography.bodySmall)
+                    (1..layout.columns).forEach { n ->
+                        FilterChip(
+                            selected = layout.spanOf(sel) == n,
+                            onClick = { layout = layout.setSpan(sel, n) },
+                            label = { Text("${n}x") },
+                        )
+                    }
+                    IconButton(onClick = { layout = layout.remove(sel); selected = null }) {
+                        Icon(Icons.Filled.Close, contentDescription = "Treure", tint = MaterialTheme.colorScheme.error)
+                    }
+                }
+            } else {
+                Text(
+                    "Toca una casella per canviar-ne l'amplada o treure-la.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
 
             // Columns + clock.
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -89,33 +143,15 @@ fun DataDesignerScreen(onBack: () -> Unit) {
                         label = { Text("$n") },
                     )
                 }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Mostrar rellotge", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                Spacer(Modifier.weight(1f))
+                Text("Rellotge", style = MaterialTheme.typography.labelLarge)
                 Switch(checked = layout.showClock, onCheckedChange = { layout = layout.copy(showClock = it) })
-            }
-
-            // Selected metrics, in order.
-            Text("Mètriques visibles (${layout.metrics().size})", style = MaterialTheme.typography.labelLarge)
-            if (layout.metrics().isEmpty()) {
-                Text("Cap. Afegeix-ne alguna a sota.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-            }
-            layout.metrics().forEachIndexed { index, metric ->
-                SelectedRow(
-                    metric = metric,
-                    units = units,
-                    canUp = index > 0,
-                    canDown = index < layout.metrics().size - 1,
-                    onUp = { layout = layout.move(index, -1) },
-                    onDown = { layout = layout.move(index, +1) },
-                    onRemove = { layout = layout.remove(metric.name) },
-                )
             }
 
             // Available metrics to add.
             val available = HudMetric.entries.filter { !layout.contains(it.name) }
             if (available.isNotEmpty()) {
-                Text("Afegir mètriques", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp))
+                Text("Afegir mètriques", style = MaterialTheme.typography.labelLarge)
                 Row(
                     Modifier.horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -133,63 +169,144 @@ fun DataDesignerScreen(onBack: () -> Unit) {
     }
 }
 
+/**
+ * The editable grid. Rows are packed by span (like the real Dades view). Every tile reports its
+ * bounds; a long-press drag live-reorders by dropping the dragged tile onto whichever tile the
+ * finger is over (launcher-style).
+ */
 @Composable
-private fun SelectedRow(
-    metric: HudMetric,
-    units: cat.hudpro.opentracks.viewer.hud.Units,
-    canUp: Boolean,
-    canDown: Boolean,
-    onUp: () -> Unit,
-    onDown: () -> Unit,
-    onRemove: () -> Unit,
+private fun TileGrid(
+    layout: DataLayout,
+    units: Units,
+    selected: String?,
+    dragging: String?,
+    onSelect: (String) -> Unit,
+    onDragState: (String?) -> Unit,
+    onReorder: (Int, Int) -> Unit,
 ) {
-    Card {
-        Row(
-            Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(metric.label, fontWeight = FontWeight.Bold)
-                Text(
-                    "${metric.value(SAMPLE_METRICS, units)} ${metric.unit(units)}".trim(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+    val bounds = remember { mutableStateMapOf<String, Rect>() }
+    val currentLayout by rememberUpdatedState(layout)
+    bounds.keys.retainAll(layout.fields.toSet())
+
+    // Pack fields into rows of `columns` capacity using each tile's span.
+    val rows = remember(layout) {
+        val out = mutableListOf<MutableList<String>>()
+        var used = 0
+        for (f in layout.fields) {
+            val span = layout.spanOf(f)
+            if (out.isEmpty() || used + span > layout.columns) {
+                out.add(mutableListOf(f)); used = span
+            } else {
+                out.last().add(f); used += span
             }
-            IconButton(onClick = onUp, enabled = canUp) {
-                Icon(Icons.Filled.ArrowUpward, contentDescription = "Pujar")
+        }
+        out
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        rows.forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { field ->
+                    key(field) {
+                        EditableTile(
+                            field = field,
+                            units = units,
+                            isSelected = selected == field,
+                            isDragging = dragging == field,
+                            weight = layout.spanOf(field).toFloat(),
+                            onSelect = { onSelect(field) },
+                            onBounds = { bounds[field] = it },
+                            onDragStart = { onDragState(field) },
+                            onDragEnd = { onDragState(null) },
+                            onDragTo = { pointer ->
+                                val target = bounds.entries
+                                    .firstOrNull { it.key != field && it.value.contains(pointer) }?.key
+                                if (target != null) {
+                                    val from = currentLayout.fields.indexOf(field)
+                                    val to = currentLayout.fields.indexOf(target)
+                                    if (from >= 0 && to >= 0) onReorder(from, to)
+                                }
+                            },
+                            modifier = Modifier.weight(layout.spanOf(field).toFloat()),
+                        )
+                    }
+                }
+                // Fill the leftover columns so tiles keep their true width.
+                val usedSpan = row.sumOf { layout.spanOf(it) }
+                if (usedSpan < layout.columns) Spacer(Modifier.weight((layout.columns - usedSpan).toFloat()))
             }
-            IconButton(onClick = onDown, enabled = canDown) {
-                Icon(Icons.Filled.ArrowDownward, contentDescription = "Baixar")
-            }
-            IconButton(onClick = onRemove) {
-                Icon(Icons.Filled.Close, contentDescription = "Treure", tint = MaterialTheme.colorScheme.error)
-            }
+        }
+        if (layout.fields.isEmpty()) {
+            Text("Cap mètrica. Afegeix-ne a sota.", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
 
 @Composable
-private fun PreviewGrid(layout: DataLayout, units: cat.hudpro.opentracks.viewer.hud.Units) {
-    val cells = layout.metrics().map { Triple(it.label, it.value(SAMPLE_METRICS, units), it.unit(units)) }.toMutableList()
-    if (layout.showClock) cells.add(Triple("Rellotge", "12:34:56", ""))
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(layout.columns.coerceIn(1, 3)),
-        modifier = Modifier.fillMaxWidth().height(220.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+private fun EditableTile(
+    field: String,
+    units: Units,
+    isSelected: Boolean,
+    isDragging: Boolean,
+    weight: Float,
+    onSelect: () -> Unit,
+    onBounds: (Rect) -> Unit,
+    onDragStart: () -> Unit,
+    onDragEnd: () -> Unit,
+    onDragTo: (Offset) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val metric = runCatching { HudMetric.valueOf(field) }.getOrNull()
+    var origin by remember { mutableStateOf(Offset.Zero) }
+    val interaction = remember { MutableInteractionSource() }
+
+    Column(
+        modifier
+            .onGloballyPositioned { origin = it.boundsInRoot().topLeft; onBounds(it.boundsInRoot()) }
+            .alpha(if (isDragging) 0.45f else 1f)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .then(
+                if (isSelected) {
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+                } else {
+                    Modifier
+                },
+            )
+            .clickable(interactionSource = interaction, indication = null, onClick = onSelect)
+            .pointerInput(Unit) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = { onDragStart() },
+                    onDragEnd = { onDragEnd() },
+                    onDragCancel = { onDragEnd() },
+                    onDrag = { change, _ ->
+                        change.consume()
+                        onDragTo(origin + change.position)
+                    },
+                )
+            }
+            .padding(12.dp),
     ) {
-        items(cells) { (label, value, unit) ->
-            Card {
-                Column(Modifier.padding(10.dp)) {
-                    Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                    Text(
-                        "$value ${unit}".trim(),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                (metric?.label ?: field).uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+            if (isSelected) {
+                Icon(
+                    Icons.Filled.UnfoldMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.height(14.dp),
+                )
             }
         }
+        Text(
+            "${metric?.value(SAMPLE_METRICS, units) ?: "—"} ${metric?.unit(units) ?: ""}".trim(),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }

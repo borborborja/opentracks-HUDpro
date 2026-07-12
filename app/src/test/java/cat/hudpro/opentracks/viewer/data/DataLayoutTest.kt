@@ -48,4 +48,35 @@ class DataLayoutTest {
         val layout = DataLayout(fields = listOf(HudMetric.SPEED.name, "NOT_A_METRIC"))
         assertThat(layout.metrics()).containsExactly(HudMetric.SPEED)
     }
+
+    @Test
+    fun spansDefaultToOneAndClampToColumns() {
+        val layout = DataLayout(fields = listOf("SPEED"), columns = 2)
+        assertThat(layout.spanOf("SPEED")).isEqualTo(1)
+        val wide = layout.setSpan("SPEED", 3) // beyond columns → clamped at read time
+        assertThat(wide.spanOf("SPEED")).isEqualTo(2)
+    }
+
+    @Test
+    fun cycleSpanWraps() {
+        val l2 = DataLayout(fields = listOf("SPEED"), columns = 2)
+        assertThat(l2.cycleSpan("SPEED").spanOf("SPEED")).isEqualTo(2)
+        assertThat(l2.cycleSpan("SPEED").cycleSpan("SPEED").spanOf("SPEED")).isEqualTo(1)
+    }
+
+    @Test
+    fun moveToRepositions() {
+        val layout = DataLayout(fields = listOf("A", "B", "C", "D"))
+        assertThat(layout.moveTo(0, 2).fields).containsExactly("B", "C", "A", "D")
+        assertThat(layout.moveTo(3, 0).fields).containsExactly("D", "A", "B", "C")
+        assertThat(layout.moveTo(1, 1)).isEqualTo(layout)
+    }
+
+    @Test
+    fun legacyJsonWithoutSpansDecodes() {
+        val legacy = """{"fields":["SPEED","DISTANCE"],"columns":2,"showClock":true}"""
+        val decoded = Json { ignoreUnknownKeys = true }.decodeFromString(DataLayout.serializer(), legacy)
+        assertThat(decoded.spans).isEmpty()
+        assertThat(decoded.spanOf("SPEED")).isEqualTo(1)
+    }
 }

@@ -26,7 +26,7 @@ import kotlinx.coroutines.delay
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-private data class DataCell(val label: String, val value: String, val unit: String)
+private data class DataCell(val label: String, val value: String, val unit: String, val span: Int = 1)
 
 /**
  * Full-screen "Dades" view: a scrollable grid of all live metrics (like OpenTracks' recording
@@ -41,7 +41,7 @@ fun DataView(data: HudData, modifier: Modifier = Modifier, reloadKey: Any? = nul
     val followOnly = setOf(HudMetric.REMAINING, HudMetric.OFF_ROUTE)
     val metrics = layout.metrics().filter { data.following || it !in followOnly }
     val cells = remember(data, layout) {
-        metrics.map { DataCell(it.label, it.value(data.metrics, data.units), it.unit(data.units)) }
+        metrics.map { DataCell(it.label, it.value(data.metrics, data.units), it.unit(data.units), layout.spanOf(it.name)) }
     }
 
     // Live wall clock tile (updates every second).
@@ -61,7 +61,7 @@ fun DataView(data: HudData, modifier: Modifier = Modifier, reloadKey: Any? = nul
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            items(cells) { cell -> DataTile(cell) }
+            items(cells, span = { cell -> androidx.compose.foundation.lazy.grid.GridItemSpan(cell.span) }) { cell -> DataTile(cell) }
             if (layout.showClock) item { DataTile(DataCell("Rellotge", clock, "")) }
         }
     }

@@ -14,7 +14,27 @@ data class DataLayout(
     val fields: List<String> = DEFAULT_FIELDS,
     val columns: Int = 2,
     val showClock: Boolean = true,
+    /** Column span per metric name (1..columns); absent = 1. */
+    val spans: Map<String, Int> = emptyMap(),
 ) {
+    /** Effective span of [field], clamped to the current column count. */
+    fun spanOf(field: String): Int = (spans[field] ?: 1).coerceIn(1, columns.coerceAtLeast(1))
+
+    fun setSpan(field: String, span: Int): DataLayout = copy(spans = spans + (field to span))
+
+    /** Cycles the tile width: 1 → 2 (→ 3 with three columns) → 1. */
+    fun cycleSpan(field: String): DataLayout =
+        setSpan(field, if (spanOf(field) >= columns) 1 else spanOf(field) + 1)
+
+    /** Moves the field at [from] to position [to], preserving the rest of the order. */
+    fun moveTo(from: Int, to: Int): DataLayout {
+        if (from !in fields.indices || to !in fields.indices || from == to) return this
+        val mutable = fields.toMutableList()
+        val item = mutable.removeAt(from)
+        mutable.add(to, item)
+        return copy(fields = mutable)
+    }
+
     /** Selected fields resolved to metrics, in order, skipping any unknown id. */
     fun metrics(): List<HudMetric> = fields.mapNotNull { runCatching { HudMetric.valueOf(it) }.getOrNull() }
 
