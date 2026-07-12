@@ -251,7 +251,11 @@ class MapLibreController(private val map: MapLibreMap) {
         val bounds = LatLngBounds.Builder()
             .includes(pts.map { LatLng(it.latitude, it.longitude) })
             .build()
-        map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 80))
+        // newLatLngBounds needs the map measured; fall back to centering on the route's start.
+        runCatching { map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 80)) }
+            .onFailure { map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(pts[0].latitude, pts[0].longitude), 13.0)) }
+        // Claim the "already framed" flag so the track observer doesn't steal the camera back.
+        hasFramedTrack = true
     }
 
     /** Splits the route into traveled ("done") and remaining at [nearestIndex] when progress is on. */

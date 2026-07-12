@@ -444,8 +444,13 @@ class MapViewerActivity : ComponentActivity() {
                 offRouteSound = prefs.offRouteSound
                 offRouteVibrate = prefs.offRouteVibrate
                 following = true
-                // When the user just picked a route, bring it into view (it may be far from the camera).
-                if (frame) { followMode = false; ctrl.frameFollowRoute(); emitControls() }
+                // Always bring the route into view on (re)load so it can't stay off-screen. During
+                // recording, the live-follow camera takes over on the next update (followMode intact).
+                ctrl.frameFollowRoute()
+            } else if (frame) {
+                android.widget.Toast.makeText(
+                    this@MapViewerActivity, "Ruta a seguir buida (id=$id)", android.widget.Toast.LENGTH_LONG,
+                ).show()
             }
         }
     }
