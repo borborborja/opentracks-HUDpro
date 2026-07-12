@@ -2,6 +2,7 @@ package cat.hudpro.opentracks.data.opentracks
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.widget.Toast
 
 /**
@@ -9,106 +10,103 @@ import android.widget.Toast
  * available externally — OpenTracks has no public pause/resume. The user must enable "Public API" in
  * OpenTracks settings, otherwise these intents are silently ignored.
  *
- * See OpenTracks `de.dennisguse.opentracks.publicapi.StartRecording` / `StopRecording`.
+ * The OpenTracks package/applicationId varies by build (release `de.dennisguse.opentracks`, nightly
+ * `.debug`, and forks with other ids), so instead of assuming a name we DISCOVER the installed
+ * package that exposes an activity ending in `.publicapi.StartRecording`.
  */
 object OpenTracksRecording {
 
-    private const val START = "de.dennisguse.opentracks.publicapi.StartRecording"
-    private const val STOP = "de.dennisguse.opentracks.publicapi.StopRecording"
-    private val PACKAGES = listOf("de.dennisguse.opentracks", "de.dennisguse.opentracks.debug")
+    private const val START_SUFFIX = ".publicapi.StartRecording"
+    private const val STOP_SUFFIX = ".publicapi.StopRecording"
 
     private const val EXTRA_STATS_PACKAGE = "STATS_TARGET_PACKAGE"
     private const val EXTRA_STATS_CLASS = "STATS_TARGET_CLASS"
 
-    /** The installed OpenTracks package (release or debug), or null if not installed. */
-    fun installedPackage(context: Context): String? = PACKAGES.firstOrNull { pkg ->
-        runCatching { context.packageManager.getPackageInfo(pkg, 0) }.isSuccess
+    /** The OpenTracks public recording API found on the device, or null if none. */
+    data class RecordingApi(val pkg: String, val startClass: String, val stopClass: String)
+
+    fun discover(context: Context): RecordingApi? {
+        val pm = context.packageManager
+        @Suppress("DEPRECATION")
+        val packages = runCatching { pm.getInstalledPackages(PackageManager.GET_ACTIVITIES) }.getOrNull().orEmpty()
+        for (info in packages) {
+            val activities = info.activities ?: continue
+            val start = activities.firstOrNull { it.name.endsWith(START_SUFFIX) } ?: continue
+            val stop = activities.firstOrNull { it.name.endsWith(STOP_SUFFIX) }?.name
+                ?: start.name.removeSuffix("StartRecording") + "StopRecording"
+            return RecordingApi(info.packageName, start.name, stop)
+        }
+        return null
     }
 
-    fun isInstalled(context: Context) = installedPackage(context) != null
+    fun isInstalled(context: Context) = discover(context) != null
 
-    /**
-     * Starts a new OpenTracks recording and asks it to route the live track back to our viewer
-     * (so the dashboard opens automatically). Returns false if it couldn't be launched.
-     */
-    fun start(context: Context): Boolean = tryLaunch(context) { pkg ->
-        Intent().apply {
-            setClassName(pkg, START)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    fun start(context: Context): Boolean {
+        val api = discover(context) ?: run { notFound(context); return false }
+        return launch(context, api.pkg, api.startClass) {
             putExtra(EXTRA_STATS_PACKAGE, context.packageName)
             putExtra(EXTRA_STATS_CLASS, "cat.hudpro.opentracks.viewer.MapViewerActivity")
         }
     }
 
-    /** Stops/finishes the current OpenTracks recording. */
-    fun stop(context: Context): Boolean = tryLaunch(context) { pkg ->
-        Intent().apply {
-            setClassName(pkg, STOP)
+    fun stop(context: Context): Boolean {
+        val api = discover(context) ?: run { notFound(context); return false }
+        return launch(context, api.pkg, api.stopClass) {}
+    }
+
+    private fun launch(context: Context, pkg: String, cls: String, extras: Intent.() -> Unit): Boolean {
+        val intent = Intent().apply {
+            setClassName(pkg, cls)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            extras()
+        }
+        return runCatching { context.startActivity(intent); true }.getOrElse {
+            Toast.makeText(context, "No s'ha pogut obrir OpenTracks. Activa l'«API pública» als seus ajustos.", Toast.LENGTH_LONG).show()
+            false
         }
     }
 
-    /**
-     * Human-readable report of what the recording control sees: which OpenTracks packages are
-     * detected, their version, whether the public-API activities resolve, and the actual result of
-     * trying to launch StartRecording. Shown in Settings for debugging.
-     */
+    private fun notFound(context: Context) {
+        Toast.makeText(context, "No s'ha trobat OpenTracks amb l'API pública. Instal·la'l i activa-la.", Toast.LENGTH_LONG).show()
+    }
+
+    /** Debug report: what OpenTracks-like packages are visible and whether the public API is found. */
     fun diagnostics(context: Context): String {
         val pm = context.packageManager
         val sb = StringBuilder()
         sb.appendLine("El nostre paquet: ${context.packageName}")
-        for (pkg in PACKAGES) {
-            val info = runCatching {
-                @Suppress("DEPRECATION") pm.getPackageInfo(pkg, 0)
-            }.getOrNull()
-            if (info == null) {
-                sb.appendLine("• $pkg → NO detectat")
-                continue
-            }
-            sb.appendLine("• $pkg → instal·lat (v${info.versionName})")
-            listOf("StartRecording" to START, "StopRecording" to STOP).forEach { (name, cls) ->
-                val intent = Intent().setClassName(pkg, cls)
-                val resolved = runCatching {
-                    @Suppress("DEPRECATION") pm.resolveActivity(intent, 0)
-                }.getOrNull()
-                sb.appendLine("   - $name resol: ${if (resolved != null) "SÍ (exportat i visible)" else "NO"}")
-            }
-        }
-        // Actual launch attempt (captures the real exception).
-        sb.appendLine("Provant iniciar gravació…")
-        var launched = false
-        for (pkg in PACKAGES) {
-            val intent = Intent().apply {
-                setClassName(pkg, START)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                putExtra(EXTRA_STATS_PACKAGE, context.packageName)
-                putExtra(EXTRA_STATS_CLASS, "cat.hudpro.opentracks.viewer.MapViewerActivity")
-            }
-            val result = runCatching { context.startActivity(intent) }
-            if (result.isSuccess) {
-                sb.appendLine("   → LLANÇAT amb $pkg ✓ (si no grava, activa l'API pública a OpenTracks)")
-                launched = true
-                break
-            } else {
-                sb.appendLine("   → $pkg: ${result.exceptionOrNull()?.javaClass?.simpleName}: ${result.exceptionOrNull()?.message}")
-            }
-        }
-        if (!launched) sb.appendLine("   → No s'ha pogut llançar cap component.")
-        return sb.toString().trim()
-    }
 
-    /** Tries each candidate OpenTracks package; toasts guidance if none can be launched. */
-    private fun tryLaunch(context: Context, intentFor: (String) -> Intent): Boolean {
-        for (pkg in PACKAGES) {
-            val launched = runCatching { context.startActivity(intentFor(pkg)); true }.getOrDefault(false)
-            if (launched) return true
+        @Suppress("DEPRECATION")
+        val all = runCatching { pm.getInstalledPackages(0) }.getOrNull().orEmpty()
+        sb.appendLine("Paquets instal·lats visibles: ${all.size}")
+        val matches = all.map { it.packageName }.filter {
+            it.contains("track", true) || it.contains("dennisguse", true) || it.contains("opentracks", true)
         }
-        val msg = if (isInstalled(context)) {
-            "OpenTracks trobat, però activa l'«API pública» als seus ajustos"
+        sb.appendLine("Coincidències 'track/opentracks': ${if (matches.isEmpty()) "cap" else matches.joinToString()}")
+
+        val api = discover(context)
+        if (api == null) {
+            sb.appendLine("API pública OpenTracks: NO trobada")
         } else {
-            "Instal·la OpenTracks i activa l'«API pública» als seus ajustos"
+            sb.appendLine("API pública trobada:")
+            sb.appendLine("  paquet: ${api.pkg}")
+            sb.appendLine("  start: ${api.startClass}")
+            sb.appendLine("  stop: ${api.stopClass}")
+            val result = runCatching {
+                context.startActivity(
+                    Intent().apply {
+                        setClassName(api.pkg, api.startClass)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        putExtra(EXTRA_STATS_PACKAGE, context.packageName)
+                        putExtra(EXTRA_STATS_CLASS, "cat.hudpro.opentracks.viewer.MapViewerActivity")
+                    },
+                )
+            }
+            sb.appendLine(
+                if (result.isSuccess) "  → LLANÇAT ✓ (si no grava, activa l'API pública a OpenTracks)"
+                else "  → ERROR: ${result.exceptionOrNull()?.message}",
+            )
         }
-        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-        return false
+        return sb.toString().trim()
     }
 }
