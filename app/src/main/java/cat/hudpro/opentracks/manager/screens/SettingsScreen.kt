@@ -189,17 +189,26 @@ private fun AppSection() {
         UpdateState.Idle -> {}
     }
 
-    // Debug: OpenTracks recording diagnostics.
+    // Debug: full app/viewer diagnostics.
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     var diag by remember { mutableStateOf<String?>(null) }
     Card {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Depuració · gravació OpenTracks", style = MaterialTheme.typography.labelMedium)
+            Text("Depuració", style = MaterialTheme.typography.labelMedium)
+            OutlinedButton(
+                onClick = { scope.launch { diag = buildDiagnostics(context) } },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Diagnòstic complet") }
             OutlinedButton(
                 onClick = { diag = cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.diagnostics(context) },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Diagnòstic de gravació") }
-            diag?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+            ) { Text("Provar iniciar gravació") }
+            diag?.let { report ->
+                OutlinedButton(
+                    onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(report)) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Copiar diagnòstic") }
+                Text(report, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
             }
         }
     }

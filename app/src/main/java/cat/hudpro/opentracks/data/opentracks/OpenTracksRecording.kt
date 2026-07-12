@@ -70,6 +70,26 @@ object OpenTracksRecording {
         Toast.makeText(context, "No s'ha trobat OpenTracks amb l'API pública. Instal·la'l i activa-la.", Toast.LENGTH_LONG).show()
     }
 
+    /** Detection-only report (no side effects): visible OpenTracks-like packages and the public API. */
+    fun detectionReport(context: Context): String {
+        val pm = context.packageManager
+        val sb = StringBuilder()
+        @Suppress("DEPRECATION")
+        val all = runCatching { pm.getInstalledPackages(0) }.getOrNull().orEmpty()
+        val matches = all.map { it.packageName }.filter {
+            it.contains("track", true) || it.contains("dennisguse", true) || it.contains("opentracks", true)
+        }
+        sb.appendLine("Paquets 'track/opentracks': ${if (matches.isEmpty()) "cap" else matches.joinToString()}")
+        val api = discover(context)
+        if (api == null) {
+            sb.append("API pública OpenTracks: NO trobada")
+        } else {
+            sb.appendLine("API pública: ${api.pkg}")
+            sb.append("  start: ${api.startClass}")
+        }
+        return sb.toString().trim()
+    }
+
     /** Debug report: what OpenTracks-like packages are visible and whether the public API is found. */
     fun diagnostics(context: Context): String {
         val pm = context.packageManager
