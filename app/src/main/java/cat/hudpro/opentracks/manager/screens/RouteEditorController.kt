@@ -66,6 +66,15 @@ class RouteEditorController(private val map: MapLibreMap) {
         waypointSource?.setGeoJson(FeatureCollection.fromFeatures(features))
     }
 
+    /** Frames the camera to enclose [points] (used when opening an existing route). No-op if empty. */
+    fun frame(points: List<GpxPoint>) {
+        if (points.size < 2) return
+        val bounds = org.maplibre.android.geometry.LatLngBounds.Builder()
+            .includes(points.map { LatLng(it.latitude, it.longitude) })
+            .build()
+        map.moveCamera(org.maplibre.android.camera.CameraUpdateFactory.newLatLngBounds(bounds, 80))
+    }
+
     fun setRoute(points: List<GpxPoint>) {
         val feature = if (points.size >= 2) {
             listOf(Feature.fromGeometry(LineString.fromLngLats(points.map { Point.fromLngLat(it.longitude, it.latitude) })))

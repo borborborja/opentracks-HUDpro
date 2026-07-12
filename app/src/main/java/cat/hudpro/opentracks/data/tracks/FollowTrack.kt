@@ -43,6 +43,12 @@ interface FollowTrackDao {
     @Query("SELECT * FROM follow_tracks WHERE id = :id")
     suspend fun getById(id: Long): FollowTrackEntity?
 
+    @Query("UPDATE follow_tracks SET name = :name WHERE id = :id")
+    suspend fun rename(id: Long, name: String)
+
+    @Query("UPDATE follow_tracks SET collection = :collection WHERE id = :id")
+    suspend fun setCollection(id: Long, collection: String)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(track: FollowTrackEntity): Long
 

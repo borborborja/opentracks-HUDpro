@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -55,6 +57,7 @@ import java.util.Locale
 fun TrackLibraryScreen(
     onBack: () -> Unit,
     onCreateRoute: () -> Unit = {},
+    onOpenRoute: (Long) -> Unit = {},
     onDownloadRouteMap: (cat.hudpro.opentracks.data.map.BoundingBox) -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -129,6 +132,7 @@ fun TrackLibraryScreen(
                             track = track,
                             isActive = activeId == track.id,
                             cov = coverage[track.id],
+                            onOpen = { onOpenRoute(track.id) },
                             onFollow = { activeId = track.id; prefs.activeFollowTrackId = track.id },
                             onDelete = { scope.launch { app.trackRepository.delete(track.id) } },
                             onDownloadMap = {
@@ -149,6 +153,7 @@ private fun TrackRow(
     track: FollowTrackEntity,
     isActive: Boolean,
     cov: cat.hudpro.opentracks.data.map.RouteCoverage?,
+    onOpen: () -> Unit,
     onFollow: () -> Unit,
     onDelete: () -> Unit,
     onDownloadMap: () -> Unit,
@@ -157,12 +162,18 @@ private fun TrackRow(
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(selected = isActive, onClick = onFollow)
-                Column(Modifier.weight(1f).padding(start = 8.dp)) {
+                Column(
+                    Modifier.weight(1f).padding(start = 8.dp)
+                        .clickable(onClick = onOpen),
+                ) {
                     Text(track.name, style = MaterialTheme.typography.bodyLarge)
                     Text(
                         String.format(Locale.US, "%.1f km · %d punts · %s", track.distanceMeters / 1000.0, track.pointCount, track.source.name),
                         style = MaterialTheme.typography.bodySmall,
                     )
+                }
+                IconButton(onClick = onOpen) {
+                    Icon(Icons.Filled.Visibility, contentDescription = "Veure / editar")
                 }
                 IconButton(onClick = onDownloadMap) {
                     Icon(Icons.Filled.Download, contentDescription = "Descarregar mapa de la ruta")

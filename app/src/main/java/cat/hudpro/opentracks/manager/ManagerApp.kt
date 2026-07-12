@@ -14,6 +14,7 @@ import cat.hudpro.opentracks.manager.screens.HudDesignerScreen
 import cat.hudpro.opentracks.manager.screens.DownloadAreaScreen
 import cat.hudpro.opentracks.manager.screens.MapLayersScreen
 import cat.hudpro.opentracks.manager.screens.OfflineMapsScreen
+import cat.hudpro.opentracks.manager.screens.RouteDetailScreen
 import cat.hudpro.opentracks.manager.screens.RouteEditorScreen
 import cat.hudpro.opentracks.manager.screens.SettingsScreen
 import cat.hudpro.opentracks.manager.screens.TrackLibraryScreen
@@ -28,6 +29,8 @@ object Routes {
     const val ENDURAIN = "endurain"
     const val SETTINGS = "settings"
     const val CREATE_ROUTE = "create_route"
+    const val ROUTE_DETAIL = "route_detail"
+    const val EDIT_ROUTE = "edit_route"
     const val DOWNLOAD_AREA = "download_area"
 }
 
@@ -77,6 +80,7 @@ fun ManagerApp(onOpenViewer: () -> Unit) {
             TrackLibraryScreen(
                 onBack = { nav.popBackStack() },
                 onCreateRoute = { nav.navigate(Routes.CREATE_ROUTE) },
+                onOpenRoute = { id -> nav.navigate("${Routes.ROUTE_DETAIL}/$id") },
                 onDownloadRouteMap = { bbox ->
                     nav.navigate("${Routes.DOWNLOAD_AREA}?w=${bbox.west}&s=${bbox.south}&e=${bbox.east}&n=${bbox.north}")
                 },
@@ -84,6 +88,27 @@ fun ManagerApp(onOpenViewer: () -> Unit) {
         }
         composable(Routes.CREATE_ROUTE) {
             RouteEditorScreen(onBack = { nav.popBackStack() }, onSaved = { nav.popBackStack() })
+        }
+        composable(
+            route = "${Routes.ROUTE_DETAIL}/{trackId}",
+            arguments = listOf(navArgument("trackId") { type = NavType.LongType }),
+        ) { entry ->
+            val id = entry.arguments?.getLong("trackId") ?: 0L
+            RouteDetailScreen(
+                trackId = id,
+                onBack = { nav.popBackStack() },
+                onEditTrace = { nav.navigate("${Routes.EDIT_ROUTE}/$it") },
+                onDownloadMap = { bbox ->
+                    nav.navigate("${Routes.DOWNLOAD_AREA}?w=${bbox.west}&s=${bbox.south}&e=${bbox.east}&n=${bbox.north}")
+                },
+            )
+        }
+        composable(
+            route = "${Routes.EDIT_ROUTE}/{trackId}",
+            arguments = listOf(navArgument("trackId") { type = NavType.LongType }),
+        ) { entry ->
+            val id = entry.arguments?.getLong("trackId") ?: 0L
+            RouteEditorScreen(trackId = id, onBack = { nav.popBackStack() }, onSaved = { nav.popBackStack() })
         }
         composable(Routes.ENDURAIN) { EndurainScreen(onBack = { nav.popBackStack() }) }
     }

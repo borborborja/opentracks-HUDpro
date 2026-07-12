@@ -52,11 +52,12 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RouteEditorScreen(onBack: () -> Unit, onSaved: () -> Unit) {
+fun RouteEditorScreen(trackId: Long? = null, onBack: () -> Unit, onSaved: () -> Unit) {
     val context = LocalContext.current
     val app = remember { HudProApplication.from(context) }
     val scope = rememberCoroutineScope()
     val mapView = rememberMapViewWithLifecycle()
+    val editing = trackId != null
 
     val waypoints = remember { mutableStateListOf<GeoPoint>() }
     var controller by remember { mutableStateOf<RouteEditorController?>(null) }
@@ -66,10 +67,38 @@ fun RouteEditorScreen(onBack: () -> Unit, onSaved: () -> Unit) {
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showSave by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("Ruta nova") }
+    // In edit mode the map is seeded from the stored route. `dirty` stays false until the user changes a
+    // waypoint, so the original trace is preserved unless actually edited.
+    var dirty by remember { mutableStateOf(false) }
+    var originalPoints by remember { mutableStateOf<List<GpxPoint>>(emptyList()) }
+
+    // Load the existing route once the map controller is ready (edit mode only).
+    LaunchedEffect(controller, trackId) {
+        val c = controller ?: return@LaunchedEffect
+        val id = trackId ?: return@LaunchedEffect
+        val gpx = app.trackRepository.loadGpxRoute(id)
+        if (gpx.size < 2) return@LaunchedEffect
+        originalPoints = gpx
+        app.trackRepository.get(id)?.let { name = it.name }
+        val simplified = cat.hudpro.opentracks.data.tracks.PolylineSimplifier
+            .simplify(gpx.map { it.toGeoPoint() }, epsilonMeters = 20.0)
+        waypoints.clear(); waypoints.addAll(simplified)
+        routed = RoutedPath(
+            gpx,
+            cat.hudpro.opentracks.data.tracks.TrackRepository.routeDistance(gpx.map { it.toGeoPoint() }),
+            cat.hudpro.opentracks.data.tracks.TrackRepository.ascent(gpx),
+        )
+        c.setWaypoints(simplified)
+        c.setRoute(gpx)
+        c.frame(gpx)
+    }
 
     // Recompute the path whenever the waypoints/profile/mode change and the map is ready.
     LaunchedEffect(waypoints.size, snap, profile, controller) {
         val c = controller ?: return@LaunchedEffect
+        // Don't overwrite the seeded original trace until the user actually edits it.
+        if (editing && !dirty) return@LaunchedEffect
         c.setWaypoints(waypoints.toList())
         when {
             waypoints.size < 2 -> { routed = null; c.setRoute(emptyList()) }
@@ -90,12 +119,14 @@ fun RouteEditorScreen(onBack: () -> Unit, onSaved: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Crear ruta") },
+                title = { Text(if (editing) "Editar ruta" else "Crear ruta") },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Enrere") }
                 },
                 actions = {
-                    IconButton(onClick = { if (waypoints.size >= 2) waypoints.removeAt(waypoints.lastIndex) }) {
+                    IconButton(onClick = {
+                        if (waypoints.size >= 2) { waypoints.removeAt(waypoints.lastIndex); dirty = true }
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Desfer")
                     }
                     IconButton(onClick = { showSave = true }, enabled = (routed?.points?.size ?: 0) >= 2) {
@@ -111,7 +142,7 @@ fun RouteEditorScreen(onBack: () -> Unit, onSaved: () -> Unit) {
                     mapView.getMapAsync { map ->
                         val c = RouteEditorController(map)
                         controller = c
-                        c.init { c.onMapClick { p -> waypoints.add(p) } }
+                        c.init { c.onMapClick { p -> waypoints.add(p); dirty = true } }
                     }
                     mapView
                 },
@@ -149,18 +180,23 @@ fun RouteEditorScreen(onBack: () -> Unit, onSaved: () -> Unit) {
     }
 
     if (showSave) {
-        var name by remember { mutableStateOf("Ruta nova") }
         AlertDialog(
             onDismissRequest = { showSave = false },
-            title = { Text("Guardar ruta") },
+            title = { Text(if (editing) "Guardar canvis" else "Guardar ruta") },
             text = {
                 OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true, label = { Text("Nom") })
             },
             confirmButton = {
                 TextButton(onClick = {
-                    val points = routed?.points ?: straightPath(waypoints.toList()).points
+                    // Edit + untouched → keep the original trace; otherwise use the (re)computed path.
+                    val points = if (editing && !dirty) originalPoints
+                    else routed?.points ?: straightPath(waypoints.toList()).points
                     scope.launch {
-                        app.trackRepository.insertRoute(name, points, TrackSource.GPX_IMPORT, remoteId = null)
+                        if (editing) {
+                            app.trackRepository.updateRoute(trackId!!, name, points)
+                        } else {
+                            app.trackRepository.insertRoute(name, points, TrackSource.GPX_IMPORT, remoteId = null)
+                        }
                         showSave = false
                         onSaved()
                     }

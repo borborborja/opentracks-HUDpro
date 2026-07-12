@@ -47,6 +47,27 @@ class TrackRepository(
         )
     }
 
+    /** Loads the full entity (including the GPX blob) for the detail/edit screens. */
+    suspend fun get(id: Long): FollowTrackEntity? = withContext(Dispatchers.IO) { dao.getById(id) }
+
+    suspend fun rename(id: Long, name: String) = withContext(Dispatchers.IO) { dao.rename(id, name) }
+
+    suspend fun setCollection(id: Long, collection: String) =
+        withContext(Dispatchers.IO) { dao.setCollection(id, collection) }
+
+    /** Overwrites the geometry (and name) of an existing route, preserving its other metadata. */
+    suspend fun updateRoute(id: Long, name: String, points: List<GpxPoint>) = withContext(Dispatchers.IO) {
+        val existing = dao.getById(id) ?: return@withContext
+        dao.insert(
+            existing.copy(
+                name = name,
+                distanceMeters = routeDistance(points.map { it.toGeoPoint() }),
+                pointCount = points.size,
+                gpx = Gpx.write(name, points),
+            ),
+        )
+    }
+
     suspend fun loadRoute(id: Long): List<GeoPoint> = withContext(Dispatchers.IO) {
         loadGpxRoute(id).map { it.toGeoPoint() }
     }
@@ -72,6 +93,18 @@ class TrackRepository(
             var acc = 0.0
             for (i in 1 until points.size) acc += MetricsCalculator.distanceMeters(points[i - 1], points[i])
             return acc
+        }
+
+        /** Cumulative positive elevation change (m) along the route; 0 if elevations are missing. */
+        fun ascent(points: List<GpxPoint>): Double {
+            var gain = 0.0
+            var prev: Double? = null
+            for (p in points) {
+                val e = p.elevation ?: continue
+                prev?.let { if (e > it) gain += e - it }
+                prev = e
+            }
+            return gain
         }
     }
 }
