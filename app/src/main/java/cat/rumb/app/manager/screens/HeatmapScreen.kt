@@ -127,15 +127,17 @@ private class HeatmapController(private val map: MapLibreMap) {
     private var source: GeoJsonSource? = null
 
     fun init(onReady: () -> Unit) {
-        map.setStyle(Style.Builder().fromJson(MapStyleFactory.rasterStyleJson(MapSource.ICGC_TOPO))) { style ->
+        map.setStyle(Style.Builder().fromJson(MapStyleFactory.rasterStyleJson(MapSource.ICGC_TOPO, desaturate = true))) { style ->
             val src = GeoJsonSource(SOURCE_ID, FeatureCollection.fromFeatures(emptyList()))
             style.addSource(src)
             // LineLayer only: SymbolLayers break GeoJSON rendering on raster styles (no glyphs).
+            // Base map is greyscale (see desaturate above) so this red track stands out; overlap
+            // of translucent lines still accumulates into the "heat".
             style.addLayer(
                 LineLayer(LAYER_ID, SOURCE_ID).withProperties(
                     PropertyFactory.lineColor("#E63946"),
-                    PropertyFactory.lineWidth(3f),
-                    PropertyFactory.lineOpacity(0.25f),
+                    PropertyFactory.lineWidth(4f),
+                    PropertyFactory.lineOpacity(0.45f),
                     PropertyFactory.lineCap("round"),
                     PropertyFactory.lineJoin("round"),
                 ),

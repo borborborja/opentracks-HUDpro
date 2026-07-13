@@ -16,12 +16,13 @@ object MapStyleFactory {
     fun styleUriOrNull(source: MapSource): String? =
         if (source.kind == MapSource.Kind.VECTOR_STYLE) source.url else null
 
-    fun rasterStyleJson(source: MapSource): String {
+    fun rasterStyleJson(source: MapSource, desaturate: Boolean = false): String {
         require(source.kind == MapSource.Kind.RASTER)
         return buildRasterStyle(
             tiles = listOf(source.url),
             attribution = source.attribution,
             maxZoom = source.maxZoom,
+            desaturate = desaturate,
         )
     }
 
@@ -40,17 +41,17 @@ object MapStyleFactory {
         return wrapRasterSource(source)
     }
 
-    private fun buildRasterStyle(tiles: List<String>, attribution: String, maxZoom: Int): String {
+    private fun buildRasterStyle(tiles: List<String>, attribution: String, maxZoom: Int, desaturate: Boolean = false): String {
         val source = JSONObject()
             .put("type", "raster")
             .put("tiles", JSONArray(tiles))
             .put("tileSize", 256)
             .put("attribution", attribution)
             .put("maxzoom", maxZoom)
-        return wrapRasterSource(source)
+        return wrapRasterSource(source, desaturate)
     }
 
-    private fun wrapRasterSource(source: JSONObject): String {
+    private fun wrapRasterSource(source: JSONObject, desaturate: Boolean = false): String {
         // Neutral background so areas without tiles (e.g. edges of a small offline region) render a
         // light grey instead of black.
         val background = JSONObject()
@@ -61,6 +62,8 @@ object MapStyleFactory {
             .put("id", "base-raster")
             .put("type", "raster")
             .put("source", "base")
+        // Full desaturation (-1) turns the base map greyscale so a colored overlay (heatmap) pops.
+        if (desaturate) layer.put("paint", JSONObject().put("raster-saturation", -1))
 
         return JSONObject()
             .put("version", 8)

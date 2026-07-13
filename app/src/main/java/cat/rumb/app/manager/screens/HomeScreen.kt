@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
@@ -37,13 +38,16 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.automirrored.filled.ViewQuilt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -246,10 +250,18 @@ fun HomeScreen(
             ViewerMapButton(onClick = onOpenViewer)
 
             TabRow(selectedTabIndex = tab, modifier = Modifier.padding(top = 12.dp)) {
-                Tab(tab == 0, onClick = { tab = 0; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_recorded)) })
-                Tab(tab == 1, onClick = { tab = 1; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_to_follow)) })
-                Tab(tab == 2, onClick = { tab = 2; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_competition)) })
-                Tab(tab == 3, onClick = { tab = 3; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_progress)) })
+                Tab(tab == 0, onClick = { tab = 0; currentFolder = null }, icon = {
+                    Icon(Icons.AutoMirrored.Filled.DirectionsRun, contentDescription = stringResource(R.string.home_tab_recorded))
+                })
+                Tab(tab == 1, onClick = { tab = 1; currentFolder = null }, icon = {
+                    Icon(Icons.Filled.Route, contentDescription = stringResource(R.string.home_tab_to_follow))
+                })
+                Tab(tab == 2, onClick = { tab = 2; currentFolder = null }, icon = {
+                    Icon(Icons.Filled.Timer, contentDescription = stringResource(R.string.home_tab_competition))
+                })
+                Tab(tab == 3, onClick = { tab = 3; currentFolder = null }, icon = {
+                    Icon(Icons.Filled.Insights, contentDescription = stringResource(R.string.home_tab_progress))
+                })
             }
 
             if (tab < 2) {
