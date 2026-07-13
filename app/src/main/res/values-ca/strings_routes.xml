@@ -40,4 +40,7 @@
     <string name="routing_shortest">Més curt</string>
     <string name="routes_type">Tipus</string>
     <string name="routes_assign_type_title">Tipus d\'activitat</string>
+    <string name="routes_stat_time">Temps</string>
+    <string name="routes_stat_avg_speed">Mitjana km/h</string>
+    <string name="routes_stat_avg_hr">FC mitjana</string>
 </resources>

@@ -61,6 +61,9 @@ fun RouteDetailScreen(
 
     var entity by remember { mutableStateOf<FollowTrackEntity?>(null) }
     var gpx by remember { mutableStateOf<List<GpxPoint>>(emptyList()) }
+    var routeStats by remember { mutableStateOf<cat.rumb.app.data.tracks.TrackStats?>(null) }
+    var samples by remember { mutableStateOf<List<cat.rumb.app.data.tracks.TrackSample>>(emptyList()) }
+    var highlight by remember { mutableStateOf<Float?>(null) }
     var controller by remember { mutableStateOf<RouteEditorController?>(null) }
     var reloadTick by remember { mutableStateOf(0) }
     var showRename by remember { mutableStateOf(false) }
@@ -70,7 +73,14 @@ fun RouteDetailScreen(
 
     LaunchedEffect(trackId, reloadTick) {
         entity = app.trackRepository.get(trackId)
-        gpx = app.trackRepository.loadGpxRoute(trackId)
+        val points = app.trackRepository.loadGpxRoute(trackId)
+        gpx = points
+        val (st, smp) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            cat.rumb.app.data.tracks.TrackStatsCalculator.compute(points) to
+                cat.rumb.app.data.tracks.TrackStatsCalculator.samples(points)
+        }
+        routeStats = st
+        samples = smp
     }
     // Draw the route once both the map and the data are ready.
     LaunchedEffect(controller, gpx) {
@@ -118,17 +128,59 @@ fun RouteDetailScreen(
                         Stat(stringResource(R.string.routes_stat_points), "${e?.pointCount ?: gpx.size}")
                     }
                 }
+                // Second stats row only when the route carries timed/sensor data (imported activity).
+                routeStats?.let { st ->
+                    if (st.totalTime != null || st.avgHr != null) {
+                        Card {
+                            Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Stat(
+                                    stringResource(R.string.routes_stat_time),
+                                    st.totalTime?.let { d -> "%d:%02d:%02d".format(d.seconds / 3600, (d.seconds % 3600) / 60, d.seconds % 60) } ?: "—",
+                                )
+                                Stat(
+                                    stringResource(R.string.routes_stat_avg_speed),
+                                    st.avgSpeedKmh?.let { v -> String.format("%.1f", v) } ?: "—",
+                                )
+                                Stat(
+                                    stringResource(R.string.routes_stat_avg_hr),
+                                    st.avgHr?.let { h -> "${h.toInt()}" } ?: "—",
+                                )
+                            }
+                        }
+                    }
+                }
                 Text(
                     stringResource(R.string.routes_source_collection, e?.source?.name ?: "—", e?.collection ?: "—"),
                     style = MaterialTheme.typography.bodySmall,
                 )
 
-                ElevationProfile(
-                    profile = gpx.mapNotNull { it.elevation?.toFloat() },
-                    progress = 1f,
-                    scale = 1f,
-                    modifier = Modifier.fillMaxWidth().height(120.dp),
-                )
+                // Stacked elevation/speed/HR chart with a map-synced scrubber (same as competition).
+                if (samples.size >= 2) {
+                    Card {
+                        StackedTrackChart(
+                            samples = samples,
+                            highlightFraction = highlight,
+                            onScrub = { f ->
+                                highlight = f
+                                val sample = f?.let { fr ->
+                                    val target = fr * samples.last().distM
+                                    samples.minByOrNull { kotlin.math.abs(it.distM - target) }
+                                }
+                                controller?.setHighlight(
+                                    sample?.let { cat.rumb.app.data.opentracks.model.GeoPoint(it.lat, it.lon) },
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth().height(200.dp).padding(vertical = 8.dp),
+                        )
+                    }
+                } else {
+                    ElevationProfile(
+                        profile = gpx.mapNotNull { it.elevation?.toFloat() },
+                        progress = 1f,
+                        scale = 1f,
+                        modifier = Modifier.fillMaxWidth().height(120.dp),
+                    )
+                }
 
                 if (entity?.archived == true) {
                     Button(

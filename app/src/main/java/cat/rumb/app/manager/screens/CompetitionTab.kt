@@ -60,6 +60,7 @@ private fun formatDuration(ms: Long): String {
  */
 @Composable
 fun CompetitionTab(
+    viewMode: String = "DETAILED",
     all: List<FollowTrackEntity>,
     onOpen: (Long) -> Unit,
     onPlay: (Long) -> Unit,
@@ -99,18 +100,43 @@ fun CompetitionTab(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(refs, key = { it.id }) { ref ->
-            CompetitionCard(
-                ref = ref,
-                attempts = attempts[ref.id].orEmpty(),
-                archived = false,
-                onOpen = { onOpen(ref.id) },
-                onPlay = { onPlay(ref.id) },
-                onArchive = { onArchive(ref.id, true) },
-                onUnarchive = {},
-                onDelete = { deleteFor = ref },
-                onRemoveAttempt = onRemoveAttempt,
-            )
+        when (viewMode) {
+            // Tiles: two per row via chunking (no nested lazy grid inside the LazyColumn).
+            "TILES" -> items(refs.chunked(2), key = { it.first().id }) { rowRefs ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    rowRefs.forEach { ref ->
+                        CompetitionTile(
+                            ref = ref,
+                            attempts = attempts[ref.id].orEmpty(),
+                            onOpen = { onOpen(ref.id) },
+                            onPlay = { onPlay(ref.id) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    if (rowRefs.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
+            "LIST" -> items(refs, key = { it.id }) { ref ->
+                CompetitionCompactRow(
+                    ref = ref,
+                    attempts = attempts[ref.id].orEmpty(),
+                    onOpen = { onOpen(ref.id) },
+                    onPlay = { onPlay(ref.id) },
+                )
+            }
+            else -> items(refs, key = { it.id }) { ref ->
+                CompetitionCard(
+                    ref = ref,
+                    attempts = attempts[ref.id].orEmpty(),
+                    archived = false,
+                    onOpen = { onOpen(ref.id) },
+                    onPlay = { onPlay(ref.id) },
+                    onArchive = { onArchive(ref.id, true) },
+                    onUnarchive = {},
+                    onDelete = { deleteFor = ref },
+                    onRemoveAttempt = onRemoveAttempt,
+                )
+            }
         }
         // Fixed "Archived" section: competitions here keep their membership until unarchived.
         if (archivedRefs.isNotEmpty()) {
@@ -284,6 +310,85 @@ private fun CompetitionCard(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/** Compact list row: type icon, name, best time and a play shortcut. */
+@Composable
+private fun CompetitionCompactRow(
+    ref: FollowTrackEntity,
+    attempts: List<FollowTrackEntity>,
+    onOpen: () -> Unit,
+    onPlay: () -> Unit,
+) {
+    val best = (attempts + ref).mapNotNull { it.durationMs }.filter { it > 0 }.minOrNull()
+    Card(onClick = onOpen) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                ActivityTypeCatalog.iconFor(ref.activityType),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                "  " + ref.name,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                modifier = Modifier.weight(1f),
+            )
+            Text(best?.let { formatDuration(it) } ?: "—", style = MaterialTheme.typography.bodySmall)
+            IconButton(onClick = onPlay) {
+                Icon(
+                    Icons.Filled.PlayArrow,
+                    contentDescription = stringResource(R.string.home_competition_play),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
+/** Grid tile: icon + name + best time + attempts, with a play shortcut. */
+@Composable
+private fun CompetitionTile(
+    ref: FollowTrackEntity,
+    attempts: List<FollowTrackEntity>,
+    onOpen: () -> Unit,
+    onPlay: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val best = (attempts + ref).mapNotNull { it.durationMs }.filter { it > 0 }.minOrNull()
+    Card(onClick = onOpen, modifier = modifier.height(120.dp)) {
+        Column(Modifier.fillMaxSize().padding(10.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    ActivityTypeCatalog.iconFor(ref.activityType),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(18.dp).weight(1f, fill = false),
+                )
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = onPlay, modifier = Modifier.size(30.dp)) {
+                    Icon(
+                        Icons.Filled.PlayArrow,
+                        contentDescription = stringResource(R.string.home_competition_play),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+            Column {
+                Text(ref.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(
+                    (best?.let { formatDuration(it) } ?: "—") + " · " +
+                        stringResource(R.string.home_competition_attempts, attempts.size),
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                )
             }
         }
     }

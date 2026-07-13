@@ -14,10 +14,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
@@ -60,6 +62,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private val GapGreen = Color(0x552ECC71)
@@ -89,8 +92,13 @@ fun CompetitionDetailScreen(refId: Long, onBack: () -> Unit, onStartCompetition:
     var statsById by remember { mutableStateOf<Map<Long, TrackStats>>(emptyMap()) }
     var zonesById by remember { mutableStateOf<Map<Long, LongArray>>(emptyMap()) }
     var loaded by remember { mutableStateOf(false) }
+    var reloadTick by remember { mutableStateOf(0) }
+    var showRename by remember { mutableStateOf(false) }
+    var showType by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
-    LaunchedEffect(refId) {
+    LaunchedEffect(refId, reloadTick) {
         val all = app.trackRepository.observeSummaries().first()
         val refEntity = all.firstOrNull { it.id == refId } ?: app.trackRepository.get(refId)
         val attempts = all.filter { it.competitionRefId == refId && it.id != refId }
@@ -127,6 +135,21 @@ fun CompetitionDetailScreen(refId: Long, onBack: () -> Unit, onStartCompetition:
             if (ref?.competitionArchived != true) {
                 IconButton(onClick = { onStartCompetition(refId) }) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.competition_play_cd))
+                }
+            }
+            androidx.compose.foundation.layout.Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(androidx.compose.material.icons.Icons.Filled.MoreVert, contentDescription = stringResource(R.string.competition_cd_menu))
+                }
+                androidx.compose.material3.DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text(stringResource(R.string.home_rename)) },
+                        onClick = { showMenu = false; showRename = true },
+                    )
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text(stringResource(R.string.routes_assign_type_title)) },
+                        onClick = { showMenu = false; showType = true },
+                    )
                 }
             }
         },
@@ -171,6 +194,51 @@ fun CompetitionDetailScreen(refId: Long, onBack: () -> Unit, onStartCompetition:
             }
             Spacer(Modifier.height(8.dp))
         }
+    }
+    if (showRename) {
+        TextDialog(
+            title = stringResource(R.string.home_rename),
+            initial = ref?.name ?: "",
+            confirm = stringResource(R.string.home_save),
+            onDismiss = { showRename = false },
+        ) { name ->
+            scope.launch { app.trackRepository.rename(refId, name); reloadTick++ }
+            showRename = false
+        }
+    }
+    if (showType) {
+        val typeOptions = rememberActivityTypeOptions(prefs)
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showType = false },
+            title = { Text(stringResource(R.string.routes_assign_type_title)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    typeOptions.forEach { option ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    scope.launch { app.trackRepository.setActivityType(refId, option.id); reloadTick++ }
+                                    showType = false
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                option.icon,
+                                contentDescription = null,
+                                tint = if (ref?.activityType == option.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                            )
+                            Text("  " + option.label)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showType = false }) { Text(stringResource(R.string.home_cancel)) }
+            },
+        )
     }
 }
 

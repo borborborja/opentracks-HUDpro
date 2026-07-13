@@ -325,7 +325,29 @@ fun HomeScreen(
                     )
                 }
             } else {
+                // Minimal toolbar for the competition tab: just the shared view-mode toggle.
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = {
+                        viewMode = when (viewMode) {
+                            "LIST" -> "DETAILED"; "DETAILED" -> "TILES"; else -> "LIST"
+                        }
+                        prefs.routeViewMode = viewMode
+                    }) {
+                        Icon(
+                            when (viewMode) {
+                                "LIST" -> Icons.AutoMirrored.Filled.ViewList
+                                "DETAILED" -> Icons.AutoMirrored.Filled.ViewQuilt
+                                else -> Icons.Filled.GridView
+                            },
+                            contentDescription = stringResource(R.string.home_cd_view_mode),
+                        )
+                    }
+                }
                 CompetitionTab(
+                    viewMode = viewMode,
                     all = all,
                     onOpen = onOpenCompetition,
                     onPlay = onStartCompetition,

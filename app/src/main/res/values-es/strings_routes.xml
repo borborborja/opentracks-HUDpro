@@ -40,4 +40,7 @@
     <string name="routing_shortest">Más corto</string>
     <string name="routes_type">Tipo</string>
     <string name="routes_assign_type_title">Tipo de actividad</string>
+    <string name="routes_stat_time">Tiempo</string>
+    <string name="routes_stat_avg_speed">Media km/h</string>
+    <string name="routes_stat_avg_hr">FC media</string>
 </resources>

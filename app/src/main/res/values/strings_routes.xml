@@ -40,4 +40,7 @@
     <string name="routing_shortest">Shortest</string>
     <string name="routes_type">Type</string>
     <string name="routes_assign_type_title">Activity type</string>
+    <string name="routes_stat_time">Time</string>
+    <string name="routes_stat_avg_speed">Avg km/h</string>
+    <string name="routes_stat_avg_hr">Avg HR</string>
 </resources>

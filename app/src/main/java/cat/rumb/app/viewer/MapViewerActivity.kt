@@ -97,8 +97,9 @@ class MapViewerActivity : ComponentActivity() {
     /** Pre-recording countdown: null hidden, -1 waiting for GPS, 3..1 digits, 0 = GO!. */
     private val countdownFlow = MutableStateFlow<Int?>(null)
 
-    /** Competition pre-start: distance (m) to the reference's start point, null = hidden. */
-    private val startPointFlow = MutableStateFlow<Double?>(null)
+    /** Competition pre-start: distance to the start point + whether the fix is precise enough. */
+    data class StartPointState(val distanceM: Double, val precise: Boolean)
+    private val startPointFlow = MutableStateFlow<StartPointState?>(null)
     private var units = cat.rumb.app.viewer.hud.Units()
     private var lastWaypoints: List<cat.rumb.app.data.opentracks.model.Waypoint> = emptyList()
     private var adaptiveZoom = false
@@ -362,9 +363,9 @@ class MapViewerActivity : ComponentActivity() {
                             )
                         }
                         // Competition pre-start pill: are we at the reference's start point?
-                        val startDist by startPointFlow.collectAsState()
-                        startDist?.let { d ->
-                            StartPointPill(d, Modifier.align(Alignment.TopCenter).padding(top = 56.dp))
+                        val startState by startPointFlow.collectAsState()
+                        startState?.let { st ->
+                            StartPointPill(st, Modifier.align(Alignment.TopCenter).padding(top = 56.dp))
                         }
                         // Fullscreen 3-2-1 countdown (renders above everything; tap cancels).
                         val countdown by countdownFlow.collectAsState()
@@ -636,8 +637,14 @@ class MapViewerActivity : ComponentActivity() {
             while (true) {
                 val ghost = ghostEngine
                 startPointFlow.value = if (competing && ghost != null && !NativeRecording.isActive) {
-                    ctrl.lastKnownGeoPoint(this@MapViewerActivity)?.let {
-                        cat.rumb.app.viewer.hud.MetricsCalculator.distanceMeters(it, ghost.positionAt(0))
+                    val loc = ctrl.lastKnownGeoPoint(this@MapViewerActivity)
+                    val acc = ctrl.currentAccuracyM(this@MapViewerActivity)
+                    loc?.let {
+                        StartPointState(
+                            distanceM = cat.rumb.app.viewer.hud.MetricsCalculator.distanceMeters(it, ghost.positionAt(0)),
+                            // A fix worse than the recording gate can't honestly place you anywhere.
+                            precise = acc != null && acc <= 25f,
+                        )
                     }
                 } else {
                     null
@@ -1112,13 +1119,18 @@ private fun SaveRecordingDialog(
 
 /** Competition pre-start pill: green at the start point (≤30 m), amber with the distance otherwise. */
 @androidx.compose.runtime.Composable
-private fun StartPointPill(distanceM: Double, modifier: androidx.compose.ui.Modifier) {
-    val near = distanceM <= 30.0
-    val bg = if (near) androidx.compose.ui.graphics.Color(0xF22ECC71) else androidx.compose.ui.graphics.Color(0xF2F4A261)
+private fun StartPointPill(state: MapViewerActivity.StartPointState, modifier: androidx.compose.ui.Modifier) {
+    val near = state.precise && state.distanceM <= 30.0
+    val bg = when {
+        !state.precise -> androidx.compose.ui.graphics.Color(0xF2555F6B)
+        near -> androidx.compose.ui.graphics.Color(0xF22ECC71)
+        else -> androidx.compose.ui.graphics.Color(0xF2F4A261)
+    }
     val text = when {
+        !state.precise -> androidx.compose.ui.res.stringResource(R.string.countdown_waiting_gps)
         near -> "✓ " + androidx.compose.ui.res.stringResource(R.string.comp_at_start)
-        distanceM > 999 -> androidx.compose.ui.res.stringResource(R.string.comp_start_distance_km, distanceM / 1000.0)
-        else -> androidx.compose.ui.res.stringResource(R.string.comp_start_distance, distanceM.toInt())
+        state.distanceM > 999 -> androidx.compose.ui.res.stringResource(R.string.comp_start_distance_km, state.distanceM / 1000.0)
+        else -> androidx.compose.ui.res.stringResource(R.string.comp_start_distance, state.distanceM.toInt())
     }
     androidx.compose.material3.Text(
         text,
