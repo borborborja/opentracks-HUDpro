@@ -26,7 +26,7 @@ import kotlinx.coroutines.delay
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-private data class DataCell(val label: String, val value: String, val unit: String, val span: Int = 1)
+private data class DataCell(val label: String, val value: String, val unit: String, val span: Int = 1, val color: String? = null)
 
 /**
  * Full-screen "Dades" view: a scrollable grid of all live metrics (like OpenTracks' recording
@@ -41,12 +41,14 @@ fun DataView(data: HudData, modifier: Modifier = Modifier, reloadKey: Any? = nul
     val followOnly = setOf(HudMetric.REMAINING, HudMetric.OFF_ROUTE)
     val metrics = layout.metrics().filter { data.following || it !in followOnly }
     val cells = remember(data, layout) {
-        metrics.map { DataCell(it.label, it.value(data.metrics, data.units), it.unit(data.units), layout.spanOf(it.name)) }
+        metrics.map {
+            DataCell(it.label, it.value(data.metrics, data.units), it.unit(data.units), layout.spanOf(it.name), layout.colorOf(it.name))
+        }
     }
 
     // Live wall clock tile (updates every second).
-    val clock by produceState(initialValue = "", data.metrics.isRecording) {
-        val fmt = DateTimeFormatter.ofPattern("HH:mm:ss")
+    val clock by produceState(initialValue = "", layout.clockH24) {
+        val fmt = DateTimeFormatter.ofPattern(if (layout.clockH24) "HH:mm:ss" else "h:mm:ss a")
         while (true) {
             value = LocalTime.now().format(fmt)
             delay(1000)
@@ -83,6 +85,9 @@ private fun DataTile(cell: DataCell) {
                     cell.value,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
+                    color = cell.color?.let { hex ->
+                        runCatching { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(hex)) }.getOrNull()
+                    } ?: androidx.compose.ui.graphics.Color.Unspecified,
                 )
                 if (cell.unit.isNotEmpty()) {
                     Text(

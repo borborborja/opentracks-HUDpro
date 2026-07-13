@@ -16,7 +16,17 @@ data class DataLayout(
     val showClock: Boolean = true,
     /** Column span per metric name (1..columns); absent = 1. */
     val spans: Map<String, Int> = emptyMap(),
+    /** Value-text color ("#RRGGBB") per metric name; absent = theme default. */
+    val colors: Map<String, String> = emptyMap(),
+    /** Clock tile format: 24 h (default) or 12 h. */
+    val clockH24: Boolean = true,
 ) {
+    fun colorOf(field: String): String? = colors[field]
+
+    /** Sets (or clears with null) the value color of [field]. */
+    fun setColor(field: String, hex: String?): DataLayout =
+        copy(colors = if (hex == null) colors - field else colors + (field to hex))
+
     /** Effective span of [field], clamped to the current column count. */
     fun spanOf(field: String): Int = (spans[field] ?: 1).coerceIn(1, columns.coerceAtLeast(1))
 

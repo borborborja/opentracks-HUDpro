@@ -79,4 +79,33 @@ class DataLayoutTest {
         assertThat(decoded.spans).isEmpty()
         assertThat(decoded.spanOf("SPEED")).isEqualTo(1)
     }
+
+    @Test
+    fun setColorAddsAndClears() {
+        val layout = DataLayout(fields = listOf("SPEED"))
+        val colored = layout.setColor("SPEED", "#E63946")
+        assertThat(colored.colorOf("SPEED")).isEqualTo("#E63946")
+        assertThat(colored.setColor("SPEED", null).colorOf("SPEED")).isNull()
+    }
+
+    @Test
+    fun legacyJsonWithoutColorsAndClockDecodes() {
+        val legacy = """{"fields":["SPEED"],"columns":2,"showClock":true,"spans":{"SPEED":2}}"""
+        val decoded = Json { ignoreUnknownKeys = true }.decodeFromString(DataLayout.serializer(), legacy)
+        assertThat(decoded.colors).isEmpty()
+        assertThat(decoded.clockH24).isTrue()
+        assertThat(decoded.spanOf("SPEED")).isEqualTo(2)
+    }
+
+    @Test
+    fun colorsAndClockRoundTrip() {
+        val layout = DataLayout(
+            fields = listOf("SPEED"),
+            colors = mapOf("SPEED" to "#FFD166"),
+            clockH24 = false,
+        )
+        val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+        val restored = json.decodeFromString(DataLayout.serializer(), json.encodeToString(DataLayout.serializer(), layout))
+        assertThat(restored).isEqualTo(layout)
+    }
 }
