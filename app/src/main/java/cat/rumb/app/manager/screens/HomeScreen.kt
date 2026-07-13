@@ -30,6 +30,7 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
@@ -131,6 +132,7 @@ fun HomeScreen(
     onStartCompetition: (Long) -> Unit = {},
     onOpenRecords: () -> Unit = {},
     onOpenHeatmap: () -> Unit = {},
+    onOpenDesktop: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val app = remember { RumbApplication.from(context) }
@@ -240,6 +242,7 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.home_title)) },
                 actions = {
+                    IconButton(onClick = onOpenDesktop) { Icon(Icons.Filled.Computer, contentDescription = stringResource(R.string.home_cd_desktop)) }
                     IconButton(onClick = onOpenLayers) { Icon(Icons.Filled.Layers, contentDescription = stringResource(R.string.home_cd_map_layers)) }
                     IconButton(onClick = onOpenSettings) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.home_cd_settings)) }
                 },

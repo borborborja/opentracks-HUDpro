@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="desktop_title">Modo escritorio</string>
+    <string name="home_cd_desktop">Modo escritorio</string>
+    <string name="desktop_url_label">Abre esta dirección en el navegador de tu ordenador:</string>
+    <string name="desktop_pin_label">PIN</string>
+    <string name="desktop_hint">El ordenador debe estar en la misma WiFi. El servidor solo funciona mientras esta pantalla está abierta.</string>
+    <string name="desktop_no_wifi">Conecta el teléfono a una WiFi para usar el modo escritorio.</string>
+    <string name="desktop_running">Servidor activo</string>
+    <string name="desktop_stop">Detener y salir</string>
+    <string name="desktop_server_error">No se pudo iniciar el servidor.</string>
+</resources>

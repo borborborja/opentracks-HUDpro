@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="desktop_title">Mode escriptori</string>
+    <string name="home_cd_desktop">Mode escriptori</string>
+    <string name="desktop_url_label">Obre aquesta adreça al navegador del teu ordinador:</string>
+    <string name="desktop_pin_label">PIN</string>
+    <string name="desktop_hint">L\'ordinador ha d\'estar a la mateixa WiFi. El servidor només funciona mentre aquesta pantalla és oberta.</string>
+    <string name="desktop_no_wifi">Connecta el telèfon a una WiFi per usar el mode escriptori.</string>
+    <string name="desktop_running">Servidor actiu</string>
+    <string name="desktop_stop">Atura i surt</string>
+    <string name="desktop_server_error">No s\'ha pogut iniciar el servidor.</string>
+</resources>

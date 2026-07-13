@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="desktop_title">Desktop mode</string>
+    <string name="home_cd_desktop">Desktop mode</string>
+    <string name="desktop_url_label">Open this address in your computer\'s browser:</string>
+    <string name="desktop_pin_label">PIN</string>
+    <string name="desktop_hint">Your computer must be on the same WiFi. The server runs only while this screen is open.</string>
+    <string name="desktop_no_wifi">Connect the phone to a WiFi network to use desktop mode.</string>
+    <string name="desktop_running">Server running</string>
+    <string name="desktop_stop">Stop and exit</string>
+    <string name="desktop_server_error">Could not start the server.</string>
+</resources>

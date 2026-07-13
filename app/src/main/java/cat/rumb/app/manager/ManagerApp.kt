@@ -10,6 +10,7 @@ import cat.rumb.app.data.map.BoundingBox
 import cat.rumb.app.manager.screens.CompetitionDetailScreen
 import cat.rumb.app.manager.screens.DataDesignerScreen
 import cat.rumb.app.manager.screens.DebugLogScreen
+import cat.rumb.app.manager.screens.DesktopModeScreen
 import cat.rumb.app.manager.screens.HeatmapScreen
 import cat.rumb.app.manager.screens.HomeScreen
 import cat.rumb.app.manager.screens.HudDesignerScreen
@@ -40,6 +41,7 @@ object Routes {
     const val DOWNLOAD_AREA = "download_area"
     const val RECORDS = "records"
     const val HEATMAP = "heatmap"
+    const val DESKTOP = "desktop"
 }
 
 @Composable
@@ -70,8 +72,10 @@ fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null, onStartComp
                 onStartCompetition = onStartCompetition,
                 onOpenRecords = { nav.navigate(Routes.RECORDS) },
                 onOpenHeatmap = { nav.navigate(Routes.HEATMAP) },
+                onOpenDesktop = { nav.navigate(Routes.DESKTOP) },
             )
         }
+        composable(Routes.DESKTOP) { DesktopModeScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.RECORDS) {
             RecordsScreen(
                 onBack = { nav.popBackStack() },
