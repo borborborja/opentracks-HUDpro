@@ -14,7 +14,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.draw.clip
+import cat.hudpro.opentracks.data.map.MapSource
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -77,6 +85,9 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit) {
     var reloadTick by remember { mutableStateOf(0) }
 
     var showMenu by remember { mutableStateOf(false) }
+    var showViewMenu by remember { mutableStateOf(false) }
+    var mapSourceId by remember { mutableStateOf(prefs.statsMapSourceId) }
+    var trackPaint by remember { mutableStateOf(prefs.statsTrackPaint) }
     var showRename by remember { mutableStateOf(false) }
     var showTypePicker by remember { mutableStateOf(false) }
     var showMove by remember { mutableStateOf(false) }
@@ -92,13 +103,20 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit) {
         stats = s
         samples = smp
     }
-    // Draw the track once both the map and the data are ready.
-    LaunchedEffect(controller, samples) {
+    // Draw the track once both the map and the data are ready; repaint when the paint mode changes.
+    var framed by remember(trackId) { mutableStateOf(false) }
+    LaunchedEffect(controller, samples, trackPaint) {
         val c = controller ?: return@LaunchedEffect
         if (samples.size >= 2) {
             val line = samples.map { cat.hudpro.opentracks.data.gpx.GpxPoint(it.lat, it.lon) }
-            c.setRoute(line)
-            c.frame(line)
+            val values = when (trackPaint) {
+                "ALTITUDE" -> samples.map { it.elevation?.toDouble() }
+                "HR" -> samples.map { it.hr?.toDouble() }
+                "SPEED" -> samples.map { it.speedKmh?.toDouble() }
+                else -> null
+            }
+            c.setRoute(line, values)
+            if (!framed) { c.frame(line); framed = true }
         }
     }
 
@@ -159,17 +177,84 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit) {
             modifier.fillMaxSize().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            AndroidView(
-                factory = {
-                    mapView.getMapAsync { map ->
-                        val c = RouteEditorController(map)
-                        controller = c
-                        c.init { }
+            Box(Modifier.fillMaxWidth().height(220.dp)) {
+                AndroidView(
+                    factory = {
+                        mapView.getMapAsync { map ->
+                            val c = RouteEditorController(map)
+                            controller = c
+                            c.init(source = MapSource.byId(mapSourceId)) { }
+                        }
+                        mapView
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                )
+                // Eye: base map + track paint selector, overlaid on the map corner.
+                Box(Modifier.align(Alignment.TopEnd).padding(8.dp)) {
+                    IconButton(
+                        onClick = { showViewMenu = true },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color(0x99000000)),
+                    ) {
+                        Icon(
+                            Icons.Filled.Visibility,
+                            contentDescription = stringResource(R.string.training_cd_view_options),
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp),
+                        )
                     }
-                    mapView
-                },
-                modifier = Modifier.fillMaxWidth().height(220.dp),
-            )
+                    DropdownMenu(expanded = showViewMenu, onDismissRequest = { showViewMenu = false }) {
+                        Text(
+                            stringResource(R.string.training_view_map),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        )
+                        MapSource.entries.filter { it.kind == MapSource.Kind.RASTER }.forEach { src ->
+                            DropdownMenuItem(
+                                text = { Text(src.displayName) },
+                                leadingIcon = {
+                                    if (MapSource.byId(mapSourceId) == src) {
+                                        Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(18.dp))
+                                    }
+                                },
+                                onClick = {
+                                    mapSourceId = src.id
+                                    prefs.statsMapSourceId = src.id
+                                    controller?.setBaseMap(src)
+                                },
+                            )
+                        }
+                        HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                        Text(
+                            stringResource(R.string.training_view_track),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        )
+                        val paints = buildList {
+                            add("SOLID" to R.string.training_paint_solid)
+                            if (samples.any { it.elevation != null }) add("ALTITUDE" to R.string.training_paint_altitude)
+                            if (samples.any { it.hr != null }) add("HR" to R.string.training_paint_hr)
+                            if (samples.any { it.speedKmh != null }) add("SPEED" to R.string.training_paint_speed)
+                        }
+                        paints.forEach { (id, res) ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(res)) },
+                                leadingIcon = {
+                                    if (trackPaint == id) Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(18.dp))
+                                },
+                                onClick = {
+                                    trackPaint = id
+                                    prefs.statsTrackPaint = id
+                                },
+                            )
+                        }
+                    }
+                }
+            }
 
             Column(Modifier.padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 entity?.let { e -> TrainingHeader(e, custom) }

@@ -126,6 +126,16 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getString(KEY_FILTER_TYPE_ROUTE, null)
         set(value) = prefs.edit().putString(KEY_FILTER_TYPE_ROUTE, value).apply()
 
+    /** Base map for the training statistics screen (MapSource id); null = default. */
+    var statsMapSourceId: String?
+        get() = prefs.getString(KEY_STATS_MAP_SOURCE, null)
+        set(value) = prefs.edit().putString(KEY_STATS_MAP_SOURCE, value).apply()
+
+    /** Track paint on the training statistics map: "SOLID", "ALTITUDE", "HR" or "SPEED". */
+    var statsTrackPaint: String
+        get() = prefs.getString(KEY_STATS_TRACK_PAINT, "SOLID") ?: "SOLID"
+        set(value) = prefs.edit().putString(KEY_STATS_TRACK_PAINT, value).apply()
+
     /** MAC addresses of paired BLE fitness sensors (heart rate / cadence / power). */
     var bleSensorAddrs: Set<String>
         get() = prefs.getStringSet(KEY_BLE_SENSORS, emptySet()) ?: emptySet()
@@ -250,6 +260,8 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_SORT_ROUTE = "track_sort_route"
         private const val KEY_FILTER_TYPE_TRAINING = "track_filter_type_training"
         private const val KEY_FILTER_TYPE_ROUTE = "track_filter_type_route"
+        private const val KEY_STATS_MAP_SOURCE = "stats_map_source"
+        private const val KEY_STATS_TRACK_PAINT = "stats_track_paint"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"
         private const val KEY_TRACK_COLOR_MODE = "track_color_mode"
         private const val KEY_TRACK_COLOR = "track_color"

@@ -30,4 +30,11 @@
     <string name="training_cd_more_actions">Més accions</string>
     <string name="training_cancel">Cancel·la</string>
     <string name="training_save">Desa</string>
+    <string name="training_cd_view_options">Opcions de vista del mapa</string>
+    <string name="training_view_map">Mapa</string>
+    <string name="training_view_track">Color del track</string>
+    <string name="training_paint_solid">Color únic</string>
+    <string name="training_paint_altitude">Per altitud</string>
+    <string name="training_paint_hr">Per pulsacions</string>
+    <string name="training_paint_speed">Per velocitat</string>
 </resources>

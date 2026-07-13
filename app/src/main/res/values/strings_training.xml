@@ -30,4 +30,11 @@
     <string name="training_cd_more_actions">More actions</string>
     <string name="training_cancel">Cancel</string>
     <string name="training_save">Save</string>
+    <string name="training_cd_view_options">Map view options</string>
+    <string name="training_view_map">Map</string>
+    <string name="training_view_track">Track color</string>
+    <string name="training_paint_solid">Solid color</string>
+    <string name="training_paint_altitude">By altitude</string>
+    <string name="training_paint_hr">By heart rate</string>
+    <string name="training_paint_speed">By speed</string>
 </resources>
