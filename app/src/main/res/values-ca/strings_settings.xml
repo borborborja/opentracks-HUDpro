@@ -144,4 +144,6 @@
     <string name="settings_licenses_body">Rumb conté codi derivat d\'aquests projectes de codi obert:\n\n· OpenTracks — lògica del motor de gravació (filtratge GPS, estadístiques). Apache License 2.0. github.com/OpenTracksApp/OpenTracks\n· OSMDashboard — integració amb la Dashboard API d\'OpenTracks. Apache License 2.0. codeberg.org/OpenTracksApp/OSMDashboard\n· MapLibre GL Native — renderitzat de mapes. BSD 2-Clause.\n· AndroidX / Jetpack Compose, Kotlin, OkHttp, kotlinx.serialization — Apache License 2.0.\n\nDades i serveis:\n· Dades de mapa © col·laboradors d\'OpenStreetMap (ODbL)\n· Mapes © Institut Cartogràfic i Geològic de Catalunya (ICGC), CC-BY 4.0\n· Geocodificació per Nominatim © col·laboradors d\'OpenStreetMap\n\nTextos complets: fitxers LICENSE i NOTICE al repositori.</string>
     <string name="settings_max_hr">FC màxima: %1$d bpm</string>
     <string name="settings_max_hr_help">S\'usa per a l\'anàlisi de zones de FC de competició.</string>
+    <string name="settings_weight">Pes: %1$d kg</string>
+    <string name="settings_weight_help">S\'usa per a l\'estimació de calories.</string>
 </resources>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rècords personals -->
+    <string name="records_title">Rècords</string>
+    <string name="records_computing">Analitzant %1$d/%2$d…</string>
+    <string name="records_empty">Encara no hi ha rècords. Grava o importa entrenaments per veure les teves millors marques.</string>
+    <string name="records_fastest_1k">1 km més ràpid</string>
+    <string name="records_fastest_5k">5 km més ràpids</string>
+    <string name="records_fastest_10k">10 km més ràpids</string>
+    <string name="records_fastest_half">Mitja marató més ràpida</string>
+    <string name="records_longest">Sortida més llarga</string>
+    <string name="records_max_ascent">Màxim desnivell</string>
+    <string name="records_max_speed">Velocitat màxima</string>
+    <string name="records_longest_time">Més temps en marxa</string>
+    <string name="records_stat_calories">Calories</string>
+
+    <!-- Mapa de calor -->
+    <string name="heatmap_title">Mapa de calor</string>
+    <string name="heatmap_include_routes">Inclou rutes</string>
+    <string name="heatmap_loading">%1$d/%2$d tracks</string>
+</resources>

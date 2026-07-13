@@ -37,6 +37,8 @@ data class LiveMetrics(
     // Competition (ghost race): + = ahead of the ghost, − = behind. Null when not racing.
     val ghostDeltaMeters: Double? = null,
     val ghostSecondsEst: Double? = null,
+    // MET-based calorie estimate (null when not recording).
+    val caloriesKcal: Int? = null,
 )
 
 /** Optional source of instantaneous altitude for a coordinate (e.g. a DEM tile sampler). */

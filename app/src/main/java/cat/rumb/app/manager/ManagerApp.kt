@@ -10,8 +10,10 @@ import cat.rumb.app.data.map.BoundingBox
 import cat.rumb.app.manager.screens.CompetitionDetailScreen
 import cat.rumb.app.manager.screens.DataDesignerScreen
 import cat.rumb.app.manager.screens.DebugLogScreen
+import cat.rumb.app.manager.screens.HeatmapScreen
 import cat.rumb.app.manager.screens.HomeScreen
 import cat.rumb.app.manager.screens.HudDesignerScreen
+import cat.rumb.app.manager.screens.RecordsScreen
 import cat.rumb.app.manager.screens.DownloadAreaScreen
 import cat.rumb.app.manager.screens.MapLayersScreen
 import cat.rumb.app.manager.screens.OfflineSectorsScreen
@@ -36,6 +38,8 @@ object Routes {
     const val COMPETITION_DETAIL = "competition_detail"
     const val EDIT_ROUTE = "edit_route"
     const val DOWNLOAD_AREA = "download_area"
+    const val RECORDS = "records"
+    const val HEATMAP = "heatmap"
 }
 
 @Composable
@@ -64,7 +68,18 @@ fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null, onStartComp
                 },
                 onOpenCompetition = { nav.navigate("${Routes.COMPETITION_DETAIL}/$it") },
                 onStartCompetition = onStartCompetition,
+                onOpenRecords = { nav.navigate(Routes.RECORDS) },
+                onOpenHeatmap = { nav.navigate(Routes.HEATMAP) },
             )
+        }
+        composable(Routes.RECORDS) {
+            RecordsScreen(
+                onBack = { nav.popBackStack() },
+                onOpenTraining = { id -> nav.navigate("${Routes.TRAINING_DETAIL}/$id") },
+            )
+        }
+        composable(Routes.HEATMAP) {
+            HeatmapScreen(onBack = { nav.popBackStack() })
         }
         composable(Routes.SETTINGS) {
             SettingsScreen(

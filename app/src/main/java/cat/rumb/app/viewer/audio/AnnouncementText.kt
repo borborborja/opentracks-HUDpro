@@ -65,6 +65,37 @@ object AnnouncementText {
 
     fun offRoute(lang: AnnounceLang): String = words(lang).offRoute
 
+    /**
+     * Turn-by-turn warning. [meters] > 0 → heads-up ("left turn in 150 meters");
+     * [meters] == 0 → at the junction ("turn left now").
+     */
+    fun turn(lang: AnnounceLang, left: Boolean, meters: Int): String = when (lang) {
+        AnnounceLang.CA -> {
+            val dir = if (left) "a l'esquerra" else "a la dreta"
+            if (meters == 0) "Ara gira $dir" else "Gir $dir en $meters metres"
+        }
+        AnnounceLang.ES -> {
+            val dir = if (left) "izquierda" else "derecha"
+            if (meters == 0) "Ahora gira a la $dir" else "Giro a la $dir en $meters metros"
+        }
+        AnnounceLang.EN -> {
+            val dir = if (left) "left" else "right"
+            if (meters == 0) "Turn $dir now" else "${if (left) "Left" else "Right"} turn in $meters meters"
+        }
+        AnnounceLang.FR -> {
+            val dir = if (left) "à gauche" else "à droite"
+            if (meters == 0) "Tournez $dir maintenant" else "Virage $dir dans $meters mètres"
+        }
+        AnnounceLang.DE -> {
+            val dir = if (left) "links" else "rechts"
+            if (meters == 0) "Jetzt $dir abbiegen" else "In $meters Metern $dir abbiegen"
+        }
+        AnnounceLang.IT -> {
+            val dir = if (left) "a sinistra" else "a destra"
+            if (meters == 0) "Ora gira $dir" else "Svolta $dir tra $meters metri"
+        }
+    }
+
     private fun distanceWords(w: Words, km: Double): String {
         val rounded = if (km % 1.0 == 0.0) km.roundToInt().toString() else String.format(Locale.US, "%.1f", km)
         val unit = if (km == 1.0) w.kmOne else w.kmMany

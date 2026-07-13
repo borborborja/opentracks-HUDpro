@@ -143,6 +143,10 @@ class MapViewerActivity : ComponentActivity() {
     private val pwrBuffer = ArrayDeque<Float>()
 
     private val offRouteAlerter = cat.rumb.app.viewer.follow.OffRouteAlerter()
+    // Turn-by-turn warnings: (turnIndex, tier) pairs already announced (tier 0 = heads-up, 1 = now).
+    private val announcedTurns = mutableSetOf<Pair<Int, Int>>()
+    private var turnVoiceOn = true
+    private var weightKg = 75
     private var following = false
     private var offRouteThreshold = 40
     private var offRouteSound = true
@@ -184,6 +188,8 @@ class MapViewerActivity : ComponentActivity() {
         hudLayoutFlow.value = HudLayoutStore.load(prefs)
         units = cat.rumb.app.viewer.hud.UnitsStore.load(prefs)
         adaptiveZoom = prefs.adaptiveZoom
+        turnVoiceOn = prefs.turnVoice
+        weightKg = prefs.userWeightKg
         setupAnnouncements(prefs)
 
         // Competition (ghost) mode: the intent carries the reference track; follow it and load a ghost.
@@ -358,6 +364,11 @@ class MapViewerActivity : ComponentActivity() {
                                 onShowSeconds = { b ->
                                     DebugLog.i("Competi", "quick-settings · segons → $b")
                                     prefs.competitionShowSeconds = b; ghostSecondsOn = b
+                                },
+                                turnVoice = prefs.turnVoice,
+                                onTurnVoice = { b ->
+                                    DebugLog.i("UI", "quick-settings · avisos de gir → $b")
+                                    prefs.turnVoice = b; turnVoiceOn = b
                                 },
                             )
                         }
@@ -789,6 +800,7 @@ class MapViewerActivity : ComponentActivity() {
     private fun loadFollowRoute(prefs: ViewerPreferences, ctrl: MapLibreController, frame: Boolean = false) {
         val id = prefs.activeFollowTrackId
         DebugLog.i("Follow", "loadFollowRoute · id=$id · frame=$frame")
+        announcedTurns.clear() // new route → new turn indices
         if (id <= 0) return
         lifecycleScope.launch {
             val gpx = RumbApplication.from(this@MapViewerActivity).trackRepository.loadGpxRoute(id)
@@ -934,6 +946,32 @@ class MapViewerActivity : ComponentActivity() {
                     DebugLog.i("Follow", "de nou EN ruta · ${state.offRouteMeters?.toInt()}m")
                 cat.rumb.app.viewer.follow.OffRouteAlerter.Event.NONE -> {}
             }
+
+            // Turn-by-turn warnings: heads-up (~150 m) + at-the-turn, each once per turn. Works
+            // whether or not we're recording — navigation matters while just following too.
+            val onRoute = (state.offRouteMeters ?: 0.0) <= offRouteThreshold
+            val turn = state.nextTurn
+            if (turnVoiceOn && turn != null && onRoute) {
+                val tier = when {
+                    turn.distanceM <= 60 -> 1
+                    turn.distanceM <= 170 -> 0
+                    else -> null
+                }
+                if (tier != null && announcedTurns.add(turn.index to tier)) {
+                    if (announceVoice && announcer != null) {
+                        announcer?.speak(
+                            cat.rumb.app.viewer.audio.AnnouncementText.turn(
+                                announceLang, turn.left, if (tier == 0) 150 else 0,
+                            ),
+                        )
+                    } else {
+                        AlertFeedback.beeps(if (tier == 0) 2 else 3)
+                    }
+                    DebugLog.d("Follow", "gir ${if (turn.left) "esquerra" else "dreta"} · tier$tier · ${turn.distanceM.toInt()}m")
+                }
+            }
+            // Forget turns already behind us so the set doesn't grow along the route.
+            announcedTurns.removeAll { it.first < state.nearestIndex }
         }
 
         // Ghost race: place the ghost at its own elapsed-time position and compute the delta vs us.
@@ -952,6 +990,13 @@ class MapViewerActivity : ComponentActivity() {
                 }
             }
         }
+
+        // Live calorie estimate (MET-based; generic activity until the user saves with a type).
+        metrics = metrics.copy(
+            caloriesKcal = cat.rumb.app.data.tracks.Calories.kcal(
+                null, weightKg, java.time.Duration.ofMillis(metrics.movingTime.inWholeMilliseconds),
+            ).takeIf { recording },
+        )
 
         if (recording) handleAnnouncements(metrics)
 
@@ -1121,6 +1166,11 @@ private fun SaveRecordingDialog(
         defaultName = defaultName,
         folders = folders,
         activityTypes = cat.rumb.app.manager.screens.rememberActivityTypeOptions(prefs),
+        initialTypeId = cat.rumb.app.data.tracks.ActivityTypeSuggester.suggest(
+            avgMovingSpeedKmh = state.statistics.avgMovingSpeedMeterPerSecond?.times(3.6),
+            ascentM = state.statistics.elevationGainMeter,
+            distanceM = state.statistics.totalDistanceMeter,
+        ),
         confirmLabel = androidx.compose.ui.res.stringResource(R.string.viewer_save),
         dismissLabel = androidx.compose.ui.res.stringResource(R.string.viewer_discard),
         onConfirm = onSave,

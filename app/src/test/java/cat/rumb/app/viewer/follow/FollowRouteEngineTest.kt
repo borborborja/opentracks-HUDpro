@@ -65,6 +65,21 @@ class FollowRouteEngineTest {
     }
 
     @Test
+    fun nextTurnCarriesDirection() {
+        // North then east = right turn; north then west = left turn.
+        val rightTurn = FollowRouteEngine(
+            listOf(GeoPoint(41.0, 2.0), GeoPoint(41.01, 2.0), GeoPoint(41.01, 2.01)),
+        )
+        assertThat(rightTurn.update(GeoPoint(41.0, 2.0))!!.nextTurn!!.left).isFalse()
+        val leftTurn = FollowRouteEngine(
+            listOf(GeoPoint(41.0, 2.0), GeoPoint(41.01, 2.0), GeoPoint(41.01, 1.99)),
+        )
+        assertThat(leftTurn.update(GeoPoint(41.0, 2.0))!!.nextTurn!!.left).isTrue()
+        // Past the turn: no next turn.
+        assertThat(rightTurn.update(GeoPoint(41.01, 2.01))!!.nextTurn).isNull()
+    }
+
+    @Test
     fun detectsUpcomingTurnDistance() {
         // North for ~2 legs, then a 90° turn east at vertex 2.
         val bent = listOf(

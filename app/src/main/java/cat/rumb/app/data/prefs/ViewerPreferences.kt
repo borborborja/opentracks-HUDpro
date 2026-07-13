@@ -156,6 +156,16 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_REC_COUNTDOWN, false)
         set(value) = prefs.edit().putBoolean(KEY_REC_COUNTDOWN, value).apply()
 
+    /** Voice/beep warnings before route turns while following. */
+    var turnVoice: Boolean
+        get() = prefs.getBoolean(KEY_TURN_VOICE, true)
+        set(value) = prefs.edit().putBoolean(KEY_TURN_VOICE, value).apply()
+
+    /** User's weight (kg), drives the MET calorie estimate. */
+    var userWeightKg: Int
+        get() = prefs.getInt(KEY_USER_WEIGHT, 75)
+        set(value) = prefs.edit().putInt(KEY_USER_WEIGHT, value).apply()
+
     /** User's maximum heart rate (bpm), drives the competition HR-zone analysis. */
     var userMaxHr: Int
         get() = prefs.getInt(KEY_USER_MAX_HR, 190)
@@ -290,6 +300,8 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_COMPETITION_HALO = "competition_halo"
         private const val KEY_COMPETITION_SECONDS = "competition_seconds"
         private const val KEY_USER_MAX_HR = "user_max_hr"
+        private const val KEY_TURN_VOICE = "turn_voice"
+        private const val KEY_USER_WEIGHT = "user_weight_kg"
         private const val KEY_REC_COUNTDOWN = "rec_countdown"
         private const val KEY_REC_AUTO_PAUSE_SEC = "rec_auto_pause_sec"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"

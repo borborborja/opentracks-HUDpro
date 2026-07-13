@@ -125,6 +125,8 @@ fun HomeScreen(
     onDownloadRouteMap: (cat.rumb.app.data.map.BoundingBox) -> Unit = {},
     onOpenCompetition: (Long) -> Unit = {},
     onStartCompetition: (Long) -> Unit = {},
+    onOpenRecords: () -> Unit = {},
+    onOpenHeatmap: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val app = remember { RumbApplication.from(context) }
@@ -247,6 +249,7 @@ fun HomeScreen(
                 Tab(tab == 0, onClick = { tab = 0; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_recorded)) })
                 Tab(tab == 1, onClick = { tab = 1; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_to_follow)) })
                 Tab(tab == 2, onClick = { tab = 2; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_competition)) })
+                Tab(tab == 3, onClick = { tab = 3; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_progress)) })
             }
 
             if (tab < 2) {
@@ -324,7 +327,7 @@ fun HomeScreen(
                         onFolderMenu = { name, action -> if (action == "rename") folderRename = name else folderDelete = name },
                     )
                 }
-            } else {
+            } else if (tab == 2) {
                 // Minimal toolbar for the competition tab: just the shared view-mode toggle.
                 Row(
                     Modifier.fillMaxWidth().padding(vertical = 6.dp),
@@ -354,6 +357,13 @@ fun HomeScreen(
                     onArchive = { refId, flag -> scope.launch { app.trackRepository.setCompetitionArchived(refId, flag) } },
                     onDeleteCompetition = { refId -> scope.launch { app.trackRepository.dissolveCompetition(refId) } },
                     onRemoveAttempt = { id -> scope.launch { app.trackRepository.removeFromCompetition(id) } },
+                )
+            } else {
+                ProgressTab(
+                    all = all,
+                    onOpenRecords = onOpenRecords,
+                    onOpenHeatmap = onOpenHeatmap,
+                    onOpenTraining = onOpenTraining,
                 )
             }
         }

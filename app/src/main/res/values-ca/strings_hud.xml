@@ -25,4 +25,5 @@
     <string name="hudel_record">Gravació</string>
     <string name="hudel_clock">Rellotge</string>
     <string name="metric_ghost_delta">Fantasma</string>
+    <string name="metric_calories">Calories</string>
 </resources>

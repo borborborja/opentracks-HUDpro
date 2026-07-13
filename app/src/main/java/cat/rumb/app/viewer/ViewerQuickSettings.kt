@@ -75,6 +75,8 @@ fun ViewerQuickSettings(
     onHalo: (Boolean) -> Unit = {},
     showSeconds: Boolean = true,
     onShowSeconds: (Boolean) -> Unit = {},
+    turnVoice: Boolean = true,
+    onTurnVoice: (Boolean) -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var tab by remember { mutableIntStateOf(0) }
@@ -103,7 +105,7 @@ fun ViewerQuickSettings(
         ) {
             when (tab) {
                 0 -> MapTab(selBase, offlineMaps) { id -> selBase = id; onSelectBaseMap(id) }
-                1 -> FollowTab(selFollow, tracks) { id -> selFollow = id; onSelectFollow(id) }
+                1 -> FollowTab(selFollow, tracks, turnVoice, onTurnVoice) { id -> selFollow = id; onSelectFollow(id) }
                 3 -> CompetitionQsTab(
                     ghostCandidates, opponentId, onSelectOpponent,
                     halo, onHalo, showSeconds, onShowSeconds,
@@ -142,7 +144,13 @@ private fun MapTab(current: String?, offlineMaps: List<OfflineMap>, onSelect: (S
 }
 
 @Composable
-private fun FollowTab(current: Long, tracks: List<FollowTrackEntity>, onSelect: (Long) -> Unit) {
+private fun FollowTab(
+    current: Long,
+    tracks: List<FollowTrackEntity>,
+    turnVoice: Boolean = true,
+    onTurnVoice: (Boolean) -> Unit = {},
+    onSelect: (Long) -> Unit,
+) {
     Text(stringResource(R.string.viewer_qs_route_to_follow), style = MaterialTheme.typography.labelLarge)
     RadioRow(
         stringResource(R.string.viewer_qs_route_none),
@@ -160,6 +168,9 @@ private fun FollowTab(current: Long, tracks: List<FollowTrackEntity>, onSelect: 
         Text(stringResource(R.string.viewer_qs_no_routes_yet),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
     }
+    HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    var tv by remember { mutableStateOf(turnVoice) }
+    ToggleRow(stringResource(R.string.viewer_qs_turn_voice), tv) { tv = it; onTurnVoice(it) }
 }
 
 @Composable

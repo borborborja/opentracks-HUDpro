@@ -210,6 +210,7 @@ private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit
     var autoPause by remember { mutableStateOf(prefs.recAutoPause) }
     var barometer by remember { mutableStateOf(prefs.recBarometer) }
     var maxHr by remember { mutableIntStateOf(prefs.userMaxHr) }
+    var weight by remember { mutableIntStateOf(prefs.userWeightKg) }
 
     Text(stringResource(R.string.settings_rec_gps_interval), style = MaterialTheme.typography.labelLarge)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -263,6 +264,18 @@ private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit
     )
     Text(
         stringResource(R.string.settings_max_hr_help),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
+    )
+    Text(stringResource(R.string.settings_weight, weight), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    Slider(
+        value = weight.toFloat(),
+        onValueChange = { weight = it.toInt(); prefs.userWeightKg = weight },
+        valueRange = 40f..150f,
+        steps = 109,
+    )
+    Text(
+        stringResource(R.string.settings_weight_help),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )

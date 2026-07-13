@@ -55,6 +55,7 @@ import cat.rumb.app.data.gpx.GpxShare
 import cat.rumb.app.data.opentracks.model.GeoPoint
 import cat.rumb.app.data.prefs.ViewerPreferences
 import cat.rumb.app.data.tracks.ActivityTypes
+import cat.rumb.app.data.tracks.Calories
 import cat.rumb.app.data.tracks.Difficulty
 import cat.rumb.app.data.tracks.DifficultyCalculator
 import cat.rumb.app.data.tracks.FollowTrackEntity
@@ -269,7 +270,10 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit) {
             Column(Modifier.padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 entity?.let { e -> TrainingHeader(e, custom) }
 
-                stats?.let { s -> StatsCard(s) }
+                stats?.let { s ->
+                    val kcal = Calories.kcal(entity?.activityType, prefs.userWeightKg, s.movingTime ?: s.totalTime)
+                    StatsCard(s, kcal)
+                }
 
                 if (samples.size >= 2) {
                     Card {
@@ -410,7 +414,7 @@ private fun difficultyColor(d: Difficulty): Color = when (d) {
 }
 
 @Composable
-private fun StatsCard(s: TrackStats) {
+private fun StatsCard(s: TrackStats, kcal: Int) {
     val cells = buildList {
         add(stringResource(R.string.training_stat_distance) to String.format("%.1f km", s.distanceM / 1000.0))
         add(stringResource(R.string.training_stat_total_time) to (s.totalTime?.let(::formatDuration) ?: "—"))
@@ -423,6 +427,7 @@ private fun StatsCard(s: TrackStats) {
         s.maxHr?.let { add(stringResource(R.string.training_stat_max_hr) to "${it.toInt()} bpm") }
         s.avgCadence?.let { add(stringResource(R.string.training_stat_avg_cadence) to "${it.toInt()} rpm") }
         s.avgPower?.let { add(stringResource(R.string.training_stat_avg_power) to "${it.toInt()} W") }
+        if (kcal > 0) add(stringResource(R.string.records_stat_calories) to "$kcal kcal")
     }
     Card {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
