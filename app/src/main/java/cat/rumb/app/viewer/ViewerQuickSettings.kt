@@ -61,6 +61,14 @@ fun ViewerQuickSettings(
     onFullscreen: (Boolean) -> Unit,
     onAdaptiveZoom: (Boolean) -> Unit,
     onDismiss: () -> Unit,
+    competing: Boolean = false,
+    ghostCandidates: List<FollowTrackEntity> = emptyList(),
+    opponentId: Long = -1L,
+    onSelectOpponent: (Long) -> Unit = {},
+    halo: Boolean = true,
+    onHalo: (Boolean) -> Unit = {},
+    showSeconds: Boolean = true,
+    onShowSeconds: (Boolean) -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var tab by remember { mutableIntStateOf(0) }
@@ -71,9 +79,11 @@ fun ViewerQuickSettings(
     var full by remember { mutableStateOf(fullscreen) }
     var autoZoom by remember { mutableStateOf(adaptiveZoom) }
 
+    val tabs = TABS + if (competing) listOf(R.string.viewer_qs_tab_competition) else emptyList()
+
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         ScrollableTabRow(selectedTabIndex = tab, edgePadding = 8.dp) {
-            TABS.forEachIndexed { i, title ->
+            tabs.forEachIndexed { i, title ->
                 Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(title)) })
             }
         }
@@ -85,6 +95,10 @@ fun ViewerQuickSettings(
             when (tab) {
                 0 -> MapTab(selBase, offlineMaps) { id -> selBase = id; onSelectBaseMap(id) }
                 1 -> FollowTab(selFollow, tracks) { id -> selFollow = id; onSelectFollow(id) }
+                3 -> CompetitionQsTab(
+                    ghostCandidates, opponentId, onSelectOpponent,
+                    halo, onHalo, showSeconds, onShowSeconds,
+                )
                 else -> OptionsTab(
                     orient, keep, full, autoZoom,
                     onOrientation = { orient = it; onOrientation(it) },
@@ -159,6 +173,47 @@ private fun OptionsTab(
     HorizontalDivider(Modifier.padding(vertical = 8.dp))
     ToggleRow(stringResource(R.string.viewer_qs_keep_screen_on), keepScreenOn, onKeepScreenOn)
     ToggleRow(stringResource(R.string.viewer_qs_fullscreen), fullscreen, onFullscreen)
+}
+
+@Composable
+private fun CompetitionQsTab(
+    candidates: List<FollowTrackEntity>,
+    opponentId: Long,
+    onSelectOpponent: (Long) -> Unit,
+    halo: Boolean,
+    onHalo: (Boolean) -> Unit,
+    showSeconds: Boolean,
+    onShowSeconds: (Boolean) -> Unit,
+) {
+    var selOpponent by remember { mutableLongStateOf(opponentId) }
+    var h by remember { mutableStateOf(halo) }
+    var secs by remember { mutableStateOf(showSeconds) }
+
+    fun fmtDuration(ms: Long?): String {
+        if (ms == null || ms <= 0) return "—"
+        val s = ms / 1000
+        return "%d:%02d:%02d".format(s / 3600, (s % 3600) / 60, s % 60)
+    }
+
+    val bestId = candidates.filter { (it.durationMs ?: 0) > 0 }.minByOrNull { it.durationMs!! }?.id
+
+    Text(stringResource(R.string.viewer_qs_opponent), style = MaterialTheme.typography.labelLarge)
+    candidates.forEach { c ->
+        val subtitle = fmtDuration(c.durationMs) +
+            if (c.id == bestId) " · " + stringResource(R.string.viewer_qs_opponent_best) else ""
+        RadioRow(c.name, subtitle, selOpponent == c.id) {
+            selOpponent = c.id
+            onSelectOpponent(c.id)
+        }
+    }
+    HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    ToggleRow(stringResource(R.string.viewer_qs_halo), h) { h = it; onHalo(it) }
+    Text(
+        stringResource(R.string.viewer_qs_halo_help),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
+    )
+    ToggleRow(stringResource(R.string.viewer_qs_ghost_seconds), secs) { secs = it; onShowSeconds(it) }
 }
 
 @Composable

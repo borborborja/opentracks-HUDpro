@@ -10,6 +10,8 @@ data class FollowState(
     val nearestIndex: Int,
     /** Distance (m) along the route to the next sharp turn ahead, or null if none. */
     val distanceToNextTurnM: Double? = null,
+    /** Distance (m) traveled along the route up to the nearest vertex (ghost-race progress). */
+    val progressMeters: Double = 0.0,
 ) {
     fun isOffRoute(thresholdMeters: Double = 40.0) = offRouteMeters > thresholdMeters
 }
@@ -76,6 +78,7 @@ class FollowRouteEngine(route: List<GeoPoint>, elevations: List<Double?> = empty
             bearingToRouteDeg = bearing,
             nearestIndex = nearest,
             distanceToNextTurnM = nextTurn,
+            progressMeters = cumulative[nearest],
         )
     }
 

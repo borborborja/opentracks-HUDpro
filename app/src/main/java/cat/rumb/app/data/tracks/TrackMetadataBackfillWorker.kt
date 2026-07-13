@@ -36,6 +36,14 @@ class TrackMetadataBackfillWorker(context: Context, params: WorkerParameters) : 
             )
         }
 
+        // Phase 1b (no network): total duration for pre-v5 tracks (0 marks untimed, no reprocess).
+        for (id in dao.idsNeedingDuration()) {
+            val entity = dao.getById(id) ?: continue
+            val points = runCatching { entity.gpx.byteInputStream().use { Gpx.read(it) }.points }
+                .getOrDefault(emptyList())
+            dao.setDuration(id, TrackRepository.durationMs(points))
+        }
+
         // Phase 2 (network): resolve municipalities, strictly rate-limited.
         val pending = dao.needingMunicipality()
         if (pending.isEmpty()) return Result.success()

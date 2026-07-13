@@ -61,4 +61,13 @@
     <string name="home_sort_difficulty">By difficulty</string>
     <string name="home_sort_type">By type</string>
     <string name="home_filter_all_types">All types</string>
+    <string name="home_tab_competition">Competition</string>
+    <string name="home_send_to_competition">Send to competition</string>
+    <string name="home_remove_from_competition">Remove from competition</string>
+    <string name="home_competition_created">Added to competition</string>
+    <string name="home_competition_untimed">This track has no timestamps and can\'t be raced</string>
+    <string name="home_competition_attempts">%1$d attempts</string>
+    <string name="home_competition_play">Race against this track</string>
+    <string name="home_competition_empty_title">No competitions yet</string>
+    <string name="home_competition_empty_body">Send a recorded training to competition from its ⋮ menu in the Recorded tab.</string>
 </resources>

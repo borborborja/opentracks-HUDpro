@@ -209,6 +209,7 @@ private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit
     var accuracy by remember { mutableFloatStateOf(prefs.recMaxAccuracyM) }
     var autoPause by remember { mutableStateOf(prefs.recAutoPause) }
     var barometer by remember { mutableStateOf(prefs.recBarometer) }
+    var maxHr by remember { mutableIntStateOf(prefs.userMaxHr) }
 
     Text(stringResource(R.string.settings_rec_gps_interval), style = MaterialTheme.typography.labelLarge)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -242,6 +243,18 @@ private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit
     }
     Text(
         stringResource(R.string.settings_rec_paired_sensors, prefs.bleSensorAddrs.size),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
+    )
+    Text(stringResource(R.string.settings_max_hr, maxHr), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    Slider(
+        value = maxHr.toFloat(),
+        onValueChange = { maxHr = it.toInt(); prefs.userMaxHr = maxHr },
+        valueRange = 120f..220f,
+        steps = 19,
+    )
+    Text(
+        stringResource(R.string.settings_max_hr_help),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )

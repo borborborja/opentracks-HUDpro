@@ -55,6 +55,8 @@ class MapLibreController(private val map: MapLibreMap) {
         const val FOLLOW_DONE_SOURCE = "follow-done-source"
         const val FOLLOW_DONE_LAYER = "follow-done-layer"
         const val FOLLOW_ARROW_LAYER = "follow-arrow-layer"
+        const val GHOST_SOURCE = "ghost-source"
+        const val GHOST_LAYER = "ghost-layer"
         const val TRACK_COLOR = "#E63946"
         const val FOLLOW_COLOR = "#3A86FF"
         const val MAX_COLOR_SEGMENTS = 500
@@ -138,6 +140,39 @@ class MapLibreController(private val map: MapLibreMap) {
             ),
         )
         waypointSource = waypoints
+
+        // Ghost (competition opponent) dot. CircleLayer only — a text SymbolLayer would need glyphs,
+        // which raster styles lack (and would break every GeoJSON layer; see note above).
+        val ghost = GeoJsonSource(GHOST_SOURCE, FeatureCollection.fromFeatures(emptyList()))
+        style.addSource(ghost)
+        style.addLayer(
+            CircleLayer(GHOST_LAYER, GHOST_SOURCE).withProperties(
+                PropertyFactory.circleRadius(7f),
+                PropertyFactory.circleColor("#9B5DE5"),
+                PropertyFactory.circleStrokeColor("#FFFFFF"),
+                PropertyFactory.circleStrokeWidth(2f),
+            ),
+        )
+        // Re-apply the last known ghost position so a base-map switch keeps the dot.
+        lastGhost?.let { setGhost(it) }
+    }
+
+    private var lastGhost: GeoPoint? = null
+
+    /** Moves the ghost dot to [point], or clears it when null. */
+    fun setGhost(point: GeoPoint?) {
+        lastGhost = point
+        // Fetch from the CURRENT style by id (field refs go stale after a restyle; see drawFollow).
+        val src = map.style?.getSourceAs<GeoJsonSource>(GHOST_SOURCE) ?: return
+        if (point == null) {
+            src.setGeoJson(FeatureCollection.fromFeatures(emptyList<Feature>()))
+        } else {
+            src.setGeoJson(
+                FeatureCollection.fromFeatures(
+                    listOf(Feature.fromGeometry(Point.fromLngLat(point.longitude, point.latitude))),
+                ),
+            )
+        }
     }
 
     private var trackUpdateCount = 0

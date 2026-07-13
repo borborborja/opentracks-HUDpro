@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="competition_title">Competició</string>
+    <string name="competition_play_cd">Competeix ara</string>
+    <string name="competition_col_date">Data</string>
+    <string name="competition_col_time">Temps</string>
+    <string name="competition_col_speed">Vel.</string>
+    <string name="competition_col_hr">FC</string>
+    <string name="competition_col_diff">Dif.</string>
+    <string name="competition_row_average">Mitjana</string>
+    <string name="competition_best_badge">Millor</string>
+    <string name="competition_gap_chart_title">Diferència vs millor (on guanyes o perds)</string>
+    <string name="competition_gap_ahead">Més ràpid que la millor</string>
+    <string name="competition_gap_behind">Més lent que la millor</string>
+    <string name="competition_hr_zones_title">Zones de freqüència cardíaca</string>
+    <string name="competition_hr_no_data">Cap intent té dades de FC</string>
+    <string name="competition_zone_fmt">Z%1$d</string>
+</resources>

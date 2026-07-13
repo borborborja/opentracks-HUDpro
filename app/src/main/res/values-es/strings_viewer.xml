@@ -49,4 +49,13 @@
     <string name="viewer_discard">Descartar</string>
     <string name="viewer_default_activity_name">Actividad %1$s</string>
     <string name="viewer_qs_route_meta">%1$.1f km · %2$d puntos</string>
+
+    <!-- Competition (ghost) mode -->
+    <string name="viewer_qs_tab_competition">Competición</string>
+    <string name="viewer_qs_opponent">Fantasma (rival)</string>
+    <string name="viewer_qs_opponent_best">mejor marca</string>
+    <string name="viewer_qs_halo">Halo de color en el borde</string>
+    <string name="viewer_qs_halo_help">Verde: vas por delante del fantasma. Rojo: vas por detrás. Azul: empate (dentro de ±5 m).</string>
+    <string name="viewer_qs_ghost_seconds">Mostrar los segundos estimados</string>
+    <string name="viewer_toast_ghost_failed">No se ha podido cargar el fantasma (track sin marcas de tiempo)</string>
 </resources>

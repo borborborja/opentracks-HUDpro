@@ -66,6 +66,7 @@ import cat.rumb.app.viewer.hud.MetricsCalculator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -151,6 +152,15 @@ class MapViewerActivity : ComponentActivity() {
     private var wasRecording = false
     private var uploadedThisSession = false
 
+    // Competition (ghost race) mode: race a previously recorded reference or one of its attempts.
+    private var competing = false
+    private var competitionRefId = -1L
+    private var ghostEngine: cat.rumb.app.data.competition.GhostEngine? = null
+    private var ghostCandidates: List<cat.rumb.app.data.tracks.FollowTrackEntity> = emptyList()
+    private var opponentId = -1L
+    private var ghostHaloOn = true
+    private var ghostSecondsOn = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         DebugLog.i("Viewer", "onCreate · dashboard=${intent.isDashboardAction()} · action=${intent.action}")
@@ -168,6 +178,18 @@ class MapViewerActivity : ComponentActivity() {
         units = cat.rumb.app.viewer.hud.UnitsStore.load(prefs)
         adaptiveZoom = prefs.adaptiveZoom
         setupAnnouncements(prefs)
+
+        // Competition (ghost) mode: the intent carries the reference track; follow it and load a ghost.
+        val compRef = intent.getLongExtra(EXTRA_COMPETITION_REF_ID, -1L)
+        if (compRef > 0) {
+            competing = true
+            competitionRefId = compRef
+            prefs.activeFollowTrackId = compRef
+            ghostHaloOn = prefs.competitionHalo
+            ghostSecondsOn = prefs.competitionShowSeconds
+            DebugLog.i("Competi", "mode competició · ref=$compRef")
+            loadGhostCandidates()
+        }
 
         // SurfaceView (default): renders GeoJSON overlays reliably. textureMode was a leftover from the
         // old Compose pager and broke the follow-route line rendering.
@@ -295,6 +317,24 @@ class MapViewerActivity : ComponentActivity() {
                                     prefs.adaptiveZoom = b; adaptiveZoom = b
                                 },
                                 onDismiss = { settingsOpenFlow.value = false },
+                                competing = competing,
+                                ghostCandidates = ghostCandidates,
+                                opponentId = opponentId,
+                                onSelectOpponent = { id ->
+                                    DebugLog.i("Competi", "quick-settings · rival → id=$id")
+                                    opponentId = id
+                                    loadGhost(id)
+                                },
+                                halo = ghostHaloOn,
+                                onHalo = { b ->
+                                    DebugLog.i("Competi", "quick-settings · halo → $b")
+                                    prefs.competitionHalo = b; ghostHaloOn = b
+                                },
+                                showSeconds = ghostSecondsOn,
+                                onShowSeconds = { b ->
+                                    DebugLog.i("Competi", "quick-settings · segons → $b")
+                                    prefs.competitionShowSeconds = b; ghostSecondsOn = b
+                                },
                             )
                         }
                         val pendingSave by saveDialogFlow.collectAsState()
@@ -531,6 +571,7 @@ class MapViewerActivity : ComponentActivity() {
                     name, pts, cat.rumb.app.data.tracks.TrackSource.RECORDED, remoteId = null,
                     kind = cat.rumb.app.data.tracks.TrackKind.TRAINING,
                     collection = folder, activityType = activityType,
+                    competitionRefId = competitionRefId.takeIf { competing },
                 )
                 if (folder != "General") {
                     val p = cat.rumb.app.data.prefs.ViewerPreferences.get(this@MapViewerActivity)
@@ -659,6 +700,44 @@ class MapViewerActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Loads the ghost candidates (the competition reference + every attempt recorded against it)
+     * and picks the default opponent: the best (lowest) timed attempt, else the reference itself.
+     */
+    private fun loadGhostCandidates() {
+        lifecycleScope.launch {
+            val all = RumbApplication.from(this@MapViewerActivity).trackRepository.observeSummaries().first()
+            val ref = all.firstOrNull { it.id == competitionRefId }
+            ghostCandidates = listOfNotNull(ref) + all.filter { it.competitionRefId == competitionRefId }
+            val best = ghostCandidates.filter { (it.durationMs ?: 0) > 0 }.minByOrNull { it.durationMs!! } ?: ref
+            opponentId = best?.id ?: -1L
+            DebugLog.i("Competi", "candidats=${ghostCandidates.size} · rival per defecte id=$opponentId")
+            if (opponentId > 0) loadGhost(opponentId)
+        }
+    }
+
+    /** (Re)builds the ghost engine from track [id]'s GPX (fails on untimed tracks → toast). */
+    private fun loadGhost(id: Long) {
+        lifecycleScope.launch {
+            runCatching {
+                cat.rumb.app.data.competition.GhostEngine(
+                    RumbApplication.from(this@MapViewerActivity).trackRepository.loadGpxRoute(id),
+                )
+            }.onSuccess {
+                ghostEngine = it
+                DebugLog.i("Competi", "ghost carregat · id=$id · ${it.totalMeters.toInt()}m · ${it.totalDurationMs / 1000}s")
+            }.onFailure { e ->
+                ghostEngine = null
+                android.widget.Toast.makeText(
+                    this@MapViewerActivity,
+                    getString(R.string.viewer_toast_ghost_failed),
+                    android.widget.Toast.LENGTH_SHORT,
+                ).show()
+                DebugLog.w("Competi", "ghost fallit · id=$id · ${e.message}")
+            }
+        }
+    }
+
     /** True recording state: native engine wins; else the user's optimistic tap; else OpenTracks. */
     private fun isRecordingNow(): Boolean =
         if (cat.rumb.app.data.recording.NativeRecording.isActive) true
@@ -746,6 +825,23 @@ class MapViewerActivity : ComponentActivity() {
             }
         }
 
+        // Ghost race: place the ghost at its own elapsed-time position and compute the delta vs us.
+        if (competing) {
+            val ghost = ghostEngine
+            if (ghost != null) {
+                val startTime = stats?.startTime?.takeIf { recording }
+                val elapsed = startTime?.let { java.time.Duration.between(it, java.time.Instant.now()).toMillis() } ?: 0L
+                ctrl.setGhost(ghost.positionAt(elapsed))
+                val offRoute = (state?.offRouteMeters ?: 0.0) > offRouteThreshold
+                if (startTime != null && state != null && !offRoute) {
+                    val delta = state.progressMeters - ghost.distanceAt(elapsed)
+                    // Rough seconds equivalent at the current speed (skip when nearly stopped).
+                    val secs = metrics.speedKmh?.takeIf { it > 1.0 }?.let { delta / (it / 3.6) }
+                    metrics = metrics.copy(ghostDeltaMeters = delta, ghostSecondsEst = secs)
+                }
+            }
+        }
+
         if (recording) handleAnnouncements(metrics)
 
         pushSpeed(metrics.speedKmh)
@@ -767,6 +863,9 @@ class MapViewerActivity : ComponentActivity() {
             following = following,
             offRouteThresholdM = offRouteThreshold,
             isPaused = isPaused,
+            competing = competing,
+            ghostHalo = ghostHaloOn,
+            ghostShowSeconds = ghostSecondsOn,
         )
     }
 
@@ -845,9 +944,12 @@ class MapViewerActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    private companion object {
-        const val TAG = "MapViewerActivity"
-        const val SPEED_HISTORY = 60
+    companion object {
+        private const val TAG = "MapViewerActivity"
+
+        /** Long extra: competition reference track id — launches the viewer in ghost-race mode. */
+        const val EXTRA_COMPETITION_REF_ID = "competition_ref_id"
+        private const val SPEED_HISTORY = 60
     }
 }
 

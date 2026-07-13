@@ -24,6 +24,7 @@ enum class HudMetric(val labelRes: Int) {
     POWER(cat.rumb.app.R.string.metric_power),
     REMAINING(cat.rumb.app.R.string.metric_remaining),
     OFF_ROUTE(cat.rumb.app.R.string.metric_off_route),
+    GHOST_DELTA(cat.rumb.app.R.string.metric_ghost_delta),
     ;
 
     /** Formatted value string for [m] under [u] (defaults to metric). */
@@ -45,6 +46,7 @@ enum class HudMetric(val labelRes: Int) {
         POWER -> fmt0(m.powerW)
         REMAINING -> fmt2(m.remainingDistanceKm?.let { u.distance.fromKm(it) })
         OFF_ROUTE -> fmt0(m.offRouteMeters?.let { u.elevation.fromMeters(it) })
+        GHOST_DELTA -> m.ghostDeltaMeters?.let { if (it >= 0) "+${it.toInt()}" else "${it.toInt()}" } ?: "—"
     }
 
     /** Unit label under [u] (defaults to metric). Empty for unit-less metrics (durations). */
@@ -60,6 +62,7 @@ enum class HudMetric(val labelRes: Int) {
         HEART_RATE -> "bpm"
         CADENCE -> "rpm"
         POWER -> "W"
+        GHOST_DELTA -> "m"
     }
 
     companion object {

@@ -29,6 +29,12 @@ class ManagerActivity : ComponentActivity() {
                         startActivity(Intent(this, MapViewerActivity::class.java))
                     },
                     startRoute = intent.getStringExtra(EXTRA_ROUTE),
+                    onStartCompetition = { refId ->
+                        startActivity(
+                            Intent(this, MapViewerActivity::class.java)
+                                .putExtra(MapViewerActivity.EXTRA_COMPETITION_REF_ID, refId),
+                        )
+                    },
                 )
             }
         }

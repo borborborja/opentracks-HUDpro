@@ -24,4 +24,5 @@
     <string name="hudel_zoom">Zoom</string>
     <string name="hudel_record">Recording</string>
     <string name="hudel_clock">Clock</string>
+    <string name="metric_ghost_delta">Ghost</string>
 </resources>

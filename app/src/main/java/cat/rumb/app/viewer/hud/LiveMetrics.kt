@@ -34,6 +34,9 @@ data class LiveMetrics(
     val remainingDistanceKm: Double? = null,
     val offRouteMeters: Double? = null,
     val bearingToRouteDeg: Double? = null,
+    // Competition (ghost race): + = ahead of the ghost, − = behind. Null when not racing.
+    val ghostDeltaMeters: Double? = null,
+    val ghostSecondsEst: Double? = null,
 )
 
 /** Optional source of instantaneous altitude for a coordinate (e.g. a DEM tile sampler). */

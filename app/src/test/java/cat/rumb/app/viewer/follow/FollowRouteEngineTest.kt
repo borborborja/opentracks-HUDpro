@@ -48,6 +48,17 @@ class FollowRouteEngineTest {
     }
 
     @Test
+    fun progressMetersMatchesCumulativeAtNearestVertex() {
+        val engine = FollowRouteEngine(route)
+        assertThat(engine.update(GeoPoint(41.000, 2.0))!!.progressMeters).isEqualTo(0.0)
+        // 4 equidistant vertices: the second vertex sits at 1/3 of the total.
+        val second = engine.update(GeoPoint(41.010, 2.0))!!
+        assertThat(second.progressMeters).isEqualTo(engine.totalMeters / 3, within(engine.totalMeters * 0.02))
+        assertThat(engine.update(GeoPoint(41.030, 2.0))!!.progressMeters)
+            .isEqualTo(engine.totalMeters, within(0.01))
+    }
+
+    @Test
     fun straightRouteHasNoTurn() {
         val engine = FollowRouteEngine(route)
         assertThat(engine.update(GeoPoint(41.000, 2.0))!!.distanceToNextTurnM).isNull()

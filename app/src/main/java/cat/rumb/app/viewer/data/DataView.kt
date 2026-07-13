@@ -39,6 +39,7 @@ fun DataView(data: HudData, modifier: Modifier = Modifier, reloadKey: Any? = nul
         DataLayoutStore.load(cat.rumb.app.data.prefs.ViewerPreferences.get(context))
     }
     val followOnly = setOf(HudMetric.REMAINING.name, HudMetric.OFF_ROUTE.name)
+    val competingOnly = setOf(HudMetric.GHOST_DELTA.name)
 
     // Live wall clock (updates every second).
     val clock by produceState(initialValue = "", layout.clockH24) {
@@ -55,8 +56,15 @@ fun DataView(data: HudData, modifier: Modifier = Modifier, reloadKey: Any? = nul
             field == DataLayout.CLOCK ->
                 DataCell(context.getString(cat.rumb.app.R.string.hudel_clock), clock, "", layout.spanOf(field), layout.colorOf(field))
             !data.following && field in followOnly -> null
+            !data.competing && field in competingOnly -> null
             else -> runCatching { HudMetric.valueOf(field) }.getOrNull()?.let {
-                DataCell(context.getString(it.labelRes), it.value(data.metrics, data.units), it.unit(data.units), layout.spanOf(field), layout.colorOf(field))
+                // The ghost tile is tinted by race state (ahead/behind/even) instead of the layout color.
+                val color = if (field == HudMetric.GHOST_DELTA.name) {
+                    data.ghostState?.colorHex ?: layout.colorOf(field)
+                } else {
+                    layout.colorOf(field)
+                }
+                DataCell(context.getString(it.labelRes), it.value(data.metrics, data.units), it.unit(data.units), layout.spanOf(field), color)
             }
         }
     }

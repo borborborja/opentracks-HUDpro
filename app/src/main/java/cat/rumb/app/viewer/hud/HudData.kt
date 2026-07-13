@@ -23,8 +23,33 @@ data class HudData(
     val units: Units = Units(),
     /** True while a native recording is paused (drives the record control's play button). */
     val isPaused: Boolean = false,
+    // Competition (ghost race) state — only meaningful when [competing] is true.
+    val competing: Boolean = false,
+    val ghostHalo: Boolean = true,
+    val ghostShowSeconds: Boolean = true,
 ) {
     /** Whether the off-route warning banner should be shown right now. */
     val isOffRoute: Boolean
         get() = following && (metrics.offRouteMeters ?: 0.0) > offRouteThresholdM
+
+    /** Race state vs the ghost: within ±[GHOST_EVEN_M] counts as even (blue). */
+    val ghostState: GhostState?
+        get() = metrics.ghostDeltaMeters?.let {
+            when {
+                it > GHOST_EVEN_M -> GhostState.AHEAD
+                it < -GHOST_EVEN_M -> GhostState.BEHIND
+                else -> GhostState.EVEN
+            }
+        }
+
+    companion object {
+        const val GHOST_EVEN_M = 5.0
+    }
+}
+
+/** Whether the athlete is ahead of, behind, or even with the ghost. */
+enum class GhostState(val colorHex: String) {
+    AHEAD("#2ECC71"),
+    BEHIND("#E63946"),
+    EVEN("#3A86FF"),
 }

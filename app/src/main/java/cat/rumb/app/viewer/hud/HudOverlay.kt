@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,12 +29,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 
 /**
  * The HUD drawn on top of the map in the viewer. Widgets are freely positioned by their fractional
@@ -48,11 +54,104 @@ fun HudOverlay(
     modifier: Modifier = Modifier,
 ) {
     Box(modifier.fillMaxSize().padding(12.dp)) {
+        if (data.competing && data.ghostHalo) {
+            data.ghostState?.let { GhostHalo(it) }
+        }
         HudZone.entries.forEach { zone ->
             ZoneGroup(zone, layout, data, controls)
         }
-        if (data.isOffRoute) {
-            OffRouteBanner(data.metrics, Modifier.align(Alignment.TopCenter).padding(top = SWITCHER_BAND))
+        Column(
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = SWITCHER_BAND),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            if (data.isOffRoute) {
+                OffRouteBanner(data.metrics)
+            }
+            if (data.competing && data.metrics.ghostDeltaMeters != null) {
+                GhostDeltaBadge(data)
+            }
+        }
+    }
+}
+
+/**
+ * Pulsating colored glow along the four screen edges: green ahead of the ghost, red behind, blue
+ * even. Peripheral-vision race feedback without reading a number. Not clickable (touches pass
+ * through to the map).
+ */
+@Composable
+private fun GhostHalo(state: GhostState) {
+    val pulse by androidx.compose.animation.core.rememberInfiniteTransition(label = "halo").animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.75f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(1000),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+        ),
+        label = "haloAlpha",
+    )
+    val color = Color(android.graphics.Color.parseColor(state.colorHex))
+    // `pulse` is read inside drawBehind so only the draw phase invalidates each animation frame.
+    Box(
+        Modifier.fillMaxSize().drawBehind {
+            val w = 14.dp.toPx()
+            val c = color.copy(alpha = pulse)
+            // Top edge.
+            drawRect(
+                brush = Brush.verticalGradient(listOf(c, Color.Transparent), startY = 0f, endY = w),
+                size = Size(size.width, w),
+            )
+            // Bottom edge (mirrored).
+            drawRect(
+                brush = Brush.verticalGradient(listOf(Color.Transparent, c), startY = size.height - w, endY = size.height),
+                topLeft = Offset(0f, size.height - w),
+                size = Size(size.width, w),
+            )
+            // Left edge.
+            drawRect(
+                brush = Brush.horizontalGradient(listOf(c, Color.Transparent), startX = 0f, endX = w),
+                size = Size(w, size.height),
+            )
+            // Right edge (mirrored).
+            drawRect(
+                brush = Brush.horizontalGradient(listOf(Color.Transparent, c), startX = size.width - w, endX = size.width),
+                topLeft = Offset(size.width - w, 0f),
+                size = Size(w, size.height),
+            )
+        },
+    )
+}
+
+/** Top-center pill with the signed distance to the ghost (and optionally the estimated seconds). */
+@Composable
+private fun GhostDeltaBadge(data: HudData) {
+    val delta = data.metrics.ghostDeltaMeters ?: return
+    val state = data.ghostState ?: return
+    val bg = Color(android.graphics.Color.parseColor(state.colorHex)).copy(alpha = 0.95f)
+    val metersText = if (delta >= 0) "+${delta.toInt()} m" else "${delta.toInt()} m"
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(bg)
+            .padding(horizontal = 18.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            metersText,
+            color = Color.White,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        val secs = data.metrics.ghostSecondsEst
+        if (data.ghostShowSeconds && secs != null) {
+            val s = secs.roundToInt()
+            Text(
+                "≈ ${if (s >= 0) "+$s" else "$s"} s",
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+            )
         }
     }
 }

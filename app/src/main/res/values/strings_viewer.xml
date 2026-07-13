@@ -49,4 +49,13 @@
     <string name="viewer_discard">Discard</string>
     <string name="viewer_default_activity_name">Activity %1$s</string>
     <string name="viewer_qs_route_meta">%1$.1f km · %2$d points</string>
+
+    <!-- Competition (ghost) mode -->
+    <string name="viewer_qs_tab_competition">Competition</string>
+    <string name="viewer_qs_opponent">Ghost (opponent)</string>
+    <string name="viewer_qs_opponent_best">best time</string>
+    <string name="viewer_qs_halo">Screen-edge color halo</string>
+    <string name="viewer_qs_halo_help">Green: you are ahead of the ghost. Red: you are behind. Blue: even (within ±5 m).</string>
+    <string name="viewer_qs_ghost_seconds">Show estimated seconds</string>
+    <string name="viewer_toast_ghost_failed">Could not load the ghost (track without timestamps)</string>
 </resources>

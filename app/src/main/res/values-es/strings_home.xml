@@ -61,4 +61,13 @@
     <string name="home_sort_difficulty">Por dificultad</string>
     <string name="home_sort_type">Por tipo</string>
     <string name="home_filter_all_types">Todos los tipos</string>
+    <string name="home_tab_competition">Competición</string>
+    <string name="home_send_to_competition">Enviar a competición</string>
+    <string name="home_remove_from_competition">Quitar de competición</string>
+    <string name="home_competition_created">Añadido a competición</string>
+    <string name="home_competition_untimed">Este track no tiene tiempos por punto y no se puede competir</string>
+    <string name="home_competition_attempts">%1$d intentos</string>
+    <string name="home_competition_play">Competir contra este track</string>
+    <string name="home_competition_empty_title">Aún no hay competiciones</string>
+    <string name="home_competition_empty_body">Envía un entrenamiento grabado a competición desde su menú ⋮ en la pestaña Registradas.</string>
 </resources>

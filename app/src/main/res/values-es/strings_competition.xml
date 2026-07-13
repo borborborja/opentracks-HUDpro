@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="competition_title">Competición</string>
+    <string name="competition_play_cd">Competir ahora</string>
+    <string name="competition_col_date">Fecha</string>
+    <string name="competition_col_time">Tiempo</string>
+    <string name="competition_col_speed">Vel.</string>
+    <string name="competition_col_hr">FC</string>
+    <string name="competition_col_diff">Dif.</string>
+    <string name="competition_row_average">Media</string>
+    <string name="competition_best_badge">Mejor</string>
+    <string name="competition_gap_chart_title">Diferencia vs mejor (dónde ganas o pierdes)</string>
+    <string name="competition_gap_ahead">Más rápido que la mejor</string>
+    <string name="competition_gap_behind">Más lento que la mejor</string>
+    <string name="competition_hr_zones_title">Zonas de frecuencia cardíaca</string>
+    <string name="competition_hr_no_data">Ningún intento tiene datos de FC</string>
+    <string name="competition_zone_fmt">Z%1$d</string>
+</resources>

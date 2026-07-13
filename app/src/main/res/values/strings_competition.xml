@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="competition_title">Competition</string>
+    <string name="competition_play_cd">Race now</string>
+    <string name="competition_col_date">Date</string>
+    <string name="competition_col_time">Time</string>
+    <string name="competition_col_speed">Speed</string>
+    <string name="competition_col_hr">HR</string>
+    <string name="competition_col_diff">Diff</string>
+    <string name="competition_row_average">Average</string>
+    <string name="competition_best_badge">Best</string>
+    <string name="competition_gap_chart_title">Gap vs best (where you gain or lose)</string>
+    <string name="competition_gap_ahead">Faster than best</string>
+    <string name="competition_gap_behind">Slower than best</string>
+    <string name="competition_hr_zones_title">Heart-rate zones</string>
+    <string name="competition_hr_no_data">No heart-rate data in any attempt</string>
+    <string name="competition_zone_fmt">Z%1$d</string>
+</resources>

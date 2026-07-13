@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cat.rumb.app.data.map.BoundingBox
+import cat.rumb.app.manager.screens.CompetitionDetailScreen
 import cat.rumb.app.manager.screens.DataDesignerScreen
 import cat.rumb.app.manager.screens.DebugLogScreen
 import cat.rumb.app.manager.screens.HomeScreen
@@ -32,12 +33,13 @@ object Routes {
     const val CREATE_ROUTE = "create_route"
     const val ROUTE_DETAIL = "route_detail"
     const val TRAINING_DETAIL = "training_detail"
+    const val COMPETITION_DETAIL = "competition_detail"
     const val EDIT_ROUTE = "edit_route"
     const val DOWNLOAD_AREA = "download_area"
 }
 
 @Composable
-fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null) {
+fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null, onStartCompetition: (Long) -> Unit = {}) {
     val nav = rememberNavController()
     androidx.compose.runtime.LaunchedEffect(nav) {
         nav.currentBackStackEntryFlow.collect { entry ->
@@ -60,6 +62,8 @@ fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null) {
                 onDownloadRouteMap = { bbox ->
                     nav.navigate("${Routes.DOWNLOAD_AREA}?w=${bbox.west}&s=${bbox.south}&e=${bbox.east}&n=${bbox.north}")
                 },
+                onOpenCompetition = { nav.navigate("${Routes.COMPETITION_DETAIL}/$it") },
+                onStartCompetition = onStartCompetition,
             )
         }
         composable(Routes.SETTINGS) {
@@ -137,6 +141,17 @@ fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null) {
         ) { entry ->
             val id = entry.arguments?.getLong("trackId") ?: 0L
             TrainingDetailScreen(trackId = id, onBack = { nav.popBackStack() })
+        }
+        composable(
+            route = "${Routes.COMPETITION_DETAIL}/{refId}",
+            arguments = listOf(navArgument("refId") { type = NavType.LongType }),
+        ) { entry ->
+            val id = entry.arguments?.getLong("refId") ?: 0L
+            CompetitionDetailScreen(
+                refId = id,
+                onBack = { nav.popBackStack() },
+                onStartCompetition = onStartCompetition,
+            )
         }
         composable(
             route = "${Routes.EDIT_ROUTE}/{trackId}",

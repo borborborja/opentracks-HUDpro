@@ -67,6 +67,7 @@ class TrackRepository(
         kind: String = TrackKind.ROUTE,
         collection: String = "General",
         activityType: String? = null,
+        competitionRefId: Long? = null,
     ): Long = withContext(Dispatchers.IO) {
         val gpxText = Gpx.write(name, points)
         dao.insert(
@@ -85,6 +86,8 @@ class TrackRepository(
                 startLat = points.firstOrNull()?.latitude,
                 startLon = points.firstOrNull()?.longitude,
                 metaDone = true,
+                competitionRefId = competitionRefId,
+                durationMs = durationMs(points),
             ),
         )
     }
@@ -102,6 +105,10 @@ class TrackRepository(
 
     suspend fun setActivityType(id: Long, type: String?) =
         withContext(Dispatchers.IO) { dao.setActivityType(id, type) }
+
+    /** Marks/unmarks a track as a competition reference. */
+    suspend fun setCompetition(id: Long, flag: Boolean) =
+        withContext(Dispatchers.IO) { dao.setCompetition(id, flag) }
 
     /** Existing folder names (collections) for [kind], for pickers outside the manager. */
     suspend fun collections(kind: String): List<String> =
@@ -164,6 +171,17 @@ class TrackRepository(
             var acc = 0.0
             for (i in 1 until points.size) acc += MetricsCalculator.distanceMeters(points[i - 1], points[i])
             return acc
+        }
+
+        /** Total elapsed ms between the first and last timed points; 0 when the track is untimed. */
+        fun durationMs(points: List<GpxPoint>): Long {
+            val first = points.firstOrNull { it.time != null }?.time
+            val last = points.lastOrNull { it.time != null }?.time
+            return if (first != null && last != null && last > first) {
+                java.time.Duration.between(first, last).toMillis()
+            } else {
+                0L
+            }
         }
 
         /** Cumulative positive elevation change (m) along the route; 0 if elevations are missing. */

@@ -118,6 +118,8 @@ fun HomeScreen(
     onEditRoute: (Long) -> Unit = {},
     onCreateRoute: () -> Unit = {},
     onDownloadRouteMap: (cat.rumb.app.data.map.BoundingBox) -> Unit = {},
+    onOpenCompetition: (Long) -> Unit = {},
+    onStartCompetition: (Long) -> Unit = {},
 ) {
     val context = LocalContext.current
     val app = remember { RumbApplication.from(context) }
@@ -196,6 +198,21 @@ fun HomeScreen(
         },
         onDelete = { deleteFor = it },
         onFollow = { t -> activeId = t.id; prefs.activeFollowTrackId = t.id },
+        onCompetition = { t ->
+            scope.launch {
+                if (t.isCompetition) {
+                    app.trackRepository.setCompetition(t.id, false)
+                } else {
+                    val pts = app.trackRepository.loadGpxRoute(t.id)
+                    if (cat.rumb.app.data.competition.GhostEngine.isTimed(pts)) {
+                        app.trackRepository.setCompetition(t.id, true)
+                        android.widget.Toast.makeText(context, context.getString(R.string.home_competition_created), android.widget.Toast.LENGTH_SHORT).show()
+                    } else {
+                        android.widget.Toast.makeText(context, context.getString(R.string.home_competition_untimed), android.widget.Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        },
     )
 
     Scaffold(
@@ -215,81 +232,86 @@ fun HomeScreen(
             TabRow(selectedTabIndex = tab, modifier = Modifier.padding(top = 12.dp)) {
                 Tab(tab == 0, onClick = { tab = 0; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_recorded)) })
                 Tab(tab == 1, onClick = { tab = 1; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_to_follow)) })
+                Tab(tab == 2, onClick = { tab = 2; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_competition)) })
             }
 
-            // Toolbar: view mode, folders, import, create route.
-            Row(
-                Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                IconButton(onClick = {
-                    viewMode = when (viewMode) {
-                        "LIST" -> "DETAILED"; "DETAILED" -> "TILES"; else -> "LIST"
+            if (tab < 2) {
+                // Toolbar: view mode, folders, import, create route.
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    IconButton(onClick = {
+                        viewMode = when (viewMode) {
+                            "LIST" -> "DETAILED"; "DETAILED" -> "TILES"; else -> "LIST"
+                        }
+                        prefs.routeViewMode = viewMode
+                    }) {
+                        Icon(
+                            when (viewMode) {
+                                "LIST" -> Icons.AutoMirrored.Filled.ViewList
+                                "DETAILED" -> Icons.AutoMirrored.Filled.ViewQuilt
+                                else -> Icons.Filled.GridView
+                            },
+                            contentDescription = stringResource(R.string.home_cd_view_mode),
+                        )
                     }
-                    prefs.routeViewMode = viewMode
-                }) {
-                    Icon(
-                        when (viewMode) {
-                            "LIST" -> Icons.AutoMirrored.Filled.ViewList
-                            "DETAILED" -> Icons.AutoMirrored.Filled.ViewQuilt
-                            else -> Icons.Filled.GridView
-                        },
-                        contentDescription = stringResource(R.string.home_cd_view_mode),
-                    )
+                    IconButton(onClick = { newFolder = true }) {
+                        Icon(Icons.Filled.CreateNewFolder, contentDescription = stringResource(R.string.home_new_folder))
+                    }
+                    SortMenuButton(sort) { s ->
+                        sort = s
+                        if (kind == TrackKind.TRAINING) prefs.trackSortTraining = s.name else prefs.trackSortRoute = s.name
+                    }
+                    FilterMenuButton(filterType, typeOptions) { f ->
+                        filterType = f
+                        if (kind == TrackKind.TRAINING) prefs.trackFilterTypeTraining = f else prefs.trackFilterTypeRoute = f
+                    }
+                    if (currentFolder != null) {
+                        AssistChip(
+                            onClick = { currentFolder = null },
+                            label = { Text(currentFolder ?: "") },
+                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.home_cd_exit_folder), Modifier.size(16.dp)) },
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    OutlinedButton(onClick = { importLauncher.launch(arrayOf("*/*")) }) {
+                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(18.dp))
+                        Text(" " + stringResource(R.string.home_import))
+                    }
+                    if (kind == TrackKind.ROUTE) {
+                        IconButton(onClick = onCreateRoute) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.home_cd_create_route)) }
+                    }
                 }
-                IconButton(onClick = { newFolder = true }) {
-                    Icon(Icons.Filled.CreateNewFolder, contentDescription = stringResource(R.string.home_new_folder))
-                }
-                SortMenuButton(sort) { s ->
-                    sort = s
-                    if (kind == TrackKind.TRAINING) prefs.trackSortTraining = s.name else prefs.trackSortRoute = s.name
-                }
-                FilterMenuButton(filterType, typeOptions) { f ->
-                    filterType = f
-                    if (kind == TrackKind.TRAINING) prefs.trackFilterTypeTraining = f else prefs.trackFilterTypeRoute = f
-                }
-                if (currentFolder != null) {
-                    AssistChip(
-                        onClick = { currentFolder = null },
-                        label = { Text(currentFolder ?: "") },
-                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.home_cd_exit_folder), Modifier.size(16.dp)) },
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-                OutlinedButton(onClick = { importLauncher.launch(arrayOf("*/*")) }) {
-                    Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(18.dp))
-                    Text(" " + stringResource(R.string.home_import))
-                }
-                if (kind == TrackKind.ROUTE) {
-                    IconButton(onClick = onCreateRoute) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.home_cd_create_route)) }
-                }
-            }
 
-            if (tracks.isEmpty() && folders.isEmpty()) {
-                Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                    Text(
-                        if (kind == TrackKind.TRAINING) {
-                            stringResource(R.string.home_empty_trainings)
-                        } else {
-                            stringResource(R.string.home_empty_routes)
-                        },
+                if (tracks.isEmpty() && folders.isEmpty()) {
+                    Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            if (kind == TrackKind.TRAINING) {
+                                stringResource(R.string.home_empty_trainings)
+                            } else {
+                                stringResource(R.string.home_empty_routes)
+                            },
+                        )
+                    }
+                } else if (viewMode == "TILES") {
+                    TilesView(
+                        tracks = tracks, folders = folders, currentFolder = currentFolder,
+                        kind = kind, activeId = activeId, actions = routeActions,
+                        onEnterFolder = { currentFolder = it },
+                        onFolderMenu = { name, action -> if (action == "rename") folderRename = name else folderDelete = name },
+                    )
+                } else {
+                    ListView(
+                        tracks = tracks, folders = folders, detailed = viewMode == "DETAILED",
+                        kind = kind, activeId = activeId, actions = routeActions,
+                        expanded = expanded,
+                        onFolderMenu = { name, action -> if (action == "rename") folderRename = name else folderDelete = name },
                     )
                 }
-            } else if (viewMode == "TILES") {
-                TilesView(
-                    tracks = tracks, folders = folders, currentFolder = currentFolder,
-                    kind = kind, activeId = activeId, actions = routeActions,
-                    onEnterFolder = { currentFolder = it },
-                    onFolderMenu = { name, action -> if (action == "rename") folderRename = name else folderDelete = name },
-                )
             } else {
-                ListView(
-                    tracks = tracks, folders = folders, detailed = viewMode == "DETAILED",
-                    kind = kind, activeId = activeId, actions = routeActions,
-                    expanded = expanded,
-                    onFolderMenu = { name, action -> if (action == "rename") folderRename = name else folderDelete = name },
-                )
+                CompetitionTab(all = all, onOpen = onOpenCompetition, onPlay = onStartCompetition)
             }
         }
     }
@@ -503,6 +525,7 @@ private data class RouteActions(
     val onDownloadMap: (FollowTrackEntity) -> Unit,
     val onDelete: (FollowTrackEntity) -> Unit,
     val onFollow: (FollowTrackEntity) -> Unit,
+    val onCompetition: (FollowTrackEntity) -> Unit,
 )
 
 // --- List / detailed modes (folders collapse/expand) ---
@@ -628,6 +651,12 @@ private fun RouteMenu(t: FollowTrackEntity, kind: String, actions: RouteActions)
                 onClick = { open = false; actions.onEdit(t) },
             )
             DropdownMenuItem(text = { Text(stringResource(R.string.home_move_to_folder_ellipsis)) }, onClick = { open = false; actions.onMove(t) })
+            if (kind == TrackKind.TRAINING) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(if (t.isCompetition) R.string.home_remove_from_competition else R.string.home_send_to_competition)) },
+                    onClick = { open = false; actions.onCompetition(t) },
+                )
+            }
             if (kind == TrackKind.ROUTE) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.home_download_maps)) }, onClick = { open = false; actions.onDownloadMap(t) })
             }
@@ -779,6 +808,12 @@ private fun RouteMenuTinted(t: FollowTrackEntity, kind: String, actions: RouteAc
                 onClick = { open = false; actions.onEdit(t) },
             )
             DropdownMenuItem(text = { Text(stringResource(R.string.home_move_to_folder_ellipsis)) }, onClick = { open = false; actions.onMove(t) })
+            if (kind == TrackKind.TRAINING) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(if (t.isCompetition) R.string.home_remove_from_competition else R.string.home_send_to_competition)) },
+                    onClick = { open = false; actions.onCompetition(t) },
+                )
+            }
             if (kind == TrackKind.ROUTE) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.home_download_maps)) }, onClick = { open = false; actions.onDownloadMap(t) })
             }

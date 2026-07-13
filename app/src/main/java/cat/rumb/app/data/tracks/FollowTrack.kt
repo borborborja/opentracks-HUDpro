@@ -51,6 +51,12 @@ data class FollowTrackEntity(
     @ColumnInfo(name = "start_lon") val startLon: Double? = null,
     /** True once ascent/start have been extracted (municipality may still be pending). */
     @ColumnInfo(name = "meta_done") val metaDone: Boolean = false,
+    /** True when this track is a competition reference (appears in the Competition tab). */
+    @ColumnInfo(name = "is_competition") val isCompetition: Boolean = false,
+    /** Set on attempts recorded in competition mode: the reference track's id. */
+    @ColumnInfo(name = "competition_ref_id") val competitionRefId: Long? = null,
+    /** Total elapsed ms (first→last timed point). null = pending; 0 = checked, untimed. */
+    @ColumnInfo(name = "duration_ms") val durationMs: Long? = null,
 )
 
 /** Projection for the municipality backfill queue. */
@@ -64,7 +70,8 @@ data class IdLatLon(
 interface FollowTrackDao {
     @Query(
         "SELECT id, name, collection, source, distance_meters, point_count, created_at, remote_id, kind, " +
-            "activity_type, municipality, ascent_m, start_lat, start_lon, meta_done, '' AS gpx " +
+            "activity_type, municipality, ascent_m, start_lat, start_lon, meta_done, " +
+            "is_competition, competition_ref_id, duration_ms, '' AS gpx " +
             "FROM follow_tracks ORDER BY created_at DESC",
     )
     fun observeSummaries(): Flow<List<FollowTrackEntity>>
@@ -107,6 +114,15 @@ interface FollowTrackDao {
 
     @Query("SELECT DISTINCT collection FROM follow_tracks WHERE kind = :kind")
     suspend fun collections(kind: String): List<String>
+
+    @Query("UPDATE follow_tracks SET is_competition = :flag WHERE id = :id")
+    suspend fun setCompetition(id: Long, flag: Boolean)
+
+    @Query("UPDATE follow_tracks SET duration_ms = :ms WHERE id = :id")
+    suspend fun setDuration(id: Long, ms: Long)
+
+    @Query("SELECT id FROM follow_tracks WHERE duration_ms IS NULL")
+    suspend fun idsNeedingDuration(): List<Long>
 }
 
 @Database(
@@ -115,7 +131,7 @@ interface FollowTrackDao {
         cat.rumb.app.data.recording.RecordingEntity::class,
         cat.rumb.app.data.recording.RecordingPointEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -124,6 +140,15 @@ abstract class RumbDatabase : RoomDatabase() {
     abstract fun recordingDao(): cat.rumb.app.data.recording.RecordingDao
 
     companion object {
+        /** v5: competition mode (reference flag, attempt link, total duration). */
+        val MIGRATION_4_5 = object : androidx.room.migration.Migration(4, 5) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE follow_tracks ADD COLUMN is_competition INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE follow_tracks ADD COLUMN competition_ref_id INTEGER")
+                db.execSQL("ALTER TABLE follow_tracks ADD COLUMN duration_ms INTEGER")
+            }
+        }
+
         /** v4: activity type, municipality and sortable metadata on follow_tracks. */
         val MIGRATION_3_4 = object : androidx.room.migration.Migration(3, 4) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {

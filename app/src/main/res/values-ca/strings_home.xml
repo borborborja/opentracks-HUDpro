@@ -61,4 +61,13 @@
     <string name="home_sort_difficulty">Per dificultat</string>
     <string name="home_sort_type">Per tipus</string>
     <string name="home_filter_all_types">Tots els tipus</string>
+    <string name="home_tab_competition">Competició</string>
+    <string name="home_send_to_competition">Envia a competició</string>
+    <string name="home_remove_from_competition">Treu de competició</string>
+    <string name="home_competition_created">Afegit a competició</string>
+    <string name="home_competition_untimed">Aquest track no té temps per punt i no s\'hi pot competir</string>
+    <string name="home_competition_attempts">%1$d intents</string>
+    <string name="home_competition_play">Competeix contra aquest track</string>
+    <string name="home_competition_empty_title">Encara no hi ha competicions</string>
+    <string name="home_competition_empty_body">Envia un entrenament gravat a competició des del seu menú ⋮ a la pestanya Registrades.</string>
 </resources>
