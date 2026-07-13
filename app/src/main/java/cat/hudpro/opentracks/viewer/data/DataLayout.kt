@@ -65,7 +65,17 @@ data class DataLayout(
         return copy(fields = mutable)
     }
 
+    /**
+     * Migration: older layouts kept the clock OUT of [fields] (a trailing `showClock` tile). Now the
+     * clock is an orderable field like any other; append it when the legacy flag asks for it.
+     */
+    fun normalized(): DataLayout =
+        if (showClock && CLOCK !in fields) copy(fields = fields + CLOCK) else this
+
     companion object {
+        /** Field id of the clock tile (orderable/resizable like a metric). */
+        const val CLOCK = "CLOCK"
+
         /** Every metric, matching the original fixed grid. */
         val DEFAULT_FIELDS: List<String> = HudMetric.entries.map { it.name }
     }
@@ -76,11 +86,15 @@ object DataLayoutStore {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     fun load(prefs: ViewerPreferences): DataLayout {
-        val raw = prefs.dataLayoutJson ?: return DataLayout()
-        return runCatching { json.decodeFromString(DataLayout.serializer(), raw) }.getOrDefault(DataLayout())
+        val raw = prefs.dataLayoutJson ?: return DataLayout().normalized()
+        return runCatching { json.decodeFromString(DataLayout.serializer(), raw) }
+            .getOrDefault(DataLayout())
+            .normalized()
     }
 
     fun save(prefs: ViewerPreferences, layout: DataLayout) {
-        prefs.dataLayoutJson = json.encodeToString(DataLayout.serializer(), layout)
+        // Keep the legacy flag in sync so older readers behave.
+        val synced = layout.copy(showClock = DataLayout.CLOCK in layout.fields)
+        prefs.dataLayoutJson = json.encodeToString(DataLayout.serializer(), synced)
     }
 }

@@ -84,6 +84,9 @@ fun HudDesignerScreen(onBack: () -> Unit) {
     var configFor by remember { mutableStateOf<Int?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
 
+    // Edit mode owns all gestures: the system back gesture is annulled (leave via ←).
+    androidx.activity.compose.BackHandler(enabled = true) {}
+
     fun update(next: HudLayout) {
         layout = next
         HudLayoutStore.save(prefs, next) // live editing: always persisted

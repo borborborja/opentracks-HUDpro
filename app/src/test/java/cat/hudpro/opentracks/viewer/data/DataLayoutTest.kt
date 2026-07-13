@@ -108,4 +108,29 @@ class DataLayoutTest {
         val restored = json.decodeFromString(DataLayout.serializer(), json.encodeToString(DataLayout.serializer(), layout))
         assertThat(restored).isEqualTo(layout)
     }
+
+    @Test
+    fun normalizedMigratesLegacyClockIntoFields() {
+        val legacy = DataLayout(fields = listOf("SPEED"), showClock = true)
+        val n = legacy.normalized()
+        assertThat(n.fields).containsExactly("SPEED", DataLayout.CLOCK)
+        // Idempotent: normalizing again doesn't duplicate.
+        assertThat(n.normalized().fields).containsExactly("SPEED", DataLayout.CLOCK)
+    }
+
+    @Test
+    fun normalizedRespectsHiddenClock() {
+        val layout = DataLayout(fields = listOf("SPEED"), showClock = false)
+        assertThat(layout.normalized().fields).containsExactly("SPEED")
+    }
+
+    @Test
+    fun clockFieldSupportsSpanAndColor() {
+        val layout = DataLayout(fields = listOf(DataLayout.CLOCK), columns = 2)
+            .setSpan(DataLayout.CLOCK, 2)
+            .setColor(DataLayout.CLOCK, "#FFD166")
+        assertThat(layout.spanOf(DataLayout.CLOCK)).isEqualTo(2)
+        assertThat(layout.colorOf(DataLayout.CLOCK)).isEqualTo("#FFD166")
+        assertThat(layout.metrics()).isEmpty() // CLOCK is not a metric
+    }
 }

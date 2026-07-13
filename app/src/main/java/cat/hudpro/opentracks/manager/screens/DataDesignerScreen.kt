@@ -1,5 +1,6 @@
 package cat.hudpro.opentracks.manager.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,10 +14,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +25,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import cat.hudpro.opentracks.data.prefs.ViewerPreferences
 import cat.hudpro.opentracks.viewer.data.DataLayout
 import cat.hudpro.opentracks.viewer.data.DataLayoutStore
+import cat.hudpro.opentracks.viewer.data.DataTileContent
 import cat.hudpro.opentracks.viewer.hud.HudMetric
 import cat.hudpro.opentracks.viewer.hud.LiveMetrics
 import cat.hudpro.opentracks.viewer.hud.Units
@@ -75,13 +76,12 @@ private val SAMPLE_METRICS = LiveMetrics(
     isRecording = true,
 )
 
-private const val CLOCK_FIELD = "__clock__"
-
 /**
- * Full-screen editor for the "Dades" grid, mirroring the HUD editor: the grid IS the screen; the top
- * pill «Mètriques ▾» is the multiselect tile selector (with the global ⚙ to its right for columns and
- * clock format); tiles reorder by drag, resize with the corner handle (span snap) and configure via
- * their center gear. Every change auto-saves.
+ * Full-screen WYSIWYG editor for the "Dades" grid: tiles render with the EXACT live-view look
+ * ([DataTileContent]) in the same grid; the top pill «Mètriques ▾» adds/removes tiles live, the
+ * global ⚙ sets the columns; every tile (clock included) reorders by long-press drag, resizes with
+ * the corner handle (span snap) and configures via its center gear. Auto-saves on every change.
+ * The system back gesture is disabled here (exit with ←) so it can't steal widget drags.
  */
 @Composable
 fun DataDesignerScreen(onBack: () -> Unit) {
@@ -95,6 +95,9 @@ fun DataDesignerScreen(onBack: () -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
     var globalOpen by remember { mutableStateOf(false) }
 
+    // Edit mode owns all gestures: the system back gesture is annulled (leave via ←).
+    BackHandler(enabled = true) {}
+
     fun update(next: DataLayout) {
         layout = next
         DataLayoutStore.save(prefs, next) // live editing: always persisted
@@ -106,7 +109,8 @@ fun DataDesignerScreen(onBack: () -> Unit) {
                 Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(start = 12.dp, end = 12.dp, top = 56.dp, bottom = 12.dp),
+                    // Mirrors DataView's contentPadding (12 sides, 60 top for the pill band).
+                    .padding(start = 12.dp, end = 12.dp, top = 60.dp, bottom = 12.dp),
             ) {
                 TileGrid(
                     layout = layout,
@@ -121,7 +125,7 @@ fun DataDesignerScreen(onBack: () -> Unit) {
                         update(layout.setSpan(field, (layout.spanOf(field) + step).coerceIn(1, layout.columns)))
                     },
                 )
-                if (layout.fields.isEmpty() && !layout.showClock) {
+                if (layout.fields.isEmpty()) {
                     Text(
                         "Cap tile. Afegeix mètriques des de «Mètriques ▾».",
                         style = MaterialTheme.typography.bodySmall,
@@ -186,32 +190,14 @@ fun DataDesignerScreen(onBack: () -> Unit) {
                                     )
                                 }
                             }
-                            if (layout.showClock) {
-                                Text(
-                                    "Format del rellotge",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                                )
-                                Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    FilterChip(layout.clockH24, { update(layout.copy(clockH24 = true)) }, label = { Text("24 h") })
-                                    FilterChip(!layout.clockH24, { update(layout.copy(clockH24 = false)) }, label = { Text("12 h") })
-                                }
-                            }
                         }
                     }
                 }
             }
 
-            // Per-tile settings dialog.
+            // Per-tile settings dialog (clock gains the 24/12h chips).
             configFor?.let { field ->
-                if (field == CLOCK_FIELD) {
-                    ClockConfigDialog(
-                        layout = layout,
-                        onUpdate = ::update,
-                        onDismiss = { configFor = null },
-                    )
-                } else if (layout.contains(field)) {
+                if (layout.contains(field)) {
                     TileConfigDialog(
                         layout = layout,
                         field = field,
@@ -227,7 +213,7 @@ fun DataDesignerScreen(onBack: () -> Unit) {
     }
 }
 
-/** Multiselect dropdown: add/remove metric tiles live; the clock has its own row. */
+/** Multiselect dropdown: add/remove tiles live (the clock is just another row). */
 @Composable
 private fun MetricsDropdown(
     expanded: Boolean,
@@ -249,13 +235,14 @@ private fun MetricsDropdown(
             }
         }
         HorizontalDivider(Modifier.padding(vertical = 4.dp))
+        val clockOn = layout.contains(DataLayout.CLOCK)
         Row(
             Modifier
-                .clickable { onUpdate(layout.copy(showClock = !layout.showClock)) }
+                .clickable { onUpdate(if (clockOn) layout.remove(DataLayout.CLOCK) else layout.add(DataLayout.CLOCK)) }
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Checkbox(checked = layout.showClock, onCheckedChange = null)
+            Checkbox(checked = clockOn, onCheckedChange = null)
             Text("Rellotge", Modifier.padding(end = 16.dp))
         }
     }
@@ -269,12 +256,20 @@ private fun TileConfigDialog(
     onRemove: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val metric = runCatching { HudMetric.valueOf(field) }.getOrNull()
+    val isClock = field == DataLayout.CLOCK
+    val metric = if (isClock) null else runCatching { HudMetric.valueOf(field) }.getOrNull()
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(metric?.label ?: field) },
+        title = { Text(if (isClock) "Rellotge" else metric?.label ?: field) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (isClock) {
+                    Text("Format", style = MaterialTheme.typography.labelLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(layout.clockH24, { onUpdate(layout.copy(clockH24 = true)) }, label = { Text("24 h") })
+                        FilterChip(!layout.clockH24, { onUpdate(layout.copy(clockH24 = false)) }, label = { Text("12 h") })
+                    }
+                }
                 Text("Amplada", style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     (1..layout.columns).forEach { n ->
@@ -312,32 +307,21 @@ private fun TileConfigDialog(
     )
 }
 
-@Composable
-private fun ClockConfigDialog(layout: DataLayout, onUpdate: (DataLayout) -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Rellotge") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Format", style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(layout.clockH24, { onUpdate(layout.copy(clockH24 = true)) }, label = { Text("24 h") })
-                    FilterChip(!layout.clockH24, { onUpdate(layout.copy(clockH24 = false)) }, label = { Text("12 h") })
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fet") } },
-        dismissButton = {
-            TextButton(onClick = { onUpdate(layout.copy(showClock = false)); onDismiss() }) {
-                Text("Treure", color = MaterialTheme.colorScheme.error)
-            }
-        },
-    )
+/**
+ * Drop-target resolution: the tile containing [pointer], or — dragging over gaps — the tile whose
+ * vertical band contains pointer.y with the nearest horizontal center. Pure (unit-tested).
+ */
+internal fun nearestField(bounds: Map<String, Rect>, pointer: Offset, exclude: String): String? {
+    bounds.entries.firstOrNull { it.key != exclude && it.value.contains(pointer) }?.let { return it.key }
+    return bounds.entries
+        .filter { it.key != exclude && pointer.y >= it.value.top && pointer.y <= it.value.bottom }
+        .minByOrNull { kotlin.math.abs(it.value.center.x - pointer.x) }
+        ?.key
 }
 
 /**
- * The editable grid. Rows are packed by span (like the real Dades view). Long-press drag reorders
- * (launcher-style, live); the clock tile renders at the end (tap to configure, not draggable).
+ * The editable grid: rows packed by span exactly like the live view (10 dp gaps), long-press drag
+ * live-reorders (launcher-style) with gap-tolerant targeting.
  */
 @Composable
 private fun TileGrid(
@@ -355,13 +339,11 @@ private fun TileGrid(
     val currentLayout by rememberUpdatedState(layout)
     bounds.keys.retainAll(layout.fields.toSet())
 
-    // Pack fields into rows of `columns` capacity using each tile's span (clock appended last).
     val rows = remember(layout) {
         val out = mutableListOf<MutableList<String>>()
         var used = 0
-        val all = layout.fields + if (layout.showClock) listOf(CLOCK_FIELD) else emptyList()
-        for (f in all) {
-            val span = if (f == CLOCK_FIELD) 1 else layout.spanOf(f)
+        for (f in layout.fields) {
+            val span = layout.spanOf(f)
             if (out.isEmpty() || used + span > layout.columns) {
                 out.add(mutableListOf(f)); used = span
             } else {
@@ -371,9 +353,9 @@ private fun TileGrid(
         out
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         rows.forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEach { field ->
                     key(field) {
                         EditableTile(
@@ -382,29 +364,25 @@ private fun TileGrid(
                             units = units,
                             isSelected = selected == field,
                             isDragging = dragging == field,
-                            onSelect = { if (field == CLOCK_FIELD) onConfigure(field) else onSelect(field) },
+                            onSelect = { onSelect(field) },
                             onConfigure = { onConfigure(field) },
                             onBounds = { bounds[field] = it },
-                            onDragStart = { if (field != CLOCK_FIELD) onDragState(field) },
+                            onDragStart = { onDragState(field) },
                             onDragEnd = { onDragState(null) },
                             onDragTo = { pointer ->
-                                if (field == CLOCK_FIELD) return@EditableTile
-                                val target = bounds.entries
-                                    .firstOrNull { it.key != field && it.key != CLOCK_FIELD && it.value.contains(pointer) }?.key
+                                val target = nearestField(bounds, pointer, exclude = field)
                                 if (target != null) {
                                     val from = currentLayout.fields.indexOf(field)
                                     val to = currentLayout.fields.indexOf(target)
-                                    if (from >= 0 && to >= 0) onReorder(from, to)
+                                    if (from >= 0 && to >= 0 && from != to) onReorder(from, to)
                                 }
                             },
-                            onSpanStep = { step -> if (field != CLOCK_FIELD) onSpanStep(field, step) },
-                            modifier = Modifier.weight(
-                                (if (field == CLOCK_FIELD) 1 else layout.spanOf(field)).toFloat(),
-                            ),
+                            onSpanStep = { step -> onSpanStep(field, step) },
+                            modifier = Modifier.weight(layout.spanOf(field).toFloat()),
                         )
                     }
                 }
-                val usedSpan = row.sumOf { if (it == CLOCK_FIELD) 1 else layout.spanOf(it) }
+                val usedSpan = row.sumOf { layout.spanOf(it) }
                 if (usedSpan < layout.columns) Spacer(Modifier.weight((layout.columns - usedSpan).toFloat()))
             }
         }
@@ -427,26 +405,20 @@ private fun EditableTile(
     onSpanStep: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val metric = runCatching { HudMetric.valueOf(field) }.getOrNull()
-    val isClock = field == CLOCK_FIELD
+    val isClock = field == DataLayout.CLOCK
+    val metric = if (isClock) null else runCatching { HudMetric.valueOf(field) }.getOrNull()
     var origin by remember { mutableStateOf(Offset.Zero) }
     val interaction = remember { MutableInteractionSource() }
     val currentOnDragTo by rememberUpdatedState(onDragTo)
     val currentOnSpanStep by rememberUpdatedState(onSpanStep)
     var resizeAcc by remember { mutableStateOf(0f) }
 
-    val valueColor = layout.colorOf(field)?.let { hex ->
-        runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrNull()
-    } ?: Color.Unspecified
-
     Box(modifier) {
-        Column(
+        Box(
             Modifier
                 .fillMaxWidth()
                 .onGloballyPositioned { origin = it.boundsInRoot().topLeft; onBounds(it.boundsInRoot()) }
                 .alpha(if (isDragging) 0.45f else 1f)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
                 .then(
                     if (isSelected) {
                         Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
@@ -454,6 +426,8 @@ private fun EditableTile(
                         Modifier
                     },
                 )
+                // Widget drags near the screen edge must not become the system back gesture.
+                .systemGestureExclusion()
                 .clickable(interactionSource = interaction, indication = null, onClick = onSelect)
                 .pointerInput(field) {
                     detectDragGesturesAfterLongPress(
@@ -465,26 +439,22 @@ private fun EditableTile(
                             currentOnDragTo(origin + change.position)
                         },
                     )
-                }
-                .padding(12.dp),
-        ) {
-            Text(
-                (if (isClock) "Rellotge" else metric?.label ?: field).uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                if (isClock) {
-                    if (layout.clockH24) "18:42:07" else "6:42:07 PM"
-                } else {
-                    "${metric?.value(SAMPLE_METRICS, units) ?: "—"} ${metric?.unit(units) ?: ""}".trim()
                 },
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = valueColor,
+        ) {
+            // EXACT live-view tile (single source of truth → true WYSIWYG).
+            DataTileContent(
+                label = if (isClock) "Rellotge" else metric?.label ?: field,
+                value = when {
+                    isClock && layout.clockH24 -> "18:42:07"
+                    isClock -> "6:42:07 PM"
+                    else -> metric?.value(SAMPLE_METRICS, units) ?: "—"
+                },
+                unit = if (isClock) "" else metric?.unit(units) ?: "",
+                colorHex = layout.colorOf(field),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
-        if (isSelected && !isDragging && !isClock) {
+        if (isSelected && !isDragging) {
             // Center gear: tile settings.
             Box(
                 Modifier
@@ -506,6 +476,7 @@ private fun EditableTile(
                     .size(24.dp)
                     .clip(CircleShape)
                     .background(Color(0xCC000000))
+                    .systemGestureExclusion()
                     .pointerInput(field) {
                         detectDragGestures(
                             onDragStart = { resizeAcc = 0f },
@@ -519,7 +490,6 @@ private fun EditableTile(
                     },
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Filled.OpenInFull, contentDescription = "Redimensionar", tint = Color.White, modifier = Modifier.size(13.dp)) }
-            // Top-end ✕ shortcut removed in favor of the config dialog's Treure (less clutter).
         }
     }
 }

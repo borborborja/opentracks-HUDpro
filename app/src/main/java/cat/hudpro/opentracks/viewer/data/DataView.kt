@@ -38,20 +38,26 @@ fun DataView(data: HudData, modifier: Modifier = Modifier, reloadKey: Any? = nul
     val layout = remember(reloadKey) {
         DataLayoutStore.load(cat.hudpro.opentracks.data.prefs.ViewerPreferences.get(context))
     }
-    val followOnly = setOf(HudMetric.REMAINING, HudMetric.OFF_ROUTE)
-    val metrics = layout.metrics().filter { data.following || it !in followOnly }
-    val cells = remember(data, layout) {
-        metrics.map {
-            DataCell(it.label, it.value(data.metrics, data.units), it.unit(data.units), layout.spanOf(it.name), layout.colorOf(it.name))
-        }
-    }
+    val followOnly = setOf(HudMetric.REMAINING.name, HudMetric.OFF_ROUTE.name)
 
-    // Live wall clock tile (updates every second).
+    // Live wall clock (updates every second).
     val clock by produceState(initialValue = "", layout.clockH24) {
         val fmt = DateTimeFormatter.ofPattern(if (layout.clockH24) "HH:mm:ss" else "h:mm:ss a")
         while (true) {
             value = LocalTime.now().format(fmt)
             delay(1000)
+        }
+    }
+
+    // Cells strictly in fields order; the clock is just another field (orderable/resizable).
+    val cells = layout.fields.mapNotNull { field ->
+        when {
+            field == DataLayout.CLOCK ->
+                DataCell("Rellotge", clock, "", layout.spanOf(field), layout.colorOf(field))
+            !data.following && field in followOnly -> null
+            else -> runCatching { HudMetric.valueOf(field) }.getOrNull()?.let {
+                DataCell(it.label, it.value(data.metrics, data.units), it.unit(data.units), layout.spanOf(field), layout.colorOf(field))
+            }
         }
     }
 
@@ -64,17 +70,24 @@ fun DataView(data: HudData, modifier: Modifier = Modifier, reloadKey: Any? = nul
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(cells, span = { cell -> androidx.compose.foundation.lazy.grid.GridItemSpan(cell.span) }) { cell -> DataTile(cell) }
-            if (layout.showClock) item { DataTile(DataCell("Rellotge", clock, "")) }
         }
     }
 }
 
 @Composable
 private fun DataTile(cell: DataCell) {
-    Card {
+    DataTileContent(cell.label, cell.value, cell.unit, cell.color)
+}
+
+/**
+ * The one true Dades tile look, shared by the live view AND the editor so editing is WYSIWYG.
+ */
+@Composable
+fun DataTileContent(label: String, value: String, unit: String, colorHex: String?, modifier: Modifier = Modifier) {
+    Card(modifier) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                cell.label.uppercase(),
+                label.uppercase(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -82,16 +95,16 @@ private fun DataTile(cell: DataCell) {
                 verticalAlignment = androidx.compose.ui.Alignment.Bottom,
             ) {
                 Text(
-                    cell.value,
+                    value,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = cell.color?.let { hex ->
+                    color = colorHex?.let { hex ->
                         runCatching { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(hex)) }.getOrNull()
                     } ?: androidx.compose.ui.graphics.Color.Unspecified,
                 )
-                if (cell.unit.isNotEmpty()) {
+                if (unit.isNotEmpty()) {
                     Text(
-                        " ${cell.unit}",
+                        " $unit",
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(bottom = 4.dp),
                     )
