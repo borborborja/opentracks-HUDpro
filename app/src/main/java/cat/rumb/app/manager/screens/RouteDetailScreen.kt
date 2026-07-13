@@ -130,6 +130,13 @@ fun RouteDetailScreen(
                     modifier = Modifier.fillMaxWidth().height(120.dp),
                 )
 
+                if (entity?.archived == true) {
+                    Button(
+                        onClick = { scope.launch { app.trackRepository.setArchived(trackId, false); reloadTick++ } },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(stringResource(R.string.home_unarchive)) }
+                }
+                if (entity?.archived != true) {
                 Button(onClick = {
                     prefs.activeFollowTrackId = trackId
                     Toast.makeText(context, context.getString(R.string.routes_active_follow_toast), Toast.LENGTH_SHORT).show()
@@ -159,6 +166,7 @@ fun RouteDetailScreen(
                 OutlinedButton(onClick = { showDelete = true }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                     Text("  " + stringResource(R.string.routes_delete), color = MaterialTheme.colorScheme.error)
+                }
                 }
                 androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
             }

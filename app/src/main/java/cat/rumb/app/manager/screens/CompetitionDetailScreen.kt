@@ -124,8 +124,10 @@ fun CompetitionDetailScreen(refId: Long, onBack: () -> Unit, onStartCompetition:
         title = ref?.name ?: stringResource(R.string.competition_title),
         onBack = onBack,
         actions = {
-            IconButton(onClick = { onStartCompetition(refId) }) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.competition_play_cd))
+            if (ref?.competitionArchived != true) {
+                IconButton(onClick = { onStartCompetition(refId) }) {
+                    Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.competition_play_cd))
+                }
             }
         },
     ) { modifier ->

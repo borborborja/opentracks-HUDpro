@@ -70,4 +70,11 @@
     <string name="home_competition_play">Race against this track</string>
     <string name="home_competition_empty_title">No competitions yet</string>
     <string name="home_competition_empty_body">Send a recorded training to competition from its ⋮ menu in the Recorded tab.</string>
+    <string name="home_archive">Archive</string>
+    <string name="home_unarchive">Unarchive</string>
+    <string name="home_archived_folder">Archived</string>
+    <string name="home_archived_comp_title">Archived competition</string>
+    <string name="home_archived_comp_msg">This track belongs to an archived competition.</string>
+    <string name="home_archived_comp_unarchive">Unarchive that competition</string>
+    <string name="home_archived_comp_new">Create a new one</string>
 </resources>

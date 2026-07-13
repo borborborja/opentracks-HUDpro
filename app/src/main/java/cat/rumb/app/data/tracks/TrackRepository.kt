@@ -110,6 +110,25 @@ class TrackRepository(
     suspend fun setCompetition(id: Long, flag: Boolean) =
         withContext(Dispatchers.IO) { dao.setCompetition(id, flag) }
 
+    /** Archives/unarchives a single track (kept intact, incl. its folder). */
+    suspend fun setArchived(id: Long, flag: Boolean) =
+        withContext(Dispatchers.IO) { dao.setArchived(id, flag) }
+
+    /** Archives/unarchives a whole competition; membership (attempt links) is preserved. */
+    suspend fun setCompetitionArchived(refId: Long, flag: Boolean) =
+        withContext(Dispatchers.IO) { dao.setCompetitionArchived(refId, flag) }
+
+    /** Removes one attempt from its competition; the track itself stays in the library. */
+    suspend fun removeFromCompetition(id: Long) =
+        withContext(Dispatchers.IO) { dao.clearCompetitionRef(id) }
+
+    /** Deletes a competition (unflags the reference, unlinks attempts). All tracks stay. */
+    suspend fun dissolveCompetition(refId: Long) = withContext(Dispatchers.IO) {
+        dao.unlinkAttempts(refId)
+        dao.setCompetition(refId, false)
+        dao.setCompetitionArchived(refId, false)
+    }
+
     /** Existing folder names (collections) for [kind], for pickers outside the manager. */
     suspend fun collections(kind: String): List<String> =
         withContext(Dispatchers.IO) { dao.collections(kind) }

@@ -15,4 +15,11 @@
     <string name="competition_hr_zones_title">Heart-rate zones</string>
     <string name="competition_hr_no_data">No heart-rate data in any attempt</string>
     <string name="competition_zone_fmt">Z%1$d</string>
+    <string name="competition_archived_section">Archived</string>
+    <string name="competition_archive">Archive competition</string>
+    <string name="competition_unarchive">Unarchive</string>
+    <string name="competition_delete">Delete competition</string>
+    <string name="competition_delete_msg">The tracks themselves stay in the library.</string>
+    <string name="competition_remove_attempt">Remove from competition</string>
+    <string name="competition_cd_menu">Competition options</string>
 </resources>

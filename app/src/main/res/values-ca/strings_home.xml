@@ -70,4 +70,11 @@
     <string name="home_competition_play">Competeix contra aquest track</string>
     <string name="home_competition_empty_title">Encara no hi ha competicions</string>
     <string name="home_competition_empty_body">Envia un entrenament gravat a competició des del seu menú ⋮ a la pestanya Registrades.</string>
+    <string name="home_archive">Arxiva</string>
+    <string name="home_unarchive">Desarxiva</string>
+    <string name="home_archived_folder">Arxivats</string>
+    <string name="home_archived_comp_title">Competició arxivada</string>
+    <string name="home_archived_comp_msg">Aquest track forma part d\'una competició arxivada.</string>
+    <string name="home_archived_comp_unarchive">Desarxiva aquella competició</string>
+    <string name="home_archived_comp_new">Crea\'n una de nova</string>
 </resources>

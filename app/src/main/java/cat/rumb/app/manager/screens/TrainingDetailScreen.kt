@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import cat.rumb.app.data.map.MapSource
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
@@ -141,11 +142,20 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit) {
             }) {
                 Icon(Icons.Filled.IosShare, contentDescription = stringResource(R.string.training_action_export))
             }
-            IconButton(onClick = { showRename = true }) {
-                Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.training_action_rename))
-            }
-            IconButton(onClick = { showMenu = true }) {
-                Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.training_cd_more_actions))
+            if (entity?.archived == true) {
+                // Archived: stats stay visible, management is reduced to unarchive.
+                IconButton(onClick = {
+                    scope.launch { app.trackRepository.setArchived(trackId, false); reloadTick++ }
+                }) {
+                    Icon(Icons.Filled.Unarchive, contentDescription = stringResource(R.string.home_unarchive))
+                }
+            } else {
+                IconButton(onClick = { showRename = true }) {
+                    Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.training_action_rename))
+                }
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.training_cd_more_actions))
+                }
             }
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                 DropdownMenuItem(

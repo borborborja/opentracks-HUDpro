@@ -32,10 +32,12 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MoreVert
@@ -102,6 +104,9 @@ import org.maplibre.android.maps.Style
 
 internal const val ROOT = "General"
 
+/** Virtual folder id for archived tracks (not a real collection; the stored folder is preserved). */
+private const val ARCHIVED_FOLDER = "\u0000arxivats"
+
 /**
  * Home = route manager: the always-visible «Entrenament» button (map background) on top, then the
  * Registrades/Per seguir tabs with three view modes (list / detailed / tiles-with-track), folders,
@@ -143,7 +148,13 @@ fun HomeScreen(
         cat.rumb.app.data.tracks.ActivityTypes.decodeCustom(prefs.customActivityTypesJson)
     }
     val typeOptions = rememberActivityTypeOptions(prefs)
-    val tracks = cat.rumb.app.data.tracks.TrackSortFilter.apply(all.filter { it.kind == kind }, sort, filterType)
+    val tracks = cat.rumb.app.data.tracks.TrackSortFilter.apply(all.filter { it.kind == kind && !it.archived }, sort, filterType)
+    val archivedTracks = all.filter { it.kind == kind && it.archived }.sortedByDescending { it.createdAt }
+    // Tracks belonging to an ACTIVE competition (reference or attempt) show the trophy icon.
+    val activeCompIds = all.filter { it.isCompetition && !it.competitionArchived }.map { it.id }.toSet()
+    val compMemberIds = all.filter {
+        it.id in activeCompIds || (it.competitionRefId != null && it.competitionRefId in activeCompIds)
+    }.map { it.id }.toSet()
     val expanded = remember { mutableStateMapOf<String, Boolean>() }
     var activeId by remember { mutableLongStateOf(prefs.activeFollowTrackId) }
 
@@ -163,6 +174,7 @@ fun HomeScreen(
     var newFolder by remember { mutableStateOf(false) }
     var folderRename by remember { mutableStateOf<String?>(null) }
     var folderDelete by remember { mutableStateOf<String?>(null) }
+    var archivedCompFor by remember { mutableStateOf<Pair<FollowTrackEntity, FollowTrackEntity>?>(null) }
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -199,20 +211,22 @@ fun HomeScreen(
         onDelete = { deleteFor = it },
         onFollow = { t -> activeId = t.id; prefs.activeFollowTrackId = t.id },
         onCompetition = { t ->
-            scope.launch {
-                if (t.isCompetition) {
-                    app.trackRepository.setCompetition(t.id, false)
-                } else {
-                    val pts = app.trackRepository.loadGpxRoute(t.id)
-                    if (cat.rumb.app.data.competition.GhostEngine.isTimed(pts)) {
-                        app.trackRepository.setCompetition(t.id, true)
-                        android.widget.Toast.makeText(context, context.getString(R.string.home_competition_created), android.widget.Toast.LENGTH_SHORT).show()
-                    } else {
-                        android.widget.Toast.makeText(context, context.getString(R.string.home_competition_untimed), android.widget.Toast.LENGTH_LONG).show()
-                    }
+            val archivedRef = t.competitionRefId?.let { rid ->
+                all.firstOrNull { a -> a.id == rid && a.isCompetition && a.competitionArchived }
+            }
+            when {
+                // The archived reference itself: re-sending simply revives its competition.
+                t.isCompetition && t.competitionArchived -> scope.launch {
+                    app.trackRepository.setCompetitionArchived(t.id, false)
+                    android.widget.Toast.makeText(context, context.getString(R.string.home_competition_created), android.widget.Toast.LENGTH_SHORT).show()
                 }
+                t.isCompetition -> scope.launch { app.trackRepository.setCompetition(t.id, false) }
+                // Attempt of an archived competition: ask unarchive-vs-new.
+                archivedRef != null -> archivedCompFor = t to archivedRef
+                else -> scope.launch { createCompetitionFrom(context, app, t.id) }
             }
         },
+        onArchive = { t -> scope.launch { app.trackRepository.setArchived(t.id, !t.archived) } },
     )
 
     Scaffold(
@@ -271,7 +285,7 @@ fun HomeScreen(
                     if (currentFolder != null) {
                         AssistChip(
                             onClick = { currentFolder = null },
-                            label = { Text(currentFolder ?: "") },
+                            label = { Text(if (currentFolder == ARCHIVED_FOLDER) stringResource(R.string.home_archived_folder) else currentFolder ?: "") },
                             leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.home_cd_exit_folder), Modifier.size(16.dp)) },
                         )
                     }
@@ -297,21 +311,28 @@ fun HomeScreen(
                     }
                 } else if (viewMode == "TILES") {
                     TilesView(
-                        tracks = tracks, folders = folders, currentFolder = currentFolder,
-                        kind = kind, activeId = activeId, actions = routeActions,
+                        tracks = tracks, archived = archivedTracks, folders = folders, currentFolder = currentFolder,
+                        kind = kind, activeId = activeId, compIds = compMemberIds, actions = routeActions,
                         onEnterFolder = { currentFolder = it },
                         onFolderMenu = { name, action -> if (action == "rename") folderRename = name else folderDelete = name },
                     )
                 } else {
                     ListView(
-                        tracks = tracks, folders = folders, detailed = viewMode == "DETAILED",
-                        kind = kind, activeId = activeId, actions = routeActions,
+                        tracks = tracks, archived = archivedTracks, folders = folders, detailed = viewMode == "DETAILED",
+                        kind = kind, activeId = activeId, compIds = compMemberIds, actions = routeActions,
                         expanded = expanded,
                         onFolderMenu = { name, action -> if (action == "rename") folderRename = name else folderDelete = name },
                     )
                 }
             } else {
-                CompetitionTab(all = all, onOpen = onOpenCompetition, onPlay = onStartCompetition)
+                CompetitionTab(
+                    all = all,
+                    onOpen = onOpenCompetition,
+                    onPlay = onStartCompetition,
+                    onArchive = { refId, flag -> scope.launch { app.trackRepository.setCompetitionArchived(refId, flag) } },
+                    onDeleteCompetition = { refId -> scope.launch { app.trackRepository.dissolveCompetition(refId) } },
+                    onRemoveAttempt = { id -> scope.launch { app.trackRepository.removeFromCompetition(id) } },
+                )
             }
         }
     }
@@ -355,6 +376,29 @@ fun HomeScreen(
                 pendingTrainingImport = null
             },
             onDismiss = { pendingTrainingImport = null },
+        )
+    }
+
+    archivedCompFor?.let { (track, ref) ->
+        AlertDialog(
+            onDismissRequest = { archivedCompFor = null },
+            title = { Text(stringResource(R.string.home_archived_comp_title)) },
+            text = { Text(stringResource(R.string.home_archived_comp_msg) + "\n· " + ref.name) },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch { app.trackRepository.setCompetitionArchived(ref.id, false) }
+                    archivedCompFor = null
+                }) { Text(stringResource(R.string.home_archived_comp_unarchive)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    scope.launch {
+                        app.trackRepository.removeFromCompetition(track.id)
+                        createCompetitionFrom(context, app, track.id)
+                    }
+                    archivedCompFor = null
+                }) { Text(stringResource(R.string.home_archived_comp_new)) }
+            },
         )
     }
 
@@ -516,6 +560,17 @@ private fun FilterMenuButton(current: String?, options: List<ActivityTypeOption>
     }
 }
 
+/** Validates timestamps and flags [id] as a competition reference (with user feedback). */
+private suspend fun createCompetitionFrom(context: android.content.Context, app: RumbApplication, id: Long) {
+    val pts = app.trackRepository.loadGpxRoute(id)
+    if (cat.rumb.app.data.competition.GhostEngine.isTimed(pts)) {
+        app.trackRepository.setCompetition(id, true)
+        android.widget.Toast.makeText(context, context.getString(R.string.home_competition_created), android.widget.Toast.LENGTH_SHORT).show()
+    } else {
+        android.widget.Toast.makeText(context, context.getString(R.string.home_competition_untimed), android.widget.Toast.LENGTH_LONG).show()
+    }
+}
+
 /** Per-route callbacks bundled to keep signatures sane. */
 private data class RouteActions(
     val onOpen: (FollowTrackEntity) -> Unit,
@@ -526,6 +581,7 @@ private data class RouteActions(
     val onDelete: (FollowTrackEntity) -> Unit,
     val onFollow: (FollowTrackEntity) -> Unit,
     val onCompetition: (FollowTrackEntity) -> Unit,
+    val onArchive: (FollowTrackEntity) -> Unit,
 )
 
 // --- List / detailed modes (folders collapse/expand) ---
@@ -533,10 +589,12 @@ private data class RouteActions(
 @Composable
 private fun ListView(
     tracks: List<FollowTrackEntity>,
+    archived: List<FollowTrackEntity>,
     folders: List<String>,
     detailed: Boolean,
     kind: String,
     activeId: Long,
+    compIds: Set<Long>,
     actions: RouteActions,
     expanded: MutableMap<String, Boolean>,
     onFolderMenu: (String, String) -> Unit,
@@ -544,7 +602,7 @@ private fun ListView(
     val root = tracks.filter { it.collection == ROOT }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(root, key = { it.id }) { t ->
-            RouteRow(t, detailed, kind, activeId, actions)
+            RouteRow(t, detailed, kind, activeId, t.id in compIds, actions)
         }
         folders.forEach { folder ->
             val children = tracks.filter { it.collection == folder }
@@ -559,9 +617,39 @@ private fun ListView(
             }
             if (expanded[folder] == true) {
                 items(children, key = { it.id }) { t ->
-                    Box(Modifier.padding(start = 16.dp)) { RouteRow(t, detailed, kind, activeId, actions) }
+                    Box(Modifier.padding(start = 16.dp)) { RouteRow(t, detailed, kind, activeId, t.id in compIds, actions) }
                 }
             }
+        }
+        // Fixed "Archived" pseudo-folder: always last, cannot be renamed or deleted.
+        if (archived.isNotEmpty()) {
+            item(key = "folder-archived") {
+                ArchivedFolderHeader(
+                    count = archived.size,
+                    expanded = expanded[ARCHIVED_FOLDER] == true,
+                    onToggle = { expanded[ARCHIVED_FOLDER] = !(expanded[ARCHIVED_FOLDER] == true) },
+                )
+            }
+            if (expanded[ARCHIVED_FOLDER] == true) {
+                items(archived, key = { it.id }) { t ->
+                    Box(Modifier.padding(start = 16.dp)) { RouteRow(t, detailed, kind, activeId, false, actions) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArchivedFolderHeader(count: Int, expanded: Boolean, onToggle: () -> Unit) {
+    Card {
+        Row(
+            Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Inventory2, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+            Text("  " + stringResource(R.string.home_archived_folder), fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("$count  ", style = MaterialTheme.typography.bodySmall)
+            Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
         }
     }
 }
@@ -595,6 +683,7 @@ private fun RouteRow(
     detailed: Boolean,
     kind: String,
     activeId: Long,
+    inCompetition: Boolean,
     actions: RouteActions,
 ) {
     Card {
@@ -611,6 +700,14 @@ private fun RouteRow(
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.size(20.dp),
+                )
+            }
+            if (inCompetition) {
+                Icon(
+                    Icons.Filled.EmojiEvents,
+                    contentDescription = stringResource(R.string.home_tab_competition),
+                    tint = Color(0xFFF4A261),
+                    modifier = Modifier.size(18.dp),
                 )
             }
             Column(Modifier.weight(1f).padding(start = 4.dp)) {
@@ -646,19 +743,25 @@ private fun RouteMenu(t: FollowTrackEntity, kind: String, actions: RouteActions)
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             DropdownMenuItem(text = { Text(stringResource(R.string.home_open)) }, onClick = { open = false; actions.onOpen(t) })
             DropdownMenuItem(text = { Text(stringResource(R.string.home_export_gpx)) }, onClick = { open = false; actions.onExport(t) })
-            DropdownMenuItem(
-                text = { Text(stringResource(if (kind == TrackKind.ROUTE) R.string.home_edit_track else R.string.home_rename)) },
-                onClick = { open = false; actions.onEdit(t) },
-            )
-            DropdownMenuItem(text = { Text(stringResource(R.string.home_move_to_folder_ellipsis)) }, onClick = { open = false; actions.onMove(t) })
-            if (kind == TrackKind.TRAINING) {
+            if (t.archived) {
+                // Archived tracks: stats and export only, plus unarchive/delete.
+                DropdownMenuItem(text = { Text(stringResource(R.string.home_unarchive)) }, onClick = { open = false; actions.onArchive(t) })
+            } else {
                 DropdownMenuItem(
-                    text = { Text(stringResource(if (t.isCompetition) R.string.home_remove_from_competition else R.string.home_send_to_competition)) },
-                    onClick = { open = false; actions.onCompetition(t) },
+                    text = { Text(stringResource(if (kind == TrackKind.ROUTE) R.string.home_edit_track else R.string.home_rename)) },
+                    onClick = { open = false; actions.onEdit(t) },
                 )
-            }
-            if (kind == TrackKind.ROUTE) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.home_download_maps)) }, onClick = { open = false; actions.onDownloadMap(t) })
+                DropdownMenuItem(text = { Text(stringResource(R.string.home_move_to_folder_ellipsis)) }, onClick = { open = false; actions.onMove(t) })
+                if (kind == TrackKind.TRAINING) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(if (t.isCompetition && !t.competitionArchived) R.string.home_remove_from_competition else R.string.home_send_to_competition)) },
+                        onClick = { open = false; actions.onCompetition(t) },
+                    )
+                }
+                if (kind == TrackKind.ROUTE) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.home_download_maps)) }, onClick = { open = false; actions.onDownloadMap(t) })
+                }
+                DropdownMenuItem(text = { Text(stringResource(R.string.home_archive)) }, onClick = { open = false; actions.onArchive(t) })
             }
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.home_delete), color = MaterialTheme.colorScheme.error) },
@@ -673,15 +776,21 @@ private fun RouteMenu(t: FollowTrackEntity, kind: String, actions: RouteActions)
 @Composable
 private fun TilesView(
     tracks: List<FollowTrackEntity>,
+    archived: List<FollowTrackEntity>,
     folders: List<String>,
     currentFolder: String?,
     kind: String,
     activeId: Long,
+    compIds: Set<Long>,
     actions: RouteActions,
     onEnterFolder: (String) -> Unit,
     onFolderMenu: (String, String) -> Unit,
 ) {
-    val visible = if (currentFolder == null) tracks.filter { it.collection == ROOT } else tracks.filter { it.collection == currentFolder }
+    val visible = when (currentFolder) {
+        null -> tracks.filter { it.collection == ROOT }
+        ARCHIVED_FOLDER -> archived
+        else -> tracks.filter { it.collection == currentFolder }
+    }
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -696,9 +805,30 @@ private fun TilesView(
                     onMenu = { action -> onFolderMenu(folder, action) },
                 )
             }
+            if (archived.isNotEmpty()) {
+                item(key = "folder-archived") {
+                    ArchivedTile(count = archived.size, onOpen = { onEnterFolder(ARCHIVED_FOLDER) })
+                }
+            }
         }
         gridItems(visible, key = { it.id }) { t ->
-            RouteTile(t, kind, activeId, actions)
+            RouteTile(t, kind, activeId, t.id in compIds, actions)
+        }
+    }
+}
+
+@Composable
+private fun ArchivedTile(count: Int, onOpen: () -> Unit) {
+    Card(onClick = onOpen, modifier = Modifier.height(110.dp)) {
+        Column(
+            Modifier.fillMaxSize().padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Icon(Icons.Filled.Inventory2, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+            Column {
+                Text(stringResource(R.string.home_archived_folder), fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(stringResource(R.string.home_folder_routes_count, count), style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }
@@ -725,7 +855,7 @@ private fun FolderTile(name: String, count: Int, onOpen: () -> Unit, onMenu: (St
 }
 
 @Composable
-private fun RouteTile(t: FollowTrackEntity, kind: String, activeId: Long, actions: RouteActions) {
+private fun RouteTile(t: FollowTrackEntity, kind: String, activeId: Long, inCompetition: Boolean, actions: RouteActions) {
     val context = LocalContext.current
     val app = remember { RumbApplication.from(context) }
     // Lazily load + simplify the geometry for the background thumbnail.
@@ -779,6 +909,15 @@ private fun RouteTile(t: FollowTrackEntity, kind: String, activeId: Long, action
                         )
                         Spacer(Modifier.size(4.dp))
                     }
+                    if (inCompetition) {
+                        Icon(
+                            Icons.Filled.EmojiEvents,
+                            contentDescription = null,
+                            tint = Color(0xFFF4A261),
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(Modifier.size(4.dp))
+                    }
                     Text(t.name, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, style = MaterialTheme.typography.bodyMedium)
                 }
                 Text(
@@ -803,19 +942,24 @@ private fun RouteMenuTinted(t: FollowTrackEntity, kind: String, actions: RouteAc
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             DropdownMenuItem(text = { Text(stringResource(R.string.home_open)) }, onClick = { open = false; actions.onOpen(t) })
             DropdownMenuItem(text = { Text(stringResource(R.string.home_export_gpx)) }, onClick = { open = false; actions.onExport(t) })
-            DropdownMenuItem(
-                text = { Text(stringResource(if (kind == TrackKind.ROUTE) R.string.home_edit_track else R.string.home_rename)) },
-                onClick = { open = false; actions.onEdit(t) },
-            )
-            DropdownMenuItem(text = { Text(stringResource(R.string.home_move_to_folder_ellipsis)) }, onClick = { open = false; actions.onMove(t) })
-            if (kind == TrackKind.TRAINING) {
+            if (t.archived) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.home_unarchive)) }, onClick = { open = false; actions.onArchive(t) })
+            } else {
                 DropdownMenuItem(
-                    text = { Text(stringResource(if (t.isCompetition) R.string.home_remove_from_competition else R.string.home_send_to_competition)) },
-                    onClick = { open = false; actions.onCompetition(t) },
+                    text = { Text(stringResource(if (kind == TrackKind.ROUTE) R.string.home_edit_track else R.string.home_rename)) },
+                    onClick = { open = false; actions.onEdit(t) },
                 )
-            }
-            if (kind == TrackKind.ROUTE) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.home_download_maps)) }, onClick = { open = false; actions.onDownloadMap(t) })
+                DropdownMenuItem(text = { Text(stringResource(R.string.home_move_to_folder_ellipsis)) }, onClick = { open = false; actions.onMove(t) })
+                if (kind == TrackKind.TRAINING) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(if (t.isCompetition && !t.competitionArchived) R.string.home_remove_from_competition else R.string.home_send_to_competition)) },
+                        onClick = { open = false; actions.onCompetition(t) },
+                    )
+                }
+                if (kind == TrackKind.ROUTE) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.home_download_maps)) }, onClick = { open = false; actions.onDownloadMap(t) })
+                }
+                DropdownMenuItem(text = { Text(stringResource(R.string.home_archive)) }, onClick = { open = false; actions.onArchive(t) })
             }
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.home_delete), color = MaterialTheme.colorScheme.error) },

@@ -15,4 +15,11 @@
     <string name="competition_hr_zones_title">Zonas de frecuencia cardíaca</string>
     <string name="competition_hr_no_data">Ningún intento tiene datos de FC</string>
     <string name="competition_zone_fmt">Z%1$d</string>
+    <string name="competition_archived_section">Archivadas</string>
+    <string name="competition_archive">Archivar la competición</string>
+    <string name="competition_unarchive">Desarchivar</string>
+    <string name="competition_delete">Eliminar la competición</string>
+    <string name="competition_delete_msg">Los tracks se mantienen en la biblioteca.</string>
+    <string name="competition_remove_attempt">Quitar de la competición</string>
+    <string name="competition_cd_menu">Opciones de la competición</string>
 </resources>

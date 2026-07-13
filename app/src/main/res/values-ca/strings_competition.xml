@@ -15,4 +15,11 @@
     <string name="competition_hr_zones_title">Zones de freqüència cardíaca</string>
     <string name="competition_hr_no_data">Cap intent té dades de FC</string>
     <string name="competition_zone_fmt">Z%1$d</string>
+    <string name="competition_archived_section">Arxivades</string>
+    <string name="competition_archive">Arxiva la competició</string>
+    <string name="competition_unarchive">Desarxiva</string>
+    <string name="competition_delete">Elimina la competició</string>
+    <string name="competition_delete_msg">Els tracks es mantenen a la biblioteca.</string>
+    <string name="competition_remove_attempt">Treu de la competició</string>
+    <string name="competition_cd_menu">Opcions de la competició</string>
 </resources>

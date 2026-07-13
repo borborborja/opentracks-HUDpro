@@ -2,6 +2,7 @@ package cat.rumb.app.manager.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,16 +14,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,20 +55,25 @@ private fun formatDuration(ms: Long): String {
 }
 
 /**
- * Competition tab of Home: one card per reference track (a training «sent to competition»),
- * with the best time, the attempt count, a play button to race against it and an expandable
- * list of past attempts.
+ * Competition tab of Home: one card per ACTIVE reference track, plus a fixed "Archived" section.
+ * The library (Recorded tab) always owns the tracks — everything here only flips flags/links.
  */
 @Composable
 fun CompetitionTab(
     all: List<FollowTrackEntity>,
     onOpen: (Long) -> Unit,
     onPlay: (Long) -> Unit,
+    onArchive: (Long, Boolean) -> Unit,
+    onDeleteCompetition: (Long) -> Unit,
+    onRemoveAttempt: (Long) -> Unit,
 ) {
-    val refs = all.filter { it.isCompetition }
+    val refs = all.filter { it.isCompetition && !it.competitionArchived }
+    val archivedRefs = all.filter { it.isCompetition && it.competitionArchived }
     val attempts = all.filter { it.competitionRefId != null }.groupBy { it.competitionRefId }
+    var deleteFor by remember { mutableStateOf<FollowTrackEntity?>(null) }
+    var archivedOpen by remember { mutableStateOf(false) }
 
-    if (refs.isEmpty()) {
+    if (refs.isEmpty() && archivedRefs.isEmpty()) {
         Column(
             Modifier.fillMaxSize().padding(24.dp),
             verticalArrangement = Arrangement.Center,
@@ -90,10 +103,66 @@ fun CompetitionTab(
             CompetitionCard(
                 ref = ref,
                 attempts = attempts[ref.id].orEmpty(),
+                archived = false,
                 onOpen = { onOpen(ref.id) },
                 onPlay = { onPlay(ref.id) },
+                onArchive = { onArchive(ref.id, true) },
+                onUnarchive = {},
+                onDelete = { deleteFor = ref },
+                onRemoveAttempt = onRemoveAttempt,
             )
         }
+        // Fixed "Archived" section: competitions here keep their membership until unarchived.
+        if (archivedRefs.isNotEmpty()) {
+            item(key = "archived-header") {
+                Card(onClick = { archivedOpen = !archivedOpen }) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Inventory2, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+                        Text(
+                            "  " + stringResource(R.string.competition_archived_section),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text("${archivedRefs.size}  ", style = MaterialTheme.typography.bodySmall)
+                        Icon(if (archivedOpen) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
+                    }
+                }
+            }
+            if (archivedOpen) {
+                items(archivedRefs, key = { "arch-${it.id}" }) { ref ->
+                    CompetitionCard(
+                        ref = ref,
+                        attempts = attempts[ref.id].orEmpty(),
+                        archived = true,
+                        onOpen = { onOpen(ref.id) },
+                        onPlay = {},
+                        onArchive = {},
+                        onUnarchive = { onArchive(ref.id, false) },
+                        onDelete = { deleteFor = ref },
+                        onRemoveAttempt = onRemoveAttempt,
+                    )
+                }
+            }
+        }
+    }
+
+    deleteFor?.let { ref ->
+        AlertDialog(
+            onDismissRequest = { deleteFor = null },
+            title = { Text(stringResource(R.string.competition_delete)) },
+            text = { Text(stringResource(R.string.competition_delete_msg)) },
+            confirmButton = {
+                TextButton(onClick = { onDeleteCompetition(ref.id); deleteFor = null }) {
+                    Text(stringResource(R.string.home_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteFor = null }) { Text(stringResource(R.string.home_cancel)) }
+            },
+        )
     }
 }
 
@@ -101,10 +170,16 @@ fun CompetitionTab(
 private fun CompetitionCard(
     ref: FollowTrackEntity,
     attempts: List<FollowTrackEntity>,
+    archived: Boolean,
     onOpen: () -> Unit,
     onPlay: () -> Unit,
+    onArchive: () -> Unit,
+    onUnarchive: () -> Unit,
+    onDelete: () -> Unit,
+    onRemoveAttempt: (Long) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var menu by remember { mutableStateOf(false) }
     val timed = (attempts + ref).mapNotNull { it.durationMs }.filter { it > 0 }
     val best = timed.minOrNull()
 
@@ -126,18 +201,42 @@ private fun CompetitionCard(
                         maxLines = 1,
                     )
                 }
-                IconButton(onClick = onPlay) {
-                    Icon(
-                        Icons.Filled.PlayArrow,
-                        contentDescription = stringResource(R.string.home_competition_play),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
+                if (!archived) {
+                    IconButton(onClick = onPlay) {
+                        Icon(
+                            Icons.Filled.PlayArrow,
+                            contentDescription = stringResource(R.string.home_competition_play),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
                         if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                         contentDescription = null,
                     )
+                }
+                Box {
+                    IconButton(onClick = { menu = true }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.competition_cd_menu))
+                    }
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        if (archived) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.competition_unarchive)) },
+                                onClick = { menu = false; onUnarchive() },
+                            )
+                        } else {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.competition_archive)) },
+                                onClick = { menu = false; onArchive() },
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.competition_delete), color = MaterialTheme.colorScheme.error) },
+                            onClick = { menu = false; onDelete() },
+                        )
+                    }
                 }
             }
             AnimatedVisibility(visible = expanded) {
@@ -170,6 +269,15 @@ private fun CompetitionCard(
                                     Icons.Filled.Star,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(14.dp),
+                                )
+                            }
+                            // The track stays in the library; only the competition link is removed.
+                            IconButton(onClick = { onRemoveAttempt(attempt.id) }, modifier = Modifier.size(28.dp)) {
+                                Icon(
+                                    Icons.Filled.Close,
+                                    contentDescription = stringResource(R.string.competition_remove_attempt),
+                                    tint = MaterialTheme.colorScheme.outline,
                                     modifier = Modifier.size(14.dp),
                                 )
                             }

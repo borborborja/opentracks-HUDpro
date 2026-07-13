@@ -57,6 +57,10 @@ data class FollowTrackEntity(
     @ColumnInfo(name = "competition_ref_id") val competitionRefId: Long? = null,
     /** Total elapsed ms (first→last timed point). null = pending; 0 = checked, untimed. */
     @ColumnInfo(name = "duration_ms") val durationMs: Long? = null,
+    /** Archived tracks leave the normal lists (the "Arxivats" pseudo-folder) but keep everything. */
+    val archived: Boolean = false,
+    /** On competition references: the whole competition is archived (membership is kept). */
+    @ColumnInfo(name = "competition_archived") val competitionArchived: Boolean = false,
 )
 
 /** Projection for the municipality backfill queue. */
@@ -71,7 +75,7 @@ interface FollowTrackDao {
     @Query(
         "SELECT id, name, collection, source, distance_meters, point_count, created_at, remote_id, kind, " +
             "activity_type, municipality, ascent_m, start_lat, start_lon, meta_done, " +
-            "is_competition, competition_ref_id, duration_ms, '' AS gpx " +
+            "is_competition, competition_ref_id, duration_ms, archived, competition_archived, '' AS gpx " +
             "FROM follow_tracks ORDER BY created_at DESC",
     )
     fun observeSummaries(): Flow<List<FollowTrackEntity>>
@@ -123,6 +127,19 @@ interface FollowTrackDao {
 
     @Query("SELECT id FROM follow_tracks WHERE duration_ms IS NULL")
     suspend fun idsNeedingDuration(): List<Long>
+
+    @Query("UPDATE follow_tracks SET archived = :flag WHERE id = :id")
+    suspend fun setArchived(id: Long, flag: Boolean)
+
+    @Query("UPDATE follow_tracks SET competition_archived = :flag WHERE id = :id")
+    suspend fun setCompetitionArchived(id: Long, flag: Boolean)
+
+    @Query("UPDATE follow_tracks SET competition_ref_id = NULL WHERE id = :id")
+    suspend fun clearCompetitionRef(id: Long)
+
+    /** Dissolves a competition: unflags the reference and unlinks every attempt. Tracks stay. */
+    @Query("UPDATE follow_tracks SET competition_ref_id = NULL WHERE competition_ref_id = :refId")
+    suspend fun unlinkAttempts(refId: Long)
 }
 
 @Database(
@@ -131,7 +148,7 @@ interface FollowTrackDao {
         cat.rumb.app.data.recording.RecordingEntity::class,
         cat.rumb.app.data.recording.RecordingPointEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -140,6 +157,14 @@ abstract class RumbDatabase : RoomDatabase() {
     abstract fun recordingDao(): cat.rumb.app.data.recording.RecordingDao
 
     companion object {
+        /** v6: per-track archive + archived competitions. */
+        val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE follow_tracks ADD COLUMN archived INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE follow_tracks ADD COLUMN competition_archived INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         /** v5: competition mode (reference flag, attempt link, total duration). */
         val MIGRATION_4_5 = object : androidx.room.migration.Migration(4, 5) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {

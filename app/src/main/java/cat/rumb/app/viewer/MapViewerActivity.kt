@@ -285,7 +285,7 @@ class MapViewerActivity : ComponentActivity() {
                                 currentBaseMapId = prefs.baseMapId,
                                 offlineMaps = cat.rumb.app.data.map.OfflineMapStore.get(this@MapViewerActivity).list(),
                                 currentFollowId = prefs.activeFollowTrackId,
-                                tracks = tracks,
+                                tracks = tracks.filter { !it.archived },
                                 orientation = prefs.mapOrientation,
                                 keepScreenOn = prefs.keepScreenOn,
                                 fullscreen = prefs.fullscreen,
