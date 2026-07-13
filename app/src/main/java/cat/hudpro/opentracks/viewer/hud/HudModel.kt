@@ -6,24 +6,24 @@ import kotlin.math.roundToInt
 import kotlin.time.Duration
 
 /** A single displayable metric. Formats a [LiveMetrics] value and its unit label under the chosen [Units]. */
-enum class HudMetric(val label: String) {
-    SPEED("Velocitat"),
-    AVG_SPEED("Vel. mitjana"),
-    MAX_SPEED("Vel. màx"),
-    DISTANCE("Distància"),
-    DURATION("Temps"),
-    MOVING_TIME("Temps mov."),
-    PACE("Ritme"),
-    HEADING("Rumb"),
-    ELEV_GAIN("Desnivell +"),
-    ALTITUDE("Altitud"),
-    SLOPE("Pendent"),
-    VAM("VAM"),
-    HEART_RATE("FC"),
-    CADENCE("Cadència"),
-    POWER("Potència"),
-    REMAINING("Restant"),
-    OFF_ROUTE("Desviació"),
+enum class HudMetric(val labelRes: Int) {
+    SPEED(cat.hudpro.opentracks.R.string.metric_speed),
+    AVG_SPEED(cat.hudpro.opentracks.R.string.metric_avg_speed),
+    MAX_SPEED(cat.hudpro.opentracks.R.string.metric_max_speed),
+    DISTANCE(cat.hudpro.opentracks.R.string.metric_distance),
+    DURATION(cat.hudpro.opentracks.R.string.metric_duration),
+    MOVING_TIME(cat.hudpro.opentracks.R.string.metric_moving_time),
+    PACE(cat.hudpro.opentracks.R.string.metric_pace),
+    HEADING(cat.hudpro.opentracks.R.string.metric_heading),
+    ELEV_GAIN(cat.hudpro.opentracks.R.string.metric_elev_gain),
+    ALTITUDE(cat.hudpro.opentracks.R.string.metric_altitude),
+    SLOPE(cat.hudpro.opentracks.R.string.metric_slope),
+    VAM(cat.hudpro.opentracks.R.string.metric_vam),
+    HEART_RATE(cat.hudpro.opentracks.R.string.metric_heart_rate),
+    CADENCE(cat.hudpro.opentracks.R.string.metric_cadence),
+    POWER(cat.hudpro.opentracks.R.string.metric_power),
+    REMAINING(cat.hudpro.opentracks.R.string.metric_remaining),
+    OFF_ROUTE(cat.hudpro.opentracks.R.string.metric_off_route),
     ;
 
     /** Formatted value string for [m] under [u] (defaults to metric). */
@@ -92,7 +92,7 @@ enum class HudCategory { METRIC, CHART, CONTROL, EXTRA }
 /** Descriptor of a placeable HUD element, resolvable from a stable [id]. */
 data class HudElement(
     val id: String,
-    val label: String,
+    val labelRes: Int,
     val category: HudCategory,
     val metric: HudMetric? = null,
 )
@@ -110,14 +110,14 @@ object HudCatalog {
     fun idOf(metric: HudMetric) = "metric:${metric.name}"
 
     val elements: List<HudElement> = buildList {
-        HudMetric.entries.forEach { add(HudElement(idOf(it), it.label, HudCategory.METRIC, it)) }
-        add(HudElement(CHART_SPEED, "Gràfic velocitat", HudCategory.CHART))
-        add(HudElement(CHART_ELEVATION, "Perfil altitud", HudCategory.CHART))
-        add(HudElement(CONTROL_RECENTER, "Centrar/seguir", HudCategory.CONTROL))
-        add(HudElement(CONTROL_COMPASS, "Brúixola", HudCategory.CONTROL))
-        add(HudElement(CONTROL_ZOOM, "Zoom", HudCategory.CONTROL))
-        add(HudElement(CONTROL_RECORD, "Gravació", HudCategory.CONTROL))
-        add(HudElement(WIDGET_CLOCK, "Rellotge", HudCategory.EXTRA))
+        HudMetric.entries.forEach { add(HudElement(idOf(it), it.labelRes, HudCategory.METRIC, it)) }
+        add(HudElement(CHART_SPEED, cat.hudpro.opentracks.R.string.hudel_chart_speed, HudCategory.CHART))
+        add(HudElement(CHART_ELEVATION, cat.hudpro.opentracks.R.string.hudel_chart_elevation, HudCategory.CHART))
+        add(HudElement(CONTROL_RECENTER, cat.hudpro.opentracks.R.string.hudel_recenter, HudCategory.CONTROL))
+        add(HudElement(CONTROL_COMPASS, cat.hudpro.opentracks.R.string.hudel_compass, HudCategory.CONTROL))
+        add(HudElement(CONTROL_ZOOM, cat.hudpro.opentracks.R.string.hudel_zoom, HudCategory.CONTROL))
+        add(HudElement(CONTROL_RECORD, cat.hudpro.opentracks.R.string.hudel_record, HudCategory.CONTROL))
+        add(HudElement(WIDGET_CLOCK, cat.hudpro.opentracks.R.string.hudel_clock, HudCategory.EXTRA))
     }
 
     private val byId = elements.associateBy { it.id }
@@ -236,7 +236,11 @@ data class HudLayout(
             ),
         )
         val DEFAULT = CYCLING
-        val PRESETS = mapOf("Ciclisme" to CYCLING, "Trail" to TRAIL, "Esquí" to SKI)
+        val PRESETS = mapOf(
+            cat.hudpro.opentracks.R.string.preset_cycling to CYCLING,
+            cat.hudpro.opentracks.R.string.preset_trail to TRAIL,
+            cat.hudpro.opentracks.R.string.preset_ski to SKI,
+        )
         const val MIN_WIDGET_SCALE = 0.6f
         const val MAX_WIDGET_SCALE = 2.2f
     }

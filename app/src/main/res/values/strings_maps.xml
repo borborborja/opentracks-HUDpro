@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Map layers screen -->
+    <string name="maps_title">Map layers</string>
+    <string name="maps_tab_online">Online</string>
+    <string name="maps_tab_offline">Offline</string>
+    <string name="maps_base_map_title">Base map for the viewer</string>
+    <string name="maps_default_map_name">map</string>
+    <string name="maps_download_area">Download area</string>
+    <string name="maps_import_mbtiles">Import</string>
+    <string name="maps_empty_offline">No offline maps yet. Download an area or import an .mbtiles file (e.g. the official ICGC topographic or orthophoto maps from visors.icgc.cat/appdownloads).</string>
+    <string name="maps_size_sectors">%1$.1f MB · %2$d sectors</string>
+    <string name="maps_delete">Delete</string>
+    <string name="maps_manage_sectors">Manage sectors</string>
+
+    <!-- Offline sectors screen -->
+    <string name="maps_sectors_title">Offline sectors</string>
+    <string name="maps_add_sector">Add sector</string>
+    <string name="maps_no_sectors">No sectors. Add one by downloading an area.</string>
+    <string name="maps_unknown_map_type">Unknown map type</string>
+    <string name="maps_redownloading">Re-downloading sector…</string>
+    <string name="maps_area_name">%1$s · area</string>
+    <string name="maps_delete_sector_title">Delete sector</string>
+    <string name="maps_delete_sector_msg">Tiles of this sector that are not shared with any other sector will be deleted.</string>
+    <string name="maps_cancel">Cancel</string>
+    <string name="maps_sector_n">Sector %1$d</string>
+    <string name="maps_sector_meta">zoom %1$d–%2$d · %3$,d tiles · %4$.0f×%5$.0f km</string>
+    <string name="maps_redownload">Re-download</string>
+
+    <!-- Download area screen -->
+    <string name="maps_back">Back</string>
+    <string name="maps_mode_route">Route</string>
+    <string name="maps_mode_province">Province</string>
+    <string name="maps_mode_visible">Visible area</string>
+    <string name="maps_mode_draw">Draw</string>
+    <string name="maps_route_hint">Area of the selected route. Choose source and zoom, then download.</string>
+    <string name="maps_visible_hint">Frame the map and tap «Visible area» again to update.</string>
+    <string name="maps_draw_hint">Drag on the map to draw the rectangle.</string>
+    <string name="maps_zoom_range">Zoom %1$d – %2$d</string>
+    <string name="maps_estimate">≈ %1$,d tiles · %2$.0f MB</string>
+    <string name="maps_over_limit">Area/zoom too large (max %1$dk). Reduce the zoom.</string>
+    <string name="maps_osm_warning">OSM discourages bulk downloads; for large areas use ICGC.</string>
+    <string name="maps_downloading">Downloading… %1$d / %2$d</string>
+    <string name="maps_download_done">Download complete ✓ — you can now select it in Offline maps.</string>
+    <string name="maps_download">Download</string>
+</resources>

@@ -17,9 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.recyclerview.widget.RecyclerView
+import cat.hudpro.opentracks.R
 
 /**
  * ViewPager2 adapter that shows exactly two pre-built, full-screen pages (map + data). Using real
@@ -62,11 +64,11 @@ fun ViewerSwitcher(currentPage: Int, onSelect: (Int) -> Unit, onGear: () -> Unit
             .padding(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SwitchTab("Mapa", currentPage == 0) { onSelect(0) }
-        SwitchTab("Dades", currentPage == 1) { onSelect(1) }
+        SwitchTab(stringResource(R.string.viewer_tab_map), currentPage == 0) { onSelect(0) }
+        SwitchTab(stringResource(R.string.viewer_tab_data), currentPage == 1) { onSelect(1) }
         Icon(
             Icons.Filled.Settings,
-            contentDescription = "Ajustos del visor",
+            contentDescription = stringResource(R.string.viewer_cd_settings),
             tint = Color.White,
             modifier = Modifier
                 .clip(RoundedCornerShape(16.dp))

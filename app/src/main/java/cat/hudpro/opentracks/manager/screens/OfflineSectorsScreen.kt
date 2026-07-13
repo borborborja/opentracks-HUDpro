@@ -30,14 +30,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.map.MapSource
 import cat.hudpro.opentracks.data.map.OfflineMapStore
 import cat.hudpro.opentracks.data.map.OfflineSector
 import cat.hudpro.opentracks.data.map.RegionDownloadWorker
-import java.util.Locale
 
 @Composable
 fun OfflineSectorsScreen(mapPath: String, onBack: () -> Unit, onDownloadArea: () -> Unit) {
@@ -80,10 +81,10 @@ fun OfflineSectorsScreen(mapPath: String, onBack: () -> Unit, onDownloadArea: ()
     }
 
     DetailScaffold(
-        title = map?.name ?: "Sectors offline",
+        title = map?.name ?: stringResource(R.string.maps_sectors_title),
         onBack = onBack,
         actions = {
-            IconButton(onClick = onDownloadArea) { Icon(Icons.Filled.Add, contentDescription = "Afegir sector") }
+            IconButton(onClick = onDownloadArea) { Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.maps_add_sector)) }
         },
     ) { modifier ->
         Column(modifier.fillMaxSize()) {
@@ -103,7 +104,7 @@ fun OfflineSectorsScreen(mapPath: String, onBack: () -> Unit, onDownloadArea: ()
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (sectors.isEmpty()) {
-                    Text("Cap sector. Afegeix-ne un descarregant una àrea.", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.maps_no_sectors), style = MaterialTheme.typography.bodySmall)
                 }
                 sectors.forEachIndexed { i, sector ->
                     SectorRow(
@@ -114,14 +115,14 @@ fun OfflineSectorsScreen(mapPath: String, onBack: () -> Unit, onDownloadArea: ()
                         onRedownload = {
                             val sid = sourceId
                             if (sid == null) {
-                                Toast.makeText(context, "Tipus de mapa desconegut", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.maps_unknown_map_type), Toast.LENGTH_SHORT).show()
                             } else {
                                 requestNotif()
                                 RegionDownloadWorker.enqueue(
-                                    context, sid, MapSource.byId(sid).displayName + " · àrea",
+                                    context, sid, context.getString(R.string.maps_area_name, MapSource.byId(sid).displayName),
                                     sector.bbox, sector.minZoom, sector.maxZoom,
                                 )
-                                Toast.makeText(context, "Redescarregant sector…", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.maps_redownloading), Toast.LENGTH_SHORT).show()
                             }
                         },
                         onDelete = { pendingDelete = sector },
@@ -135,16 +136,16 @@ fun OfflineSectorsScreen(mapPath: String, onBack: () -> Unit, onDownloadArea: ()
     if (target != null) {
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
-            title = { Text("Esborrar sector") },
-            text = { Text("S'esborraran les tessel·les d'aquest sector que no comparteixi cap altre.") },
+            title = { Text(stringResource(R.string.maps_delete_sector_title)) },
+            text = { Text(stringResource(R.string.maps_delete_sector_msg)) },
             confirmButton = {
                 TextButton(onClick = {
                     map?.let { store.deleteSector(it, target) }
                     pendingDelete = null
                     refresh()
-                }) { Text("Esborrar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.maps_delete), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text("Cancel·lar") } },
+            dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.maps_cancel)) } },
         )
     }
 }
@@ -165,13 +166,13 @@ private fun SectorRow(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    "Sector ${index + 1}" + if (selected) "  ●" else "",
+                    stringResource(R.string.maps_sector_n, index + 1) + if (selected) "  ●" else "",
                     fontWeight = FontWeight.Bold,
                     color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    String.format(
-                        Locale.US, "zoom %d–%d · %,d tessel·les · %.0f×%.0f km",
+                    stringResource(
+                        R.string.maps_sector_meta,
                         sector.minZoom, sector.maxZoom, sector.tileCount,
                         widthKm(sector), heightKm(sector),
                     ),
@@ -179,10 +180,10 @@ private fun SectorRow(
                 )
             }
             IconButton(onClick = onRedownload) {
-                Icon(Icons.Filled.Refresh, contentDescription = "Redescarregar")
+                Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.maps_redownload))
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, contentDescription = "Esborrar", tint = MaterialTheme.colorScheme.error)
+                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.maps_delete), tint = MaterialTheme.colorScheme.error)
             }
         }
     }

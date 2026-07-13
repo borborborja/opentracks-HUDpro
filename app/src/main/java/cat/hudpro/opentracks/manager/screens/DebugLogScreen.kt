@@ -34,7 +34,9 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.debug.DebugLog
 import java.io.File
 
@@ -43,12 +45,13 @@ fun DebugLogScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     var onlyApp by remember { mutableStateOf(false) }
-    var text by remember { mutableStateOf("Carregant…") }
+    var text by remember { mutableStateOf(context.getString(R.string.debug_loading)) }
 
     fun reload() {
         val dump = DebugLog.logcatDump()
         text = if (onlyApp) {
-            dump.lineSequence().filter { it.contains("HUDpro") }.joinToString("\n").ifBlank { "(cap línia de HUD Pro)" }
+            dump.lineSequence().filter { it.contains("HUDpro") }.joinToString("\n")
+                .ifBlank { context.getString(R.string.debug_no_lines) }
         } else {
             dump
         }
@@ -56,10 +59,10 @@ fun DebugLogScreen(onBack: () -> Unit) {
     LaunchedEffect(onlyApp) { reload() }
 
     DetailScaffold(
-        title = "Registre de debug",
+        title = stringResource(R.string.debug_title),
         onBack = onBack,
         actions = {
-            IconButton(onClick = { reload() }) { Icon(Icons.Filled.Refresh, contentDescription = "Actualitzar") }
+            IconButton(onClick = { reload() }) { Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.debug_refresh)) }
             IconButton(onClick = {
                 runCatching {
                     val dir = File(context.cacheDir, "debug").apply { mkdirs() }
@@ -69,20 +72,20 @@ fun DebugLogScreen(onBack: () -> Unit) {
                     val share = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_STREAM, uri)
-                        putExtra(Intent.EXTRA_SUBJECT, "HUD Pro · registre de debug")
+                        putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.debug_share_subject))
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
-                    context.startActivity(Intent.createChooser(share, "Compartir registre"))
+                    context.startActivity(Intent.createChooser(share, context.getString(R.string.debug_share_chooser)))
                 }
-            }) { Icon(Icons.Filled.Share, contentDescription = "Compartir") }
-            IconButton(onClick = { DebugLog.clear(); reload() }) { Icon(Icons.Filled.Delete, contentDescription = "Netejar") }
+            }) { Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.debug_share)) }
+            IconButton(onClick = { DebugLog.clear(); reload() }) { Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.debug_clear)) }
         },
     ) { modifier ->
         Column(modifier.fillMaxSize().padding(horizontal = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(onlyApp, { onlyApp = !onlyApp }, label = { Text("Només HUD Pro") })
-                OutlinedButton(onClick = { clipboard.setText(AnnotatedString(text)) }) { Text("Copiar") }
-                Text("${text.count { it == '\n' } + 1} línies", style = MaterialTheme.typography.bodySmall)
+                FilterChip(onlyApp, { onlyApp = !onlyApp }, label = { Text(stringResource(R.string.debug_only_app)) })
+                OutlinedButton(onClick = { clipboard.setText(AnnotatedString(text)) }) { Text(stringResource(R.string.debug_copy)) }
+                Text(stringResource(R.string.debug_lines, text.count { it == '\n' } + 1), style = MaterialTheme.typography.bodySmall)
             }
             Text(
                 text,

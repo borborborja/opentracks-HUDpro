@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pantalla de detall de ruta -->
+    <string name="routes_route_fallback_title">Ruta</string>
+    <string name="routes_edit_trace">Editar traçat</string>
+    <string name="routes_stat_distance">Distància</string>
+    <string name="routes_stat_ascent">Desnivell +</string>
+    <string name="routes_stat_points">Punts</string>
+    <string name="routes_distance_km_format">%1$.2f km</string>
+    <string name="routes_ascent_m_format">%1$d m</string>
+    <string name="routes_source_collection">Font: %1$s · Col·lecció: %2$s</string>
+    <string name="routes_follow_this_route">Seguir aquesta ruta</string>
+    <string name="routes_active_follow_toast">Ruta activa per seguir</string>
+    <string name="routes_rename">Renombrar</string>
+    <string name="routes_collection">Col·lecció</string>
+    <string name="routes_download_route_map">Descarregar mapa de la ruta</string>
+    <string name="routes_delete">Esborrar</string>
+    <string name="routes_rename_route_title">Renombrar ruta</string>
+    <string name="routes_delete_route_title">Esborrar ruta</string>
+    <string name="routes_delete_confirm">Segur que vols esborrar «%1$s»?</string>
+
+    <!-- Pantalla d’edició de ruta -->
+    <string name="routes_create_route">Crear ruta</string>
+    <string name="routes_edit_route">Editar ruta</string>
+    <string name="routes_back">Enrere</string>
+    <string name="routes_undo">Desfer</string>
+    <string name="routes_save">Guardar</string>
+    <string name="routes_cancel">Cancel·lar</string>
+    <string name="routes_save_route_title">Guardar ruta</string>
+    <string name="routes_save_changes_title">Guardar canvis</string>
+    <string name="routes_name_label">Nom</string>
+    <string name="routes_snap_to_path">Enganxar al camí</string>
+    <string name="routes_tap_map_to_add_points">Toca el mapa per afegir punts.</string>
+    <string name="routes_new_route_default_name">Ruta nova</string>
+
+    <!-- Routing profiles -->
+    <string name="routing_hiking">Senderisme</string>
+    <string name="routing_trekking">Bici/trekking</string>
+    <string name="routing_mtb">BTT</string>
+    <string name="routing_shortest">Més curt</string>
+</resources>

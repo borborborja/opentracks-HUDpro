@@ -133,7 +133,7 @@ private fun OffRouteBanner(metrics: LiveMetrics, modifier: Modifier = Modifier) 
             modifier = Modifier.size(22.dp).rotate(relBearing),
         )
         Text(
-            "  Fora de ruta · $meters m",
+            "  " + androidx.compose.ui.res.stringResource(cat.hudpro.opentracks.R.string.viewer_off_route, meters),
             color = Color.White,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
@@ -196,7 +196,7 @@ private fun HudTile(metric: HudMetric, data: HudData, scale: Float, options: Map
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Text(
-            text = metric.label.uppercase(),
+            text = androidx.compose.ui.res.stringResource(metric.labelRes).uppercase(),
             color = Color(0xFFB8C4CE),
             fontSize = (11 * scale).sp,
             fontWeight = FontWeight.Medium,
@@ -264,7 +264,7 @@ private fun ClockTile(scale: Float, options: Map<String, String>) {
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Text(
-            text = "RELLOTGE",
+            text = androidx.compose.ui.res.stringResource(HudCatalog.byId(HudCatalog.WIDGET_CLOCK)!!.labelRes).uppercase(),
             color = Color(0xFFB8C4CE),
             fontSize = (11 * scale).sp,
             fontWeight = FontWeight.Medium,
@@ -283,7 +283,7 @@ private fun ClockTile(scale: Float, options: Map<String, String>) {
 private fun RecenterControl(controls: HudControls, scale: Float) {
     val tint = if (controls.followEnabled) Color(0xFFFFD166) else Color.White
     RoundButton(scale = scale, onClick = controls.onRecenter) {
-        Icon(Icons.Filled.MyLocation, contentDescription = "Centrar", tint = tint, modifier = Modifier.size((22 * scale).dp))
+        Icon(Icons.Filled.MyLocation, contentDescription = androidx.compose.ui.res.stringResource(cat.hudpro.opentracks.R.string.viewer_cd_center), tint = tint, modifier = Modifier.size((22 * scale).dp))
     }
 }
 
@@ -292,7 +292,7 @@ private fun CompassControl(controls: HudControls, bearingDeg: Double?, scale: Fl
     RoundButton(scale = scale, onClick = controls.onNorth) {
         Icon(
             Icons.Filled.Navigation,
-            contentDescription = "Nord",
+            contentDescription = androidx.compose.ui.res.stringResource(cat.hudpro.opentracks.R.string.viewer_cd_north),
             tint = Color.White,
             modifier = Modifier.size((22 * scale).dp).rotate((bearingDeg ?: 0.0).toFloat()),
         )
@@ -321,7 +321,9 @@ private fun RecordControl(controls: HudControls, isRecording: Boolean, isPaused:
         ) {
             Icon(
                 if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
-                contentDescription = if (isPaused) "Reprendre" else "Pausa",
+                contentDescription = androidx.compose.ui.res.stringResource(
+                    if (isPaused) cat.hudpro.opentracks.R.string.viewer_cd_resume else cat.hudpro.opentracks.R.string.viewer_cd_pause,
+                ),
                 tint = if (isPaused) Color(0xFFFFD166) else Color.White,
                 modifier = Modifier.size((22 * scale).dp),
             )
@@ -342,10 +344,10 @@ private fun RecordControl(controls: HudControls, isRecording: Boolean, isPaused:
 private fun ZoomControl(controls: HudControls, scale: Float) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         RoundButton(scale = scale, onClick = controls.onZoomIn) {
-            Icon(Icons.Filled.Add, contentDescription = "Apropar", tint = Color.White, modifier = Modifier.size((22 * scale).dp))
+            Icon(Icons.Filled.Add, contentDescription = androidx.compose.ui.res.stringResource(cat.hudpro.opentracks.R.string.viewer_cd_zoom_in), tint = Color.White, modifier = Modifier.size((22 * scale).dp))
         }
         RoundButton(scale = scale, onClick = controls.onZoomOut) {
-            Icon(Icons.Filled.Remove, contentDescription = "Allunyar", tint = Color.White, modifier = Modifier.size((22 * scale).dp))
+            Icon(Icons.Filled.Remove, contentDescription = androidx.compose.ui.res.stringResource(cat.hudpro.opentracks.R.string.viewer_cd_zoom_out), tint = Color.White, modifier = Modifier.size((22 * scale).dp))
         }
     }
 }

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rec_notif_channel">Activity recording</string>
+    <string name="rec_notif_recording">Recording activity</string>
+    <string name="rec_notif_paused">Recording paused</string>
+    <string name="rec_notif_on_pause_suffix"> · PAUSED</string>
+    <string name="rec_action_pause">Pause</string>
+    <string name="rec_action_resume">Resume</string>
+    <string name="rec_action_stop">Stop</string>
+    <string name="dl_notif_channel">Map downloads</string>
+    <string name="dl_notif_title">Downloading offline map</string>
+    <string name="dl_notif_progress">%1$d / %2$d tiles</string>
+    <string name="ot_not_found">OpenTracks with the public API was not found. Install it and enable the API.</string>
+    <string name="ot_launch_failed">Could not open OpenTracks. Enable its \u0022Public API\u0022 setting.</string>
+    <string name="share_export_title">Export \u0022%1$s\u0022</string>
+</resources>

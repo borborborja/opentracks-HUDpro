@@ -29,13 +29,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.map.MapSource
 import cat.hudpro.opentracks.data.map.OfflineMap
 import cat.hudpro.opentracks.data.tracks.FollowTrackEntity
-import java.util.Locale
 
-private val TABS = listOf("Mapa", "Ruta", "Opcions")
+private val TABS = listOf(
+    R.string.viewer_qs_tab_map,
+    R.string.viewer_qs_tab_route,
+    R.string.viewer_qs_tab_options,
+)
 
 /** Bottom sheet with quick, live viewer settings, opened from the switcher's gear. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,7 +74,7 @@ fun ViewerQuickSettings(
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         ScrollableTabRow(selectedTabIndex = tab, edgePadding = 8.dp) {
             TABS.forEachIndexed { i, title ->
-                Tab(selected = tab == i, onClick = { tab = i }, text = { Text(title) })
+                Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(title)) })
             }
         }
         Column(
@@ -94,32 +99,36 @@ fun ViewerQuickSettings(
 
 @Composable
 private fun MapTab(current: String?, offlineMaps: List<OfflineMap>, onSelect: (String) -> Unit) {
-    Text("Mapa online", style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.viewer_qs_online_map), style = MaterialTheme.typography.labelLarge)
     MapSource.entries.forEach { source ->
         RadioRow(source.displayName, source.attribution, current == source.id) { onSelect(source.id) }
     }
     if (offlineMaps.isNotEmpty()) {
         HorizontalDivider(Modifier.padding(vertical = 6.dp))
-        Text("Mapa offline", style = MaterialTheme.typography.labelLarge)
+        Text(stringResource(R.string.viewer_qs_offline_map), style = MaterialTheme.typography.labelLarge)
         offlineMaps.forEach { map ->
-            RadioRow(map.name, "offline", current == map.selectionId) { onSelect(map.selectionId) }
+            RadioRow(map.name, stringResource(R.string.viewer_qs_offline_subtitle), current == map.selectionId) { onSelect(map.selectionId) }
         }
     }
 }
 
 @Composable
 private fun FollowTab(current: Long, tracks: List<FollowTrackEntity>, onSelect: (Long) -> Unit) {
-    Text("Ruta a seguir", style = MaterialTheme.typography.labelLarge)
-    RadioRow("Cap", "sense ruta", current <= 0L) { onSelect(-1L) }
+    Text(stringResource(R.string.viewer_qs_route_to_follow), style = MaterialTheme.typography.labelLarge)
+    RadioRow(
+        stringResource(R.string.viewer_qs_route_none),
+        stringResource(R.string.viewer_qs_route_none_subtitle),
+        current <= 0L,
+    ) { onSelect(-1L) }
     tracks.forEach { t ->
         RadioRow(
             t.name,
-            String.format(Locale.US, "%.1f km · %d punts", t.distanceMeters / 1000.0, t.pointCount),
+            stringResource(R.string.viewer_qs_route_meta, t.distanceMeters / 1000.0, t.pointCount),
             current == t.id,
         ) { onSelect(t.id) }
     }
     if (tracks.isEmpty()) {
-        Text("Encara no hi ha rutes. Crea'n o importa'n des de «Tracks a seguir».",
+        Text(stringResource(R.string.viewer_qs_no_routes_yet),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
     }
 }
@@ -135,21 +144,21 @@ private fun OptionsTab(
     onFullscreen: (Boolean) -> Unit,
     onAdaptiveZoom: (Boolean) -> Unit,
 ) {
-    Text("Orientació del mapa", style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.viewer_qs_map_orientation), style = MaterialTheme.typography.labelLarge)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip(orientation == "NORTH_UP", { onOrientation("NORTH_UP") }, label = { Text("Nord amunt") })
-        FilterChip(orientation == "HEADING_UP", { onOrientation("HEADING_UP") }, label = { Text("Segons direcció") })
+        FilterChip(orientation == "NORTH_UP", { onOrientation("NORTH_UP") }, label = { Text(stringResource(R.string.viewer_qs_north_up)) })
+        FilterChip(orientation == "HEADING_UP", { onOrientation("HEADING_UP") }, label = { Text(stringResource(R.string.viewer_qs_heading_up)) })
     }
     HorizontalDivider(Modifier.padding(vertical = 8.dp))
-    ToggleRow("Zoom automàtic als girs de la ruta", adaptiveZoom, onAdaptiveZoom)
+    ToggleRow(stringResource(R.string.viewer_qs_adaptive_zoom), adaptiveZoom, onAdaptiveZoom)
     Text(
-        "En seguiment: apropa el mapa en acostar-te a un gir/cruïlla de la ruta i l'allunya als trams rectes.",
+        stringResource(R.string.viewer_qs_adaptive_zoom_help),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )
     HorizontalDivider(Modifier.padding(vertical = 8.dp))
-    ToggleRow("Mantenir la pantalla encesa", keepScreenOn, onKeepScreenOn)
-    ToggleRow("Pantalla completa", fullscreen, onFullscreen)
+    ToggleRow(stringResource(R.string.viewer_qs_keep_screen_on), keepScreenOn, onKeepScreenOn)
+    ToggleRow(stringResource(R.string.viewer_qs_fullscreen), fullscreen, onFullscreen)
 }
 
 @Composable

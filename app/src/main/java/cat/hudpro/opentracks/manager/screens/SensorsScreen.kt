@@ -33,7 +33,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.debug.DebugLog
 import cat.hudpro.opentracks.data.prefs.ViewerPreferences
 import cat.hudpro.opentracks.data.recording.ble.BleSensorManager
@@ -61,17 +63,18 @@ fun SensorsScreen(onBack: () -> Unit) {
     val callback = remember {
         object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                val name = result.device.name ?: result.scanRecord?.deviceName ?: "Sensor"
+                val name = result.device.name ?: result.scanRecord?.deviceName
+                    ?: context.getString(R.string.sensors_default_name)
                 found[result.device.address] = name
             }
             override fun onScanFailed(errorCode: Int) {
-                scanError = "Error d'escaneig ($errorCode)"
+                scanError = context.getString(R.string.sensors_scan_error, errorCode)
             }
         }
     }
 
     fun startScan() {
-        val s = scanner ?: run { scanError = "Bluetooth desactivat"; return }
+        val s = scanner ?: run { scanError = context.getString(R.string.sensors_bluetooth_off); return }
         val filters = BleSensorManager.SCAN_SERVICES.map {
             ScanFilter.Builder().setServiceUuid(ParcelUuid(it)).build()
         }
@@ -98,33 +101,32 @@ fun SensorsScreen(onBack: () -> Unit) {
         onDispose { runCatching { scanner?.stopScan(callback) } }
     }
 
-    DetailScaffold(title = "Sensors BLE", onBack = onBack) { modifier ->
+    DetailScaffold(title = stringResource(R.string.sensors_title), onBack = onBack) { modifier ->
         Column(
             modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                "Empareja bandes de freqüència cardíaca, sensors de cadència i potenciòmetres. " +
-                    "Es connecten automàticament en començar a gravar.",
+                stringResource(R.string.sensors_intro),
                 style = MaterialTheme.typography.bodySmall,
             )
             Button(
                 onClick = { if (scanning) { runCatching { scanner?.stopScan(callback) }; scanning = false } else scanWithPermissions() },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text(if (scanning) "Aturar l'escaneig" else "Buscar sensors") }
+            ) { Text(stringResource(if (scanning) R.string.sensors_stop_scan else R.string.sensors_scan)) }
             scanError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
 
             // Paired sensors not currently in range still show (so they can be unpaired).
             val all = (found.keys + paired).distinct().sorted()
             if (all.isEmpty()) {
                 Text(
-                    if (scanning) "Buscant… encén el sensor i posa'l a prop." else "Cap sensor. Toca «Buscar sensors».",
+                    stringResource(if (scanning) R.string.sensors_scanning_hint else R.string.sensors_none),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,
                 )
             }
             all.forEach { address ->
-                val name = found[address] ?: "Sensor emparellat"
+                val name = found[address] ?: stringResource(R.string.sensors_paired_name)
                 Card {
                     Row(
                         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),

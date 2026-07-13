@@ -31,6 +31,6 @@ object GpxShare {
             putExtra(Intent.EXTRA_SUBJECT, name)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(send, "Exportar «$name»"))
+        context.startActivity(Intent.createChooser(send, context.getString(cat.hudpro.opentracks.R.string.share_export_title, name)))
     }
 }

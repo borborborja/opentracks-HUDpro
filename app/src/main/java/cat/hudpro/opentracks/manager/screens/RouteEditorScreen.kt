@@ -38,9 +38,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import cat.hudpro.opentracks.HudProApplication
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.gpx.GpxPoint
 import cat.hudpro.opentracks.data.opentracks.model.GeoPoint
 import cat.hudpro.opentracks.data.routing.RoutedPath
@@ -48,7 +50,6 @@ import cat.hudpro.opentracks.data.routing.RoutingProfile
 import cat.hudpro.opentracks.data.tracks.TrackSource
 import cat.hudpro.opentracks.viewer.hud.MetricsCalculator
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,7 +68,8 @@ fun RouteEditorScreen(trackId: Long? = null, onBack: () -> Unit, onSaved: () -> 
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showSave by remember { mutableStateOf(false) }
-    var name by remember { mutableStateOf("Ruta nova") }
+    val defaultRouteName = stringResource(R.string.routes_new_route_default_name)
+    var name by remember { mutableStateOf(defaultRouteName) }
     // In edit mode the map is seeded from the stored route. `dirty` stays false until the user changes a
     // waypoint, so the original trace is preserved unless actually edited.
     var dirty by remember { mutableStateOf(false) }
@@ -119,18 +121,18 @@ fun RouteEditorScreen(trackId: Long? = null, onBack: () -> Unit, onSaved: () -> 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (editing) "Editar ruta" else "Crear ruta") },
+                title = { Text(stringResource(if (editing) R.string.routes_edit_route else R.string.routes_create_route)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Enrere") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.routes_back)) }
                 },
                 actions = {
                     IconButton(onClick = {
                         if (waypoints.size >= 2) { waypoints.removeAt(waypoints.lastIndex); dirty = true }
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Desfer")
+                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.routes_undo))
                     }
                     IconButton(onClick = { showSave = true }, enabled = (routed?.points?.size ?: 0) >= 2) {
-                        Icon(Icons.Filled.Save, contentDescription = "Guardar")
+                        Icon(Icons.Filled.Save, contentDescription = stringResource(R.string.routes_save))
                     }
                 },
             )
@@ -157,23 +159,29 @@ fun RouteEditorScreen(trackId: Long? = null, onBack: () -> Unit, onSaved: () -> 
             Card(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(12.dp)) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Stat("Distància", String.format(Locale.US, "%.2f km", (routed?.distanceMeters ?: 0.0) / 1000.0))
-                        Stat("Desnivell +", "${(routed?.ascentMeters ?: 0.0).toInt()} m")
-                        Stat("Punts", "${waypoints.size}")
+                        Stat(
+                            stringResource(R.string.routes_stat_distance),
+                            stringResource(R.string.routes_distance_km_format, (routed?.distanceMeters ?: 0.0) / 1000.0),
+                        )
+                        Stat(
+                            stringResource(R.string.routes_stat_ascent),
+                            stringResource(R.string.routes_ascent_m_format, (routed?.ascentMeters ?: 0.0).toInt()),
+                        )
+                        Stat(stringResource(R.string.routes_stat_points), "${waypoints.size}")
                     }
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         RoutingProfile.entries.forEach { p ->
-                            FilterChip(selected = profile == p, onClick = { profile = p }, label = { Text(p.label) })
+                            FilterChip(selected = profile == p, onClick = { profile = p }, label = { Text(stringResource(p.labelRes)) })
                         }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Switch(checked = snap, onCheckedChange = { snap = it })
-                        Text("  Enganxar al camí", style = MaterialTheme.typography.bodyMedium)
+                        Text("  " + stringResource(R.string.routes_snap_to_path), style = MaterialTheme.typography.bodyMedium)
                         error?.let {
                             Text("  · $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                         }
                     }
-                    Text("Toca el mapa per afegir punts.", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.routes_tap_map_to_add_points), style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -182,9 +190,9 @@ fun RouteEditorScreen(trackId: Long? = null, onBack: () -> Unit, onSaved: () -> 
     if (showSave) {
         AlertDialog(
             onDismissRequest = { showSave = false },
-            title = { Text(if (editing) "Guardar canvis" else "Guardar ruta") },
+            title = { Text(stringResource(if (editing) R.string.routes_save_changes_title else R.string.routes_save_route_title)) },
             text = {
-                OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true, label = { Text("Nom") })
+                OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true, label = { Text(stringResource(R.string.routes_name_label)) })
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -200,9 +208,9 @@ fun RouteEditorScreen(trackId: Long? = null, onBack: () -> Unit, onSaved: () -> 
                         showSave = false
                         onSaved()
                     }
-                }) { Text("Guardar") }
+                }) { Text(stringResource(R.string.routes_save)) }
             },
-            dismissButton = { TextButton(onClick = { showSave = false }) { Text("Cancel·lar") } },
+            dismissButton = { TextButton(onClick = { showSave = false }) { Text(stringResource(R.string.routes_cancel)) } },
         )
     }
 }

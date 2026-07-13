@@ -34,13 +34,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.map.MapSource
 import cat.hudpro.opentracks.data.map.OfflineMap
 import cat.hudpro.opentracks.data.map.OfflineMapStore
 import cat.hudpro.opentracks.data.prefs.ViewerPreferences
 import java.io.File
-import java.util.Locale
 
 @Composable
 fun MapLayersScreen(
@@ -54,11 +55,11 @@ fun MapLayersScreen(
     var tab by remember { mutableIntStateOf(0) }
     var baseMapId by remember { mutableStateOf(prefs.baseMapId) }
 
-    DetailScaffold(title = "Capas de mapa", onBack = onBack) { modifier ->
+    DetailScaffold(title = stringResource(R.string.maps_title), onBack = onBack) { modifier ->
         Column(modifier.fillMaxSize()) {
             ScrollableTabRow(selectedTabIndex = tab, edgePadding = 8.dp) {
-                Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Online") })
-                Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Offline") })
+                Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(R.string.maps_tab_online)) })
+                Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(R.string.maps_tab_offline)) })
             }
             Column(
                 Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(16.dp),
@@ -82,7 +83,7 @@ fun MapLayersScreen(
 
 @Composable
 private fun OnlineTab(current: String?, onSelect: (String) -> Unit) {
-    Text("Mapa base per al visor", style = MaterialTheme.typography.titleSmall)
+    Text(stringResource(R.string.maps_base_map_title), style = MaterialTheme.typography.titleSmall)
     MapSource.entries.forEach { source ->
         Card {
             Row(
@@ -115,7 +116,7 @@ private fun OfflineTab(
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            val name = uri.lastPathSegment?.substringAfterLast('/') ?: "mapa"
+            val name = uri.lastPathSegment?.substringAfterLast('/') ?: context.getString(R.string.maps_default_map_name)
             runCatching { store.import(context.contentResolver, uri, name) }
             maps = store.list()
         }
@@ -124,21 +125,20 @@ private fun OfflineTab(
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(onClick = onDownloadArea, modifier = Modifier.weight(1f)) {
             Icon(Icons.Filled.Map, contentDescription = null)
-            Text("  Descarregar àrea")
+            Text("  " + stringResource(R.string.maps_download_area))
         }
         OutlinedButton(
             onClick = { importLauncher.launch(arrayOf("application/octet-stream", "*/*")) },
             modifier = Modifier.weight(1f),
         ) {
             Icon(Icons.Filled.Download, contentDescription = null)
-            Text("  Importar")
+            Text("  " + stringResource(R.string.maps_import_mbtiles))
         }
     }
 
     if (maps.isEmpty()) {
         Text(
-            "Encara no hi ha mapes offline. Descarrega una àrea o importa un fitxer .mbtiles " +
-                "(p. ex. el topogràfic o l'ortofoto oficials de l'ICGC des de visors.icgc.cat/appdownloads).",
+            stringResource(R.string.maps_empty_offline),
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(top = 8.dp),
         )
@@ -174,14 +174,14 @@ private fun OfflineRow(
                     Text(map.name, style = MaterialTheme.typography.bodyLarge)
                     val mb = File(map.path).length() / (1024.0 * 1024.0)
                     Text(
-                        String.format(Locale.US, "%.1f MB · %d sector%s", mb, sectorCount, if (sectorCount == 1) "" else "s"),
+                        stringResource(R.string.maps_size_sectors, mb, sectorCount),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, contentDescription = "Esborrar") }
+                IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.maps_delete)) }
             }
             OutlinedButton(onClick = onManage, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                Text("Gestionar sectors")
+                Text(stringResource(R.string.maps_manage_sectors))
             }
         }
     }

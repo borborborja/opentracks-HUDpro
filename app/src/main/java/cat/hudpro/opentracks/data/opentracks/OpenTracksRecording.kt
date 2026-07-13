@@ -76,13 +76,13 @@ object OpenTracksRecording {
             .recoverCatching { context.startActivity(build(true)); true }
             .getOrElse {
                 cat.hudpro.opentracks.data.debug.DebugLog.e("Record", "launch $pkg/$cls fallit", it)
-                Toast.makeText(context, "No s'ha pogut obrir OpenTracks. Activa l'«API pública» als seus ajustos.", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(cat.hudpro.opentracks.R.string.ot_launch_failed), Toast.LENGTH_LONG).show()
                 false
             }
     }
 
     private fun notFound(context: Context) {
-        Toast.makeText(context, "No s'ha trobat OpenTracks amb l'API pública. Instal·la'l i activa-la.", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, context.getString(cat.hudpro.opentracks.R.string.ot_not_found), Toast.LENGTH_LONG).show()
     }
 
     /** Detection-only report (no side effects): visible OpenTracks-like packages and the public API. */

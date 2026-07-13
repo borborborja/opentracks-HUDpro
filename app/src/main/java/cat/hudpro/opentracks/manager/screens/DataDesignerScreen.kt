@@ -56,8 +56,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.prefs.ViewerPreferences
 import cat.hudpro.opentracks.viewer.data.DataLayout
 import cat.hudpro.opentracks.viewer.data.DataLayoutStore
@@ -127,7 +129,7 @@ fun DataDesignerScreen(onBack: () -> Unit) {
                 )
                 if (layout.fields.isEmpty()) {
                     Text(
-                        "Cap tile. Afegeix mètriques des de «Mètriques ▾».",
+                        stringResource(R.string.editor_no_tiles),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.padding(top = 24.dp),
@@ -141,7 +143,7 @@ fun DataDesignerScreen(onBack: () -> Unit) {
                     onClick = onBack,
                     modifier = Modifier.align(Alignment.TopStart).padding(start = 8.dp),
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Sortir", tint = Color.White, modifier = Modifier.size(20.dp))
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.editor_exit), tint = Color.White, modifier = Modifier.size(20.dp))
                 }
                 Row(
                     Modifier.align(Alignment.TopCenter),
@@ -160,7 +162,7 @@ fun DataDesignerScreen(onBack: () -> Unit) {
                                 .padding(horizontal = 18.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text("Mètriques", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.editor_metrics), color = Color.White, fontWeight = FontWeight.Bold)
                             Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = Color.White)
                         }
                         MetricsDropdown(
@@ -172,11 +174,11 @@ fun DataDesignerScreen(onBack: () -> Unit) {
                     }
                     Box {
                         RoundDarkButton(onClick = { globalOpen = true }) {
-                            Icon(Icons.Filled.Settings, contentDescription = "Configuració global", tint = Color.White, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.editor_global_settings), tint = Color.White, modifier = Modifier.size(18.dp))
                         }
                         DropdownMenu(expanded = globalOpen, onDismissRequest = { globalOpen = false }) {
                             Text(
-                                "Columnes",
+                                stringResource(R.string.editor_columns),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -231,7 +233,7 @@ private fun MetricsDropdown(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Checkbox(checked = placed, onCheckedChange = null)
-                Text(metric.label, Modifier.padding(end = 16.dp))
+                Text(androidx.compose.ui.res.stringResource(metric.labelRes), Modifier.padding(end = 16.dp))
             }
         }
         HorizontalDivider(Modifier.padding(vertical = 4.dp))
@@ -243,7 +245,7 @@ private fun MetricsDropdown(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(checked = clockOn, onCheckedChange = null)
-            Text("Rellotge", Modifier.padding(end = 16.dp))
+            Text(stringResource(R.string.hudel_clock), Modifier.padding(end = 16.dp))
         }
     }
 }
@@ -260,17 +262,17 @@ private fun TileConfigDialog(
     val metric = if (isClock) null else runCatching { HudMetric.valueOf(field) }.getOrNull()
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (isClock) "Rellotge" else metric?.label ?: field) },
+        title = { Text(if (isClock) stringResource(R.string.hudel_clock) else metric?.let { stringResource(it.labelRes) } ?: field) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (isClock) {
-                    Text("Format", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.editor_format), style = MaterialTheme.typography.labelLarge)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(layout.clockH24, { onUpdate(layout.copy(clockH24 = true)) }, label = { Text("24 h") })
                         FilterChip(!layout.clockH24, { onUpdate(layout.copy(clockH24 = false)) }, label = { Text("12 h") })
                     }
                 }
-                Text("Amplada", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.editor_width), style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     (1..layout.columns).forEach { n ->
                         FilterChip(
@@ -280,7 +282,7 @@ private fun TileConfigDialog(
                         )
                     }
                 }
-                Text("Color del valor", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.editor_value_color), style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     val palette = listOf(null, "#FFD166", "#E63946", "#2A9D8F", "#3A86FF", "#F4A261", "#9B5DE5")
                     palette.forEach { hex ->
@@ -302,8 +304,8 @@ private fun TileConfigDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fet") } },
-        dismissButton = { TextButton(onClick = onRemove) { Text("Treure", color = MaterialTheme.colorScheme.error) } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.editor_done)) } },
+        dismissButton = { TextButton(onClick = onRemove) { Text(stringResource(R.string.editor_remove), color = MaterialTheme.colorScheme.error) } },
     )
 }
 
@@ -443,7 +445,7 @@ private fun EditableTile(
         ) {
             // EXACT live-view tile (single source of truth → true WYSIWYG).
             DataTileContent(
-                label = if (isClock) "Rellotge" else metric?.label ?: field,
+                label = if (isClock) stringResource(R.string.hudel_clock) else metric?.let { stringResource(it.labelRes) } ?: field,
                 value = when {
                     isClock && layout.clockH24 -> "18:42:07"
                     isClock -> "6:42:07 PM"
@@ -468,7 +470,7 @@ private fun EditableTile(
                         onClick = onConfigure,
                     ),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.Settings, contentDescription = "Configurar", tint = Color.White, modifier = Modifier.size(16.dp)) }
+            ) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.editor_configure), tint = Color.White, modifier = Modifier.size(16.dp)) }
             // Bottom-end handle: horizontal drag snaps the span 1x↔2x↔3x.
             Box(
                 Modifier
@@ -489,7 +491,7 @@ private fun EditableTile(
                         )
                     },
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.OpenInFull, contentDescription = "Redimensionar", tint = Color.White, modifier = Modifier.size(13.dp)) }
+            ) { Icon(Icons.Filled.OpenInFull, contentDescription = stringResource(R.string.editor_resize), tint = Color.White, modifier = Modifier.size(13.dp)) }
         }
     }
 }

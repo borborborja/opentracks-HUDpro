@@ -26,7 +26,7 @@ class UpdateRepository(
             ?: return@withContext null
         UpdateInfo(
             version = remote,
-            changelog = release.body?.takeIf { it.isNotBlank() } ?: release.name ?: "Nova versió $remote",
+            changelog = release.body?.takeIf { it.isNotBlank() } ?: release.name ?: "v$remote",
             apkUrl = apk.downloadUrl,
             sizeBytes = apk.size,
         )

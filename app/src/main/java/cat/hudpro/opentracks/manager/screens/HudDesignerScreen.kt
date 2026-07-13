@@ -41,8 +41,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.prefs.ViewerPreferences
 import cat.hudpro.opentracks.viewer.hud.HudCatalog
 import cat.hudpro.opentracks.viewer.hud.HudCategory
@@ -110,7 +112,7 @@ fun HudDesignerScreen(onBack: () -> Unit) {
                 onClick = onBack,
                 modifier = Modifier.align(Alignment.TopStart).padding(start = 8.dp),
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Sortir", tint = Color.White, modifier = Modifier.size(20.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.editor_exit), tint = Color.White, modifier = Modifier.size(20.dp))
             }
             Box(Modifier.align(Alignment.TopCenter)) {
                 Row(
@@ -124,7 +126,7 @@ fun HudDesignerScreen(onBack: () -> Unit) {
                         .padding(horizontal = 18.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("Widgets", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.editor_widgets), color = Color.White, fontWeight = FontWeight.Bold)
                     Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = Color.White)
                 }
                 WidgetsDropdown(
@@ -162,13 +164,13 @@ private fun WidgetsDropdown(
 ) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         val groups = listOf(
-            "Mètriques" to HudCategory.METRIC,
-            "Gràfics" to HudCategory.CHART,
-            "Controls" to HudCategory.CONTROL,
+            R.string.editor_metrics to HudCategory.METRIC,
+            R.string.editor_charts to HudCategory.CHART,
+            R.string.editor_controls to HudCategory.CONTROL,
         )
-        groups.forEach { (title, category) ->
+        groups.forEach { (titleRes, category) ->
             Text(
-                title,
+                stringResource(titleRes),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -184,13 +186,13 @@ private fun WidgetsDropdown(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(checked = placed, onCheckedChange = null)
-                    Text(element.label, Modifier.padding(end = 16.dp))
+                    Text(androidx.compose.ui.res.stringResource(element.labelRes), Modifier.padding(end = 16.dp))
                 }
             }
         }
         HorizontalDivider(Modifier.padding(vertical = 6.dp))
         Text(
-            "Presets",
+            stringResource(R.string.editor_presets),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -199,12 +201,12 @@ private fun WidgetsDropdown(
             Modifier.padding(horizontal = 12.dp).horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            HudLayout.PRESETS.forEach { (name, preset) ->
-                AssistChip(onClick = { onUpdate(preset) }, label = { Text(name) })
+            HudLayout.PRESETS.forEach { (nameRes, preset) ->
+                AssistChip(onClick = { onUpdate(preset) }, label = { Text(stringResource(nameRes)) })
             }
         }
         Text(
-            "Mida global",
+            stringResource(R.string.editor_global_size),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -231,20 +233,20 @@ private fun WidgetConfigDialog(
     val element = widget.element
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(element?.label ?: "Widget") },
+        title = { Text(element?.let { stringResource(it.labelRes) } ?: stringResource(R.string.editor_widget)) },
         text = {
             Column(
                 Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text("Mida de la lletra: ${"%.0f".format(widget.scale * 100)}%", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.editor_font_size, widget.scale * 100), style = MaterialTheme.typography.labelLarge)
                 Slider(
                     value = widget.scale,
                     onValueChange = { onUpdate(layout.setWidgetScale(index, it)) },
                     valueRange = HudLayout.MIN_WIDGET_SCALE..HudLayout.MAX_WIDGET_SCALE,
                 )
 
-                Text("Color del valor", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.editor_value_color), style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     val palette = listOf(null, "#FFD166", "#E63946", "#2A9D8F", "#3A86FF", "#F4A261", "#9B5DE5")
                     palette.forEach { hex ->
@@ -277,7 +279,7 @@ private fun WidgetConfigDialog(
                 )
                 if (chartable) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Mostrar gràfica", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.editor_show_chart), Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
                         androidx.compose.material3.Switch(
                             checked = widget.options[HudOption.CHART] == "1",
                             onCheckedChange = { on ->
@@ -289,7 +291,7 @@ private fun WidgetConfigDialog(
 
                 // Clock-specific: 24 h vs 12 h.
                 if (widget.elementId == HudCatalog.WIDGET_CLOCK) {
-                    Text("Format de l'hora", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.editor_time_format), style = MaterialTheme.typography.labelLarge)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         val h24 = widget.options[HudOption.H24] != "0"
                         androidx.compose.material3.FilterChip(
@@ -305,13 +307,13 @@ private fun WidgetConfigDialog(
                     }
                 }
 
-                Text("Zona", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.editor_zone), style = MaterialTheme.typography.labelLarge)
                 ZonePicker(widget.zone) { zone -> onUpdate(layout.moveToZone(index, zone)) }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fet") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.editor_done)) } },
         dismissButton = {
-            TextButton(onClick = onRemove) { Text("Treure", color = MaterialTheme.colorScheme.error) }
+            TextButton(onClick = onRemove) { Text(stringResource(R.string.editor_remove), color = MaterialTheme.colorScheme.error) }
         },
     )
 }

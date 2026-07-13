@@ -52,7 +52,7 @@ fun DetailScaffold(
                 title = { Text(title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Enrere")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = androidx.compose.ui.res.stringResource(cat.hudpro.opentracks.R.string.common_back))
                     }
                 },
                 actions = actions,

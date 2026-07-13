@@ -33,16 +33,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import cat.hudpro.opentracks.HudProApplication
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.gpx.GpxPoint
 import cat.hudpro.opentracks.data.prefs.ViewerPreferences
 import cat.hudpro.opentracks.data.tracks.FollowTrackEntity
 import cat.hudpro.opentracks.data.tracks.TrackRepository
 import cat.hudpro.opentracks.viewer.hud.ElevationProfile
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @Composable
 fun RouteDetailScreen(
@@ -76,11 +77,11 @@ fun RouteDetailScreen(
     }
 
     DetailScaffold(
-        title = entity?.name ?: "Ruta",
+        title = entity?.name ?: stringResource(R.string.routes_route_fallback_title),
         onBack = onBack,
         actions = {
             IconButton(onClick = { onEditTrace(trackId) }) {
-                Icon(Icons.Filled.Edit, contentDescription = "Editar traçat")
+                Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.routes_edit_trace))
             }
         },
     ) { modifier ->
@@ -104,13 +105,19 @@ fun RouteDetailScreen(
             Column(Modifier.padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Card {
                     Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Stat("Distància", String.format(Locale.US, "%.2f km", (e?.distanceMeters ?: 0.0) / 1000.0))
-                        Stat("Desnivell +", "${TrackRepository.ascent(gpx).toInt()} m")
-                        Stat("Punts", "${e?.pointCount ?: gpx.size}")
+                        Stat(
+                            stringResource(R.string.routes_stat_distance),
+                            stringResource(R.string.routes_distance_km_format, (e?.distanceMeters ?: 0.0) / 1000.0),
+                        )
+                        Stat(
+                            stringResource(R.string.routes_stat_ascent),
+                            stringResource(R.string.routes_ascent_m_format, TrackRepository.ascent(gpx).toInt()),
+                        )
+                        Stat(stringResource(R.string.routes_stat_points), "${e?.pointCount ?: gpx.size}")
                     }
                 }
                 Text(
-                    "Font: ${e?.source?.name ?: "—"} · Col·lecció: ${e?.collection ?: "—"}",
+                    stringResource(R.string.routes_source_collection, e?.source?.name ?: "—", e?.collection ?: "—"),
                     style = MaterialTheme.typography.bodySmall,
                 )
 
@@ -123,17 +130,17 @@ fun RouteDetailScreen(
 
                 Button(onClick = {
                     prefs.activeFollowTrackId = trackId
-                    Toast.makeText(context, "Ruta activa per seguir", Toast.LENGTH_SHORT).show()
-                }, modifier = Modifier.fillMaxWidth()) { Text("Seguir aquesta ruta") }
+                    Toast.makeText(context, context.getString(R.string.routes_active_follow_toast), Toast.LENGTH_SHORT).show()
+                }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.routes_follow_this_route)) }
 
                 OutlinedButton(onClick = { onEditTrace(trackId) }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Filled.Edit, contentDescription = null)
-                    Text("  Editar traçat")
+                    Text("  " + stringResource(R.string.routes_edit_trace))
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { showRename = true }, modifier = Modifier.weight(1f)) { Text("Renombrar") }
-                    OutlinedButton(onClick = { showCollection = true }, modifier = Modifier.weight(1f)) { Text("Col·lecció") }
+                    OutlinedButton(onClick = { showRename = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.routes_rename)) }
+                    OutlinedButton(onClick = { showCollection = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.routes_collection)) }
                 }
 
                 OutlinedButton(
@@ -143,12 +150,12 @@ fun RouteDetailScreen(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Icon(Icons.Filled.Download, contentDescription = null)
-                    Text("  Descarregar mapa de la ruta")
+                    Text("  " + stringResource(R.string.routes_download_route_map))
                 }
 
                 OutlinedButton(onClick = { showDelete = true }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                    Text("  Esborrar", color = MaterialTheme.colorScheme.error)
+                    Text("  " + stringResource(R.string.routes_delete), color = MaterialTheme.colorScheme.error)
                 }
                 androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
             }
@@ -157,7 +164,7 @@ fun RouteDetailScreen(
 
     if (showRename) {
         TextFieldDialog(
-            title = "Renombrar ruta",
+            title = stringResource(R.string.routes_rename_route_title),
             initial = entity?.name ?: "",
             onConfirm = { newName ->
                 scope.launch { app.trackRepository.rename(trackId, newName); reloadTick++ }
@@ -168,7 +175,7 @@ fun RouteDetailScreen(
     }
     if (showCollection) {
         TextFieldDialog(
-            title = "Col·lecció",
+            title = stringResource(R.string.routes_collection),
             initial = entity?.collection ?: "General",
             onConfirm = { c ->
                 scope.launch { app.trackRepository.setCollection(trackId, c); reloadTick++ }
@@ -180,14 +187,14 @@ fun RouteDetailScreen(
     if (showDelete) {
         AlertDialog(
             onDismissRequest = { showDelete = false },
-            title = { Text("Esborrar ruta") },
-            text = { Text("Segur que vols esborrar «${entity?.name ?: ""}»?") },
+            title = { Text(stringResource(R.string.routes_delete_route_title)) },
+            text = { Text(stringResource(R.string.routes_delete_confirm, entity?.name ?: "")) },
             confirmButton = {
                 TextButton(onClick = {
                     scope.launch { app.trackRepository.delete(trackId); onBack() }
-                }) { Text("Esborrar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.routes_delete), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { showDelete = false }) { Text("Cancel·lar") } },
+            dismissButton = { TextButton(onClick = { showDelete = false }) { Text(stringResource(R.string.routes_cancel)) } },
         )
     }
 }
@@ -207,7 +214,7 @@ private fun TextFieldDialog(title: String, initial: String, onConfirm: (String) 
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = { OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true) },
-        confirmButton = { TextButton(onClick = { if (text.isNotBlank()) onConfirm(text.trim()) }) { Text("Guardar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel·lar") } },
+        confirmButton = { TextButton(onClick = { if (text.isNotBlank()) onConfirm(text.trim()) }) { Text(stringResource(R.string.routes_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.routes_cancel)) } },
     )
 }

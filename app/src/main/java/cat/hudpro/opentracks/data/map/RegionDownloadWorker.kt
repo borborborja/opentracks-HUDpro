@@ -78,14 +78,14 @@ class RegionDownloadWorker(context: Context, params: WorkerParameters) : Corouti
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             nm.createNotificationChannel(
-                NotificationChannel(CHANNEL, "Descàrrega de mapes", NotificationManager.IMPORTANCE_LOW),
+                NotificationChannel(CHANNEL, applicationContext.getString(cat.hudpro.opentracks.R.string.dl_notif_channel), NotificationManager.IMPORTANCE_LOW),
             )
         }
         val max = total.coerceAtLeast(1).toInt()
         val progress = done.coerceAtMost(total).toInt()
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL)
-            .setContentTitle("Descarregant mapa offline")
-            .setContentText("$progress / $max tessel·les")
+            .setContentTitle(applicationContext.getString(cat.hudpro.opentracks.R.string.dl_notif_title))
+            .setContentText(applicationContext.getString(cat.hudpro.opentracks.R.string.dl_notif_progress, progress, max))
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setOngoing(true)
             .setProgress(max, progress, total <= 1)

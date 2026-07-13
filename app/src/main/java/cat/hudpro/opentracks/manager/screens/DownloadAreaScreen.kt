@@ -37,17 +37,18 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.map.BoundingBox
 import cat.hudpro.opentracks.data.map.CatalanRegions
 import cat.hudpro.opentracks.data.map.MapSource
 import cat.hudpro.opentracks.data.map.RegionDownloadWorker
 import cat.hudpro.opentracks.data.map.TileMath
-import java.util.Locale
 import kotlin.math.roundToLong
 
 private enum class AreaMode { PROVINCE, VISIBLE, DRAW, ROUTE }
@@ -87,9 +88,9 @@ fun DownloadAreaScreen(onBack: () -> Unit, initialBbox: BoundingBox? = null) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Descarregar àrea") },
+                title = { Text(stringResource(R.string.maps_download_area)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Enrere") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.maps_back)) }
                 },
             )
         },
@@ -152,18 +153,18 @@ fun DownloadAreaScreen(onBack: () -> Unit, initialBbox: BoundingBox? = null) {
                             FilterChip(mode == AreaMode.ROUTE, {
                                 mode = AreaMode.ROUTE; bbox = initialBbox
                                 controller?.let { it.showSelection(initialBbox); it.fitBounds(initialBbox) }
-                            }, label = { Text("Ruta") })
+                            }, label = { Text(stringResource(R.string.maps_mode_route)) })
                         }
-                        FilterChip(mode == AreaMode.PROVINCE, { mode = AreaMode.PROVINCE }, label = { Text("Província") })
+                        FilterChip(mode == AreaMode.PROVINCE, { mode = AreaMode.PROVINCE }, label = { Text(stringResource(R.string.maps_mode_province)) })
                         FilterChip(mode == AreaMode.VISIBLE, {
                             mode = AreaMode.VISIBLE
                             controller?.let { bbox = it.visibleBounds(); it.showSelection(bbox) }
-                        }, label = { Text("Àrea visible") })
-                        FilterChip(mode == AreaMode.DRAW, { mode = AreaMode.DRAW }, label = { Text("Dibuixar") })
+                        }, label = { Text(stringResource(R.string.maps_mode_visible)) })
+                        FilterChip(mode == AreaMode.DRAW, { mode = AreaMode.DRAW }, label = { Text(stringResource(R.string.maps_mode_draw)) })
                     }
                     controller?.setGesturesEnabled(mode != AreaMode.DRAW)
                     if (mode == AreaMode.ROUTE) {
-                        Text("Àrea de la ruta seleccionada. Tria font i zoom i descarrega.",
+                        Text(stringResource(R.string.maps_route_hint),
                             style = MaterialTheme.typography.bodySmall)
                     }
 
@@ -179,11 +180,11 @@ fun DownloadAreaScreen(onBack: () -> Unit, initialBbox: BoundingBox? = null) {
                         }
                     }
                     if (mode == AreaMode.VISIBLE) {
-                        Text("Enquadra el mapa i torna a tocar «Àrea visible» per actualitzar.",
+                        Text(stringResource(R.string.maps_visible_hint),
                             style = MaterialTheme.typography.bodySmall)
                     }
                     if (mode == AreaMode.DRAW) {
-                        Text("Arrossega sobre el mapa per dibuixar el rectangle.",
+                        Text(stringResource(R.string.maps_draw_hint),
                             style = MaterialTheme.typography.bodySmall)
                     }
 
@@ -197,7 +198,7 @@ fun DownloadAreaScreen(onBack: () -> Unit, initialBbox: BoundingBox? = null) {
                         }
                     }
 
-                    Text("Zoom $minZoom – $maxZoom", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.maps_zoom_range, minZoom, maxZoom), style = MaterialTheme.typography.labelLarge)
                     RangeSlider(
                         value = zoom,
                         onValueChange = { zoom = it },
@@ -208,13 +209,13 @@ fun DownloadAreaScreen(onBack: () -> Unit, initialBbox: BoundingBox? = null) {
                     if (bbox != null) {
                         val mb = tiles * KB_PER_TILE / 1024.0
                         Text(
-                            String.format(Locale.US, "≈ %,d tessel·les · %.0f MB", tiles, mb),
+                            stringResource(R.string.maps_estimate, tiles, mb),
                             color = if (overLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                         )
-                        if (overLimit) Text("Àrea/zoom massa gran (màx ${TILE_LIMIT / 1000}k). Redueix el zoom.",
+                        if (overLimit) Text(stringResource(R.string.maps_over_limit, TILE_LIMIT / 1000),
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                         if (source == MapSource.OSM) Text(
-                            "OSM desaconsella descàrregues massives; per àrees grans usa ICGC.",
+                            stringResource(R.string.maps_osm_warning),
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -222,22 +223,22 @@ fun DownloadAreaScreen(onBack: () -> Unit, initialBbox: BoundingBox? = null) {
                     if (active != null) {
                         val done = active.progress.getLong(RegionDownloadWorker.KEY_DONE, 0)
                         val total = active.progress.getLong(RegionDownloadWorker.KEY_TOTAL, 1).coerceAtLeast(1)
-                        Text("Descarregant… $done / $total")
+                        Text(stringResource(R.string.maps_downloading, done, total))
                         LinearProgressIndicator(progress = { done.toFloat() / total }, modifier = Modifier.fillMaxWidth())
                     } else {
-                        if (succeeded) Text("Descàrrega completada ✓ — ja la pots seleccionar a Mapes offline.")
+                        if (succeeded) Text(stringResource(R.string.maps_download_done))
                         Button(
                             onClick = {
                                 bbox?.let {
                                     requestNotif()
                                     RegionDownloadWorker.enqueue(
-                                        context, source.id, "${source.displayName} · àrea", it, minZoom, maxZoom,
+                                        context, source.id, context.getString(R.string.maps_area_name, source.displayName), it, minZoom, maxZoom,
                                     )
                                 }
                             },
                             enabled = bbox != null && !overLimit,
                             modifier = Modifier.fillMaxWidth(),
-                        ) { Text("Descarregar") }
+                        ) { Text(stringResource(R.string.maps_download)) }
                     }
                 }
             }

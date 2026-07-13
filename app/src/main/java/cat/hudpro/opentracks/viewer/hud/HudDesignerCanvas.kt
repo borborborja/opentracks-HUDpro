@@ -39,7 +39,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import cat.hudpro.opentracks.R
 
 /**
  * Full-screen WYSIWYG HUD editor canvas: renders exactly like the viewer's [HudOverlay] (auto-stacked
@@ -243,7 +245,7 @@ private fun EditorWidget(
                     .background(Color(0xCC1D3557))
                     .noRippleClickable(onConfigure),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.Settings, contentDescription = "Configurar", tint = Color.White, modifier = Modifier.size(18.dp)) }
+            ) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.editor_configure), tint = Color.White, modifier = Modifier.size(18.dp)) }
             // Top-end ✕: remove.
             Box(
                 Modifier
@@ -253,7 +255,7 @@ private fun EditorWidget(
                     .background(Color(0xFFE63946))
                     .noRippleClickable(onRemove),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.Close, contentDescription = "Treure", tint = Color.White, modifier = Modifier.size(15.dp)) }
+            ) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.editor_remove), tint = Color.White, modifier = Modifier.size(15.dp)) }
             // Bottom-end handle: drag to resize (individual scale).
             Box(
                 Modifier
@@ -271,7 +273,7 @@ private fun EditorWidget(
                         )
                     },
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.OpenInFull, contentDescription = "Redimensionar", tint = Color.White, modifier = Modifier.size(14.dp)) }
+            ) { Icon(Icons.Filled.OpenInFull, contentDescription = stringResource(R.string.editor_resize), tint = Color.White, modifier = Modifier.size(14.dp)) }
         }
     }
 }

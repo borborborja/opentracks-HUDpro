@@ -39,9 +39,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import cat.hudpro.opentracks.BuildConfig
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.prefs.ViewerPreferences
 import cat.hudpro.opentracks.data.update.ApkInstaller
 import cat.hudpro.opentracks.data.update.UpdateInfo
@@ -57,7 +59,15 @@ private sealed interface UpdateState {
     data class Error(val message: String) : UpdateState
 }
 
-private val TABS = listOf("Unitats", "Gravació", "Sincronització", "Aparença", "Ruta", "Àudio", "App")
+private val TABS = listOf(
+    R.string.settings_tab_units,
+    R.string.settings_tab_recording,
+    R.string.settings_tab_sync,
+    R.string.settings_tab_appearance,
+    R.string.settings_tab_route,
+    R.string.settings_tab_audio,
+    R.string.settings_tab_app,
+)
 
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}, onOpenSensors: () -> Unit = {}) {
@@ -65,11 +75,11 @@ fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}, onOpenSe
     val prefs = remember { ViewerPreferences.get(context) }
     var tab by remember { mutableIntStateOf(0) }
 
-    DetailScaffold(title = "Ajustos", onBack = onBack) { modifier ->
+    DetailScaffold(title = stringResource(R.string.settings_title), onBack = onBack) { modifier ->
         Column(modifier.fillMaxSize()) {
             ScrollableTabRow(selectedTabIndex = tab, edgePadding = 8.dp) {
                 TABS.forEachIndexed { i, title ->
-                    Tab(selected = tab == i, onClick = { tab = i }, text = { Text(title) })
+                    Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(title)) })
                 }
             }
             Column(
@@ -98,23 +108,23 @@ private fun UnitsSection(prefs: ViewerPreferences) {
     var elev by remember { mutableStateOf(prefs.elevationUnit) }
     var spd by remember { mutableStateOf(prefs.speedUnit) }
 
-    Text("Distància", style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.settings_units_distance), style = MaterialTheme.typography.labelLarge)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip(dist == "KM", { dist = "KM"; prefs.distanceUnit = "KM" }, label = { Text("Quilòmetres (km)") })
-        FilterChip(dist == "MILE", { dist = "MILE"; prefs.distanceUnit = "MILE" }, label = { Text("Milles (mi)") })
+        FilterChip(dist == "KM", { dist = "KM"; prefs.distanceUnit = "KM" }, label = { Text(stringResource(R.string.settings_units_kilometers)) })
+        FilterChip(dist == "MILE", { dist = "MILE"; prefs.distanceUnit = "MILE" }, label = { Text(stringResource(R.string.settings_units_miles)) })
     }
-    Text("Altitud i desnivell", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    Text(stringResource(R.string.settings_units_elevation), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip(elev == "METER", { elev = "METER"; prefs.elevationUnit = "METER" }, label = { Text("Metres (m)") })
-        FilterChip(elev == "FOOT", { elev = "FOOT"; prefs.elevationUnit = "FOOT" }, label = { Text("Peus (ft)") })
+        FilterChip(elev == "METER", { elev = "METER"; prefs.elevationUnit = "METER" }, label = { Text(stringResource(R.string.settings_units_meters)) })
+        FilterChip(elev == "FOOT", { elev = "FOOT"; prefs.elevationUnit = "FOOT" }, label = { Text(stringResource(R.string.settings_units_feet)) })
     }
-    Text("Velocitat", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    Text(stringResource(R.string.settings_units_speed), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         FilterChip(spd == "KMH", { spd = "KMH"; prefs.speedUnit = "KMH" }, label = { Text("km/h") })
         FilterChip(spd == "MPH", { spd = "MPH"; prefs.speedUnit = "MPH" }, label = { Text("mph") })
     }
     Text(
-        "El ritme usa la unitat de distància (min/km o min/mi); VAM i desviació, la d'altitud.",
+        stringResource(R.string.settings_units_note),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
         modifier = Modifier.padding(top = 8.dp),
@@ -132,18 +142,18 @@ private fun SyncSection() {
     var apiKey by remember { mutableStateOf(endurainPrefs.apiKey ?: "") }
     var status by remember { mutableStateOf<String?>(null) }
 
-    Text("Endurain", style = MaterialTheme.typography.titleSmall)
+    Text(stringResource(R.string.settings_sync_endurain), style = MaterialTheme.typography.titleSmall)
     androidx.compose.material3.OutlinedTextField(
         value = host,
         onValueChange = { host = it },
-        label = { Text("Servidor (https://…)") },
+        label = { Text(stringResource(R.string.settings_sync_server_label)) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
     )
     androidx.compose.material3.OutlinedTextField(
         value = apiKey,
         onValueChange = { apiKey = it },
-        label = { Text("API key (scope activities:upload)") },
+        label = { Text(stringResource(R.string.settings_sync_api_key_label)) },
         singleLine = true,
         visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
         modifier = Modifier.fillMaxWidth(),
@@ -152,28 +162,27 @@ private fun SyncSection() {
         onClick = {
             endurainPrefs.host = host
             endurainPrefs.apiKey = apiKey
-            status = "Desat. Provant connexió…"
+            status = context.getString(R.string.settings_sync_saved_testing)
             scope.launch {
                 val repo = cat.hudpro.opentracks.data.endurain.EndurainRepository(endurainPrefs)
                 status = repo.testConnection().fold(
-                    onSuccess = { "Connectat ✓ ($it activitats al servidor)" },
-                    onFailure = { "Error: ${it.message}" },
+                    onSuccess = { context.getString(R.string.settings_sync_connected, "$it") },
+                    onFailure = { context.getString(R.string.settings_error, "${it.message}") },
                 )
             }
         },
         modifier = Modifier.fillMaxWidth(),
-    ) { Text("Guardar i provar connexió") }
+    ) { Text(stringResource(R.string.settings_sync_save_test)) }
     status?.let { Card { Text(it, Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium) } }
     Text(
-        "Els entrenaments gravats es pugen automàticament a Endurain en aturar la gravació (si la " +
-            "connexió està configurada). La cua reintenta si no hi ha xarxa.",
+        stringResource(R.string.settings_sync_upload_note),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )
 
-    Text("Properament", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp))
+    Text(stringResource(R.string.settings_sync_coming_soon), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp))
     Text(
-        "· Strava\n· Pujada automàtica a Google Drive\n· Desar els GPX en una carpeta del telèfon",
+        stringResource(R.string.settings_sync_coming_soon_items),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )
@@ -189,14 +198,14 @@ private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit
     var autoPause by remember { mutableStateOf(prefs.recAutoPause) }
     var barometer by remember { mutableStateOf(prefs.recBarometer) }
 
-    Text("Interval GPS", style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.settings_rec_gps_interval), style = MaterialTheme.typography.labelLarge)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf(1, 2, 5).forEach { s ->
             FilterChip(interval == s, { interval = s; prefs.recGpsIntervalSec = s }, label = { Text("${s}s") })
         }
     }
 
-    Text("Distància mínima entre punts: ${minDist.toInt()} m", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    Text(stringResource(R.string.settings_rec_min_distance, minDist.toInt()), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
     Slider(
         value = minDist,
         onValueChange = { minDist = it; prefs.recMinDistanceM = it },
@@ -204,8 +213,8 @@ private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit
         steps = 13,
     )
 
-    Text("Precisió GPS màxima: ${accuracy.toInt()} m", style = MaterialTheme.typography.labelLarge)
-    Text("Es descarten les posicions amb pitjor precisió.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+    Text(stringResource(R.string.settings_rec_max_accuracy, accuracy.toInt()), style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.settings_rec_accuracy_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
     Slider(
         value = accuracy,
         onValueChange = { accuracy = it; prefs.recMaxAccuracyM = it },
@@ -213,19 +222,19 @@ private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit
         steps = 8,
     )
 
-    ToggleRow("Auto-pausa quan estàs aturat", autoPause) { autoPause = it; prefs.recAutoPause = it }
-    ToggleRow("Usar baròmetre per al desnivell", barometer) { barometer = it; prefs.recBarometer = it }
+    ToggleRow(stringResource(R.string.settings_rec_auto_pause), autoPause) { autoPause = it; prefs.recAutoPause = it }
+    ToggleRow(stringResource(R.string.settings_rec_barometer), barometer) { barometer = it; prefs.recBarometer = it }
 
     OutlinedButton(onClick = onOpenSensors, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Text("Sensors BLE (FC · cadència · potència)")
+        Text(stringResource(R.string.settings_rec_ble_sensors))
     }
     Text(
-        "Sensors emparellats: ${prefs.bleSensorAddrs.size}",
+        stringResource(R.string.settings_rec_paired_sensors, prefs.bleSensorAddrs.size),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )
     Text(
-        "Els canvis s'apliquen a la propera gravació.",
+        stringResource(R.string.settings_rec_apply_note),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
         modifier = Modifier.padding(top = 8.dp),
@@ -242,13 +251,16 @@ private fun AppSection(onOpenDebugLog: () -> Unit) {
     var state by remember { mutableStateOf<UpdateState>(UpdateState.Idle) }
     var progress by remember { mutableFloatStateOf(0f) }
 
+    LanguageCard()
+
     Card {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Versió instal·lada", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.settings_app_installed_version), style = MaterialTheme.typography.labelMedium)
             Text("v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", style = MaterialTheme.typography.titleMedium)
         }
     }
 
+    val networkError = stringResource(R.string.settings_update_network_error)
     Button(
         onClick = {
             state = UpdateState.Checking
@@ -256,27 +268,28 @@ private fun AppSection(onOpenDebugLog: () -> Unit) {
                 state = try {
                     repo.checkForUpdate()?.let { UpdateState.Available(it) } ?: UpdateState.UpToDate
                 } catch (e: Exception) {
-                    UpdateState.Error(e.message ?: "Error de xarxa")
+                    UpdateState.Error(e.message ?: networkError)
                 }
             }
         },
         enabled = state !is UpdateState.Checking && state !is UpdateState.Downloading,
         modifier = Modifier.fillMaxWidth(),
-    ) { Text("Buscar actualització") }
+    ) { Text(stringResource(R.string.settings_check_update)) }
 
     when (val s = state) {
-        is UpdateState.Checking -> Text("Comprovant…")
-        is UpdateState.UpToDate -> Text("Estàs a l'última versió ✓")
-        is UpdateState.Error -> Text("Error: ${s.message}", color = MaterialTheme.colorScheme.error)
+        is UpdateState.Checking -> Text(stringResource(R.string.settings_update_checking))
+        is UpdateState.UpToDate -> Text(stringResource(R.string.settings_update_up_to_date))
+        is UpdateState.Error -> Text(stringResource(R.string.settings_error, s.message), color = MaterialTheme.colorScheme.error)
         is UpdateState.Downloading ->
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Descarregant… ${(progress * 100).toInt()}%")
+                Text(stringResource(R.string.settings_update_downloading, (progress * 100).toInt()))
                 LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
             }
         is UpdateState.Available -> Card {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Nova versió v${s.info.version}", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.settings_update_new_version, s.info.version), style = MaterialTheme.typography.titleMedium)
                 Text(s.info.changelog, style = MaterialTheme.typography.bodySmall)
+                val downloadError = stringResource(R.string.settings_update_download_error)
                 Button(
                     onClick = {
                         if (!ApkInstaller.canInstall(context)) {
@@ -291,12 +304,12 @@ private fun AppSection(onOpenDebugLog: () -> Unit) {
                                 ApkInstaller.install(context, file)
                                 state = UpdateState.Idle
                             } catch (e: Exception) {
-                                state = UpdateState.Error(e.message ?: "Error descarregant")
+                                state = UpdateState.Error(e.message ?: downloadError)
                             }
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Descarregar i instal·lar") }
+                ) { Text(stringResource(R.string.settings_update_download_install)) }
             }
         }
         UpdateState.Idle -> {}
@@ -307,24 +320,24 @@ private fun AppSection(onOpenDebugLog: () -> Unit) {
     var diag by remember { mutableStateOf<String?>(null) }
     Card {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Depuració", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.settings_debug_section), style = MaterialTheme.typography.labelMedium)
             OutlinedButton(
                 onClick = onOpenDebugLog,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Registre de debug (log complet)") }
+            ) { Text(stringResource(R.string.settings_debug_log_button)) }
             OutlinedButton(
                 onClick = { scope.launch { diag = buildDiagnostics(context) } },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Diagnòstic complet") }
+            ) { Text(stringResource(R.string.settings_debug_full)) }
             OutlinedButton(
                 onClick = { diag = cat.hudpro.opentracks.data.opentracks.OpenTracksRecording.diagnostics(context) },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Provar iniciar gravació") }
+            ) { Text(stringResource(R.string.settings_debug_test_recording)) }
             diag?.let { report ->
                 OutlinedButton(
                     onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(report)) },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Copiar diagnòstic") }
+                ) { Text(stringResource(R.string.settings_debug_copy)) }
                 Text(report, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
             }
         }
@@ -332,10 +345,54 @@ private fun AppSection(onOpenDebugLog: () -> Unit) {
 
     Card {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Quant a", style = MaterialTheme.typography.labelMedium)
-            Text("OpenTracks HUD Pro — fork d'OSMDashboard amb mapes ICGC, HUD i Endurain.",
+            Text(stringResource(R.string.settings_about), style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.settings_about_desc),
                 style = MaterialTheme.typography.bodySmall)
             Text("github.com/borborborja/opentracks-HUDpro", style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+// --- App language (per-app locales, API 33+) ---
+
+@Composable
+private fun LanguageCard() {
+    val context = LocalContext.current
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.lang_title), style = MaterialTheme.typography.labelMedium)
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                val localeManager = context.getSystemService(android.app.LocaleManager::class.java)
+                var current by remember {
+                    mutableStateOf(localeManager.applicationLocales.toLanguageTags().substringBefore('-'))
+                }
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FilterChip(
+                        selected = current.isEmpty(),
+                        onClick = {
+                            current = ""
+                            localeManager.applicationLocales = android.os.LocaleList.getEmptyLocaleList()
+                        },
+                        label = { Text(stringResource(R.string.lang_system)) },
+                    )
+                    listOf("ca" to "Català", "es" to "Español", "en" to "English").forEach { (code, label) ->
+                        FilterChip(
+                            selected = current == code,
+                            onClick = {
+                                current = code
+                                localeManager.applicationLocales = android.os.LocaleList.forLanguageTags(code)
+                            },
+                            label = { Text(label) },
+                        )
+                    }
+                }
+            } else {
+                Text(
+                    stringResource(R.string.lang_hint_old),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
         }
     }
 }
@@ -348,13 +405,13 @@ private fun TrackAppearanceSection(prefs: ViewerPreferences) {
     var mode by remember { mutableStateOf(cat.hudpro.opentracks.data.map.TrackColorMode.byName(prefs.trackColorMode)) }
     var color by remember { mutableStateOf(prefs.trackColor) }
 
-    Text("Aparença del track", style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.settings_appearance_track), style = MaterialTheme.typography.labelLarge)
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         cat.hudpro.opentracks.data.map.TrackColorMode.entries.forEach { m ->
             FilterChip(
                 selected = mode == m,
                 onClick = { mode = m; prefs.trackColorMode = m.name },
-                label = { Text(m.label) },
+                label = { Text(stringResource(m.labelRes)) },
             )
         }
     }
@@ -376,23 +433,23 @@ private fun FollowRouteSection(prefs: ViewerPreferences) {
     var sound by remember { mutableStateOf(prefs.offRouteSound) }
     var vibrate by remember { mutableStateOf(prefs.offRouteVibrate) }
 
-    Text("Ruta a seguir", style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.settings_route_follow), style = MaterialTheme.typography.labelLarge)
     ColorPalette(palette, color) { color = it; prefs.followColor = it }
-    Text("Gruix ${width.toInt()}", style = MaterialTheme.typography.bodySmall)
+    Text(stringResource(R.string.settings_route_width, width.toInt()), style = MaterialTheme.typography.bodySmall)
     Slider(value = width, onValueChange = { width = it; prefs.followWidth = it }, valueRange = 3f..12f)
-    ToggleRow("Fletxes de direcció", arrows) { arrows = it; prefs.followArrows = it }
-    ToggleRow("Mostrar progrés (recorregut atenuat)", progress) { progress = it; prefs.followProgress = it }
+    ToggleRow(stringResource(R.string.settings_route_arrows), arrows) { arrows = it; prefs.followArrows = it }
+    ToggleRow(stringResource(R.string.settings_route_progress), progress) { progress = it; prefs.followProgress = it }
 
-    Text("Avís fora de ruta", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
-    Text("Llindar de desviació: ${threshold.toInt()} m", style = MaterialTheme.typography.bodySmall)
+    Text(stringResource(R.string.settings_route_off_route), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    Text(stringResource(R.string.settings_route_threshold, threshold.toInt()), style = MaterialTheme.typography.bodySmall)
     Slider(
         value = threshold,
         onValueChange = { threshold = it; prefs.offRouteThresholdM = it.toInt() },
         valueRange = 10f..100f,
         steps = 8,
     )
-    ToggleRow("So", sound) { sound = it; prefs.offRouteSound = it }
-    ToggleRow("Vibració", vibrate) { vibrate = it; prefs.offRouteVibrate = it }
+    ToggleRow(stringResource(R.string.settings_route_sound), sound) { sound = it; prefs.offRouteSound = it }
+    ToggleRow(stringResource(R.string.settings_route_vibration), vibrate) { vibrate = it; prefs.offRouteVibrate = it }
 }
 
 // --- Audio announcements (moved from the HUD designer) ---
@@ -413,16 +470,16 @@ private fun AudioAnnouncementsSection(prefs: ViewerPreferences) {
     var fHr by remember { mutableStateOf(prefs.annHeartRate) }
     var offSpoken by remember { mutableStateOf(prefs.offRouteSpoken) }
 
-    Text("Àudio i avisos", style = MaterialTheme.typography.labelLarge)
-    ToggleRow("Activar avisos d'àudio", enabled) { enabled = it; prefs.announceEnabled = it }
+    Text(stringResource(R.string.settings_audio_title), style = MaterialTheme.typography.labelLarge)
+    ToggleRow(stringResource(R.string.settings_audio_enable), enabled) { enabled = it; prefs.announceEnabled = it }
     if (!enabled) return
 
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        FilterChip(voice, { voice = true; prefs.announceMode = "VOICE" }, label = { Text("Veu") })
-        FilterChip(!voice, { voice = false; prefs.announceMode = "BEEP" }, label = { Text("Xiulets") })
+        FilterChip(voice, { voice = true; prefs.announceMode = "VOICE" }, label = { Text(stringResource(R.string.settings_audio_voice)) })
+        FilterChip(!voice, { voice = false; prefs.announceMode = "BEEP" }, label = { Text(stringResource(R.string.settings_audio_beeps)) })
     }
     if (voice) {
-        Text("Idioma", style = MaterialTheme.typography.bodySmall)
+        Text(stringResource(R.string.settings_audio_language), style = MaterialTheme.typography.bodySmall)
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             cat.hudpro.opentracks.viewer.audio.AnnounceLang.entries.forEach { l ->
                 FilterChip(lang == l, { lang = l; prefs.announceLang = l.code }, label = { Text(l.label) })
@@ -430,23 +487,23 @@ private fun AudioAnnouncementsSection(prefs: ViewerPreferences) {
         }
     }
 
-    ToggleRow("Cada ${distKm.toInt()} km", byDist) { byDist = it; prefs.announceByDistance = it }
+    ToggleRow(stringResource(R.string.settings_every_km, distKm.toInt()), byDist) { byDist = it; prefs.announceByDistance = it }
     if (byDist) {
         Slider(value = distKm, onValueChange = { distKm = it; prefs.announceDistanceKm = it }, valueRange = 1f..10f, steps = 8)
     }
-    ToggleRow("Cada ${timeMin.toInt()} min", byTime) { byTime = it; prefs.announceByTime = it }
+    ToggleRow(stringResource(R.string.settings_every_min, timeMin.toInt()), byTime) { byTime = it; prefs.announceByTime = it }
     if (byTime) {
         Slider(value = timeMin, onValueChange = { timeMin = it; prefs.announceTimeMin = it.toInt() }, valueRange = 1f..30f, steps = 28)
     }
 
     if (voice) {
-        Text("Què s'anuncia", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
-        ToggleRow("Distància i temps", fDist) { fDist = it; prefs.annDistanceTime = it }
-        ToggleRow("Ritme", fPace) { fPace = it; prefs.annPace = it }
-        ToggleRow("Ritme de l'últim km", fSplit) { fSplit = it; prefs.annSplitPace = it }
-        ToggleRow("Desnivell", fElev) { fElev = it; prefs.annElevation = it }
-        ToggleRow("Pulsacions", fHr) { fHr = it; prefs.annHeartRate = it }
-        ToggleRow("Dir 'Fora de ruta' per veu", offSpoken) { offSpoken = it; prefs.offRouteSpoken = it }
+        Text(stringResource(R.string.settings_audio_announce_what), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+        ToggleRow(stringResource(R.string.settings_audio_distance_time), fDist) { fDist = it; prefs.annDistanceTime = it }
+        ToggleRow(stringResource(R.string.settings_audio_pace), fPace) { fPace = it; prefs.annPace = it }
+        ToggleRow(stringResource(R.string.settings_audio_split_pace), fSplit) { fSplit = it; prefs.annSplitPace = it }
+        ToggleRow(stringResource(R.string.settings_audio_elevation), fElev) { fElev = it; prefs.annElevation = it }
+        ToggleRow(stringResource(R.string.settings_audio_heart_rate), fHr) { fHr = it; prefs.annHeartRate = it }
+        ToggleRow(stringResource(R.string.settings_audio_off_route_spoken), offSpoken) { offSpoken = it; prefs.offRouteSpoken = it }
     }
 }
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lang_title">Idioma de l\'aplicació</string>
+    <string name="lang_system">El del sistema</string>
+    <string name="lang_hint_old">En aquesta versió d\'Android, canvia l\'idioma de l\'app des dels ajustos d\'idioma del sistema.</string>
+</resources>

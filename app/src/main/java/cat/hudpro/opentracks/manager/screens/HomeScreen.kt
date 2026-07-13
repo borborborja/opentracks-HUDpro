@@ -76,11 +76,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.hudpro.opentracks.HudProApplication
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.gpx.GpxShare
 import cat.hudpro.opentracks.data.map.MapSource
 import cat.hudpro.opentracks.data.map.MapStyleFactory
@@ -93,7 +95,6 @@ import kotlinx.coroutines.launch
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.Style
-import java.util.Locale
 
 private const val ROOT = "General"
 
@@ -183,10 +184,10 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("HUD Pro") },
+                title = { Text(stringResource(R.string.home_title)) },
                 actions = {
-                    IconButton(onClick = onOpenLayers) { Icon(Icons.Filled.Layers, contentDescription = "Capes de mapa") }
-                    IconButton(onClick = onOpenSettings) { Icon(Icons.Filled.Settings, contentDescription = "Ajustos") }
+                    IconButton(onClick = onOpenLayers) { Icon(Icons.Filled.Layers, contentDescription = stringResource(R.string.home_cd_map_layers)) }
+                    IconButton(onClick = onOpenSettings) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.home_cd_settings)) }
                 },
             )
         },
@@ -195,8 +196,8 @@ fun HomeScreen(
             ViewerMapButton(onClick = onOpenViewer)
 
             TabRow(selectedTabIndex = tab, modifier = Modifier.padding(top = 12.dp)) {
-                Tab(tab == 0, onClick = { tab = 0; currentFolder = null }, text = { Text("Registrades") })
-                Tab(tab == 1, onClick = { tab = 1; currentFolder = null }, text = { Text("Per seguir") })
+                Tab(tab == 0, onClick = { tab = 0; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_recorded)) })
+                Tab(tab == 1, onClick = { tab = 1; currentFolder = null }, text = { Text(stringResource(R.string.home_tab_to_follow)) })
             }
 
             // Toolbar: view mode, folders, import, create route.
@@ -217,26 +218,26 @@ fun HomeScreen(
                             "DETAILED" -> Icons.AutoMirrored.Filled.ViewQuilt
                             else -> Icons.Filled.GridView
                         },
-                        contentDescription = "Mode de vista",
+                        contentDescription = stringResource(R.string.home_cd_view_mode),
                     )
                 }
                 IconButton(onClick = { newFolder = true }) {
-                    Icon(Icons.Filled.CreateNewFolder, contentDescription = "Nova carpeta")
+                    Icon(Icons.Filled.CreateNewFolder, contentDescription = stringResource(R.string.home_new_folder))
                 }
                 if (currentFolder != null) {
                     AssistChip(
                         onClick = { currentFolder = null },
                         label = { Text(currentFolder ?: "") },
-                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Sortir de la carpeta", Modifier.size(16.dp)) },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.home_cd_exit_folder), Modifier.size(16.dp)) },
                     )
                 }
                 Spacer(Modifier.weight(1f))
                 OutlinedButton(onClick = { importLauncher.launch(arrayOf("*/*")) }) {
                     Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(18.dp))
-                    Text(" Importar")
+                    Text(" " + stringResource(R.string.home_import))
                 }
                 if (kind == TrackKind.ROUTE) {
-                    IconButton(onClick = onCreateRoute) { Icon(Icons.Filled.Edit, contentDescription = "Crear ruta") }
+                    IconButton(onClick = onCreateRoute) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.home_cd_create_route)) }
                 }
             }
 
@@ -244,9 +245,9 @@ fun HomeScreen(
                 Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                     Text(
                         if (kind == TrackKind.TRAINING) {
-                            "Encara no hi ha entrenaments. Grava'n un des d'Entrenament o importa un fitxer."
+                            stringResource(R.string.home_empty_trainings)
                         } else {
-                            "Encara no hi ha rutes. Importa un GPX/KML/TCX o crea'n una."
+                            stringResource(R.string.home_empty_routes)
                         },
                     )
                 }
@@ -273,23 +274,23 @@ fun HomeScreen(
     pendingImport?.let { (uri, fileName) ->
         AlertDialog(
             onDismissRequest = { pendingImport = null },
-            title = { Text("Importar «${fileName ?: "fitxer"}»") },
-            text = { Text("Com vols desar-lo?") },
+            title = { Text(stringResource(R.string.home_import_dialog_title, fileName ?: stringResource(R.string.home_file_fallback))) },
+            text = { Text(stringResource(R.string.home_import_dialog_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     doImport(context, scope, app, uri, fileName, TrackKind.ROUTE); pendingImport = null
-                }) { Text("Ruta per seguir") }
+                }) { Text(stringResource(R.string.home_import_as_route)) }
             },
             dismissButton = {
                 TextButton(onClick = {
                     doImport(context, scope, app, uri, fileName, TrackKind.TRAINING); pendingImport = null
-                }) { Text("Entrenament") }
+                }) { Text(stringResource(R.string.home_training)) }
             },
         )
     }
 
     if (newFolder) {
-        TextDialog(title = "Nova carpeta", initial = "", confirm = "Crear", onDismiss = { newFolder = false }) { name ->
+        TextDialog(title = stringResource(R.string.home_new_folder), initial = "", confirm = stringResource(R.string.home_create), onDismiss = { newFolder = false }) { name ->
             saveFolderSet(folderSet() + name)
             newFolder = false
         }
@@ -309,7 +310,7 @@ fun HomeScreen(
     }
 
     renameFor?.let { track ->
-        TextDialog(title = "Reanomenar", initial = track.name, confirm = "Desar", onDismiss = { renameFor = null }) { name ->
+        TextDialog(title = stringResource(R.string.home_rename), initial = track.name, confirm = stringResource(R.string.home_save), onDismiss = { renameFor = null }) { name ->
             scope.launch { app.trackRepository.rename(track.id, name) }
             renameFor = null
         }
@@ -318,19 +319,19 @@ fun HomeScreen(
     deleteFor?.let { track ->
         AlertDialog(
             onDismissRequest = { deleteFor = null },
-            title = { Text("Esborrar «${track.name}»?") },
+            title = { Text(stringResource(R.string.home_delete_confirm, track.name)) },
             confirmButton = {
                 TextButton(onClick = {
                     scope.launch { app.trackRepository.delete(track.id) }
                     deleteFor = null
-                }) { Text("Esborrar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.home_delete), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { deleteFor = null }) { Text("Cancel·lar") } },
+            dismissButton = { TextButton(onClick = { deleteFor = null }) { Text(stringResource(R.string.home_cancel)) } },
         )
     }
 
     folderRename?.let { old ->
-        TextDialog(title = "Reanomenar carpeta", initial = old, confirm = "Desar", onDismiss = { folderRename = null }) { new ->
+        TextDialog(title = stringResource(R.string.home_rename_folder), initial = old, confirm = stringResource(R.string.home_save), onDismiss = { folderRename = null }) { new ->
             scope.launch { app.trackRepository.renameCollection(old, new, kind) }
             saveFolderSet(folderSet() - old + new)
             if (currentFolder == old) currentFolder = new
@@ -341,17 +342,17 @@ fun HomeScreen(
     folderDelete?.let { name ->
         AlertDialog(
             onDismissRequest = { folderDelete = null },
-            title = { Text("Esborrar la carpeta «$name»?") },
-            text = { Text("Les rutes de dins tornaran a l'arrel (no s'esborren).") },
+            title = { Text(stringResource(R.string.home_delete_folder_confirm, name)) },
+            text = { Text(stringResource(R.string.home_delete_folder_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     scope.launch { app.trackRepository.renameCollection(name, ROOT, kind) }
                     saveFolderSet(folderSet() - name)
                     if (currentFolder == name) currentFolder = null
                     folderDelete = null
-                }) { Text("Esborrar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.home_delete), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { folderDelete = null }) { Text("Cancel·lar") } },
+            dismissButton = { TextButton(onClick = { folderDelete = null }) { Text(stringResource(R.string.home_cancel)) } },
         )
     }
 }
@@ -366,11 +367,11 @@ private fun doImport(
 ) {
     scope.launch {
         runCatching {
-            app.trackRepository.importAny(uri, fileName, fileName?.substringBeforeLast('.') ?: "Importat", kind)
+            app.trackRepository.importAny(uri, fileName, fileName?.substringBeforeLast('.') ?: context.getString(R.string.home_imported_default_name), kind)
         }.onFailure {
-            android.widget.Toast.makeText(context, it.message ?: "Error important", android.widget.Toast.LENGTH_LONG).show()
+            android.widget.Toast.makeText(context, it.message ?: context.getString(R.string.home_import_error), android.widget.Toast.LENGTH_LONG).show()
         }.onSuccess {
-            android.widget.Toast.makeText(context, "Importat ✓", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, context.getString(R.string.home_imported), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 }
@@ -437,10 +438,10 @@ private fun FolderHeader(name: String, count: Int, expanded: Boolean, onToggle: 
             Text("$count  ", style = MaterialTheme.typography.bodySmall)
             Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
             Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Accions de carpeta") }
+                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.home_cd_folder_actions)) }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(text = { Text("Reanomenar") }, onClick = { menu = false; onMenu("rename") })
-                    DropdownMenuItem(text = { Text("Esborrar carpeta") }, onClick = { menu = false; onMenu("delete") })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.home_rename)) }, onClick = { menu = false; onMenu("rename") })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.home_delete_folder)) }, onClick = { menu = false; onMenu("delete") })
                 }
             }
         }
@@ -467,14 +468,14 @@ private fun RouteRow(
                 Text(t.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
                 if (detailed) {
                     Text(
-                        String.format(
-                            Locale.US, "%.1f km · %d punts · %s",
+                        stringResource(
+                            R.string.home_route_detail_format,
                             t.distanceMeters / 1000.0, t.pointCount, t.source.name,
                         ),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 } else {
-                    Text(String.format(Locale.US, "%.1f km", t.distanceMeters / 1000.0), style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.home_distance_km, t.distanceMeters / 1000.0), style = MaterialTheme.typography.bodySmall)
                 }
             }
             RouteMenu(t, kind, actions)
@@ -486,20 +487,20 @@ private fun RouteRow(
 private fun RouteMenu(t: FollowTrackEntity, kind: String, actions: RouteActions) {
     var open by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { open = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Accions") }
+        IconButton(onClick = { open = true }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.home_cd_actions)) }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            DropdownMenuItem(text = { Text("Obrir") }, onClick = { open = false; actions.onOpen(t) })
-            DropdownMenuItem(text = { Text("Exportar (GPX)") }, onClick = { open = false; actions.onExport(t) })
+            DropdownMenuItem(text = { Text(stringResource(R.string.home_open)) }, onClick = { open = false; actions.onOpen(t) })
+            DropdownMenuItem(text = { Text(stringResource(R.string.home_export_gpx)) }, onClick = { open = false; actions.onExport(t) })
             DropdownMenuItem(
-                text = { Text(if (kind == TrackKind.ROUTE) "Editar traçat" else "Reanomenar") },
+                text = { Text(stringResource(if (kind == TrackKind.ROUTE) R.string.home_edit_track else R.string.home_rename)) },
                 onClick = { open = false; actions.onEdit(t) },
             )
-            DropdownMenuItem(text = { Text("Mou a carpeta…") }, onClick = { open = false; actions.onMove(t) })
+            DropdownMenuItem(text = { Text(stringResource(R.string.home_move_to_folder_ellipsis)) }, onClick = { open = false; actions.onMove(t) })
             if (kind == TrackKind.ROUTE) {
-                DropdownMenuItem(text = { Text("Baixar mapes") }, onClick = { open = false; actions.onDownloadMap(t) })
+                DropdownMenuItem(text = { Text(stringResource(R.string.home_download_maps)) }, onClick = { open = false; actions.onDownloadMap(t) })
             }
             DropdownMenuItem(
-                text = { Text("Esborrar", color = MaterialTheme.colorScheme.error) },
+                text = { Text(stringResource(R.string.home_delete), color = MaterialTheme.colorScheme.error) },
                 onClick = { open = false; actions.onDelete(t) },
             )
         }
@@ -548,15 +549,15 @@ private fun FolderTile(name: String, count: Int, onOpen: () -> Unit, onMenu: (St
         Box(Modifier.fillMaxSize().padding(12.dp)) {
             Icon(Icons.Filled.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
             Box(Modifier.align(Alignment.TopEnd)) {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Accions de carpeta") }
+                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.home_cd_folder_actions)) }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(text = { Text("Reanomenar") }, onClick = { menu = false; onMenu("rename") })
-                    DropdownMenuItem(text = { Text("Esborrar carpeta") }, onClick = { menu = false; onMenu("delete") })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.home_rename)) }, onClick = { menu = false; onMenu("rename") })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.home_delete_folder)) }, onClick = { menu = false; onMenu("delete") })
                 }
             }
             Column(Modifier.align(Alignment.BottomStart)) {
                 Text(name, fontWeight = FontWeight.Bold, maxLines = 1)
-                Text("$count rutes", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.home_folder_routes_count, count), style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -600,7 +601,7 @@ private fun RouteTile(t: FollowTrackEntity, kind: String, activeId: Long, action
                 IconButton(onClick = { actions.onFollow(t) }, modifier = Modifier.align(Alignment.TopStart)) {
                     Icon(
                         if (activeId == t.id) Icons.Filled.Star else Icons.Filled.StarBorder,
-                        contentDescription = "Ruta activa",
+                        contentDescription = stringResource(R.string.home_cd_active_route),
                         tint = if (activeId == t.id) Color(0xFFFFD166) else Color.White,
                     )
                 }
@@ -609,7 +610,7 @@ private fun RouteTile(t: FollowTrackEntity, kind: String, activeId: Long, action
             Column(Modifier.align(Alignment.BottomStart).padding(10.dp)) {
                 Text(t.name, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, style = MaterialTheme.typography.bodyMedium)
                 Text(
-                    String.format(Locale.US, "%.1f km", t.distanceMeters / 1000.0),
+                    stringResource(R.string.home_distance_km, t.distanceMeters / 1000.0),
                     color = Color(0xFFB8C4CE),
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -622,20 +623,20 @@ private fun RouteTile(t: FollowTrackEntity, kind: String, activeId: Long, action
 private fun RouteMenuTinted(t: FollowTrackEntity, kind: String, actions: RouteActions) {
     var open by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { open = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Accions", tint = Color.White) }
+        IconButton(onClick = { open = true }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.home_cd_actions), tint = Color.White) }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            DropdownMenuItem(text = { Text("Obrir") }, onClick = { open = false; actions.onOpen(t) })
-            DropdownMenuItem(text = { Text("Exportar (GPX)") }, onClick = { open = false; actions.onExport(t) })
+            DropdownMenuItem(text = { Text(stringResource(R.string.home_open)) }, onClick = { open = false; actions.onOpen(t) })
+            DropdownMenuItem(text = { Text(stringResource(R.string.home_export_gpx)) }, onClick = { open = false; actions.onExport(t) })
             DropdownMenuItem(
-                text = { Text(if (kind == TrackKind.ROUTE) "Editar traçat" else "Reanomenar") },
+                text = { Text(stringResource(if (kind == TrackKind.ROUTE) R.string.home_edit_track else R.string.home_rename)) },
                 onClick = { open = false; actions.onEdit(t) },
             )
-            DropdownMenuItem(text = { Text("Mou a carpeta…") }, onClick = { open = false; actions.onMove(t) })
+            DropdownMenuItem(text = { Text(stringResource(R.string.home_move_to_folder_ellipsis)) }, onClick = { open = false; actions.onMove(t) })
             if (kind == TrackKind.ROUTE) {
-                DropdownMenuItem(text = { Text("Baixar mapes") }, onClick = { open = false; actions.onDownloadMap(t) })
+                DropdownMenuItem(text = { Text(stringResource(R.string.home_download_maps)) }, onClick = { open = false; actions.onDownloadMap(t) })
             }
             DropdownMenuItem(
-                text = { Text("Esborrar", color = MaterialTheme.colorScheme.error) },
+                text = { Text(stringResource(R.string.home_delete), color = MaterialTheme.colorScheme.error) },
                 onClick = { open = false; actions.onDelete(t) },
             )
         }
@@ -654,7 +655,7 @@ private fun TextDialog(title: String, initial: String, confirm: String, onDismis
         confirmButton = {
             TextButton(onClick = { if (text.isNotBlank()) onConfirm(text.trim()) }) { Text(confirm) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel·lar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.home_cancel)) } },
     )
 }
 
@@ -668,16 +669,16 @@ private fun MoveToFolderDialog(
     var newName by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Mou a carpeta") },
+        title = { Text(stringResource(R.string.home_move_to_folder)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                FolderChoice("Cap (arrel)", current == ROOT) { onMove(ROOT) }
+                FolderChoice(stringResource(R.string.home_none_root), current == ROOT) { onMove(ROOT) }
                 folders.forEach { f -> FolderChoice(f, current == f) { onMove(f) } }
                 OutlinedTextField(
                     value = newName,
                     onValueChange = { newName = it },
                     singleLine = true,
-                    label = { Text("Nova carpeta…") },
+                    label = { Text(stringResource(R.string.home_new_folder_ellipsis)) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -686,9 +687,9 @@ private fun MoveToFolderDialog(
             TextButton(
                 onClick = { if (newName.isNotBlank()) onMove(newName.trim()) },
                 enabled = newName.isNotBlank(),
-            ) { Text("Crear i moure") }
+            ) { Text(stringResource(R.string.home_create_and_move)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel·lar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.home_cancel)) } },
     )
 }
 
@@ -749,7 +750,7 @@ private fun ViewerMapButton(onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Map, contentDescription = null, tint = Color.White)
                 Text(
-                    "  Entrenament",
+                    "  " + stringResource(R.string.home_training),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,

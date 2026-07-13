@@ -266,7 +266,7 @@ class RecordingService : Service() {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             nm.createNotificationChannel(
-                NotificationChannel(CHANNEL, "Gravació d'activitat", NotificationManager.IMPORTANCE_LOW),
+                NotificationChannel(CHANNEL, getString(cat.hudpro.opentracks.R.string.rec_notif_channel), NotificationManager.IMPORTANCE_LOW),
             )
         }
         val state = recorder?.snapshot(Instant.now())
@@ -276,7 +276,7 @@ class RecordingService : Service() {
         val text = String.format(
             Locale.US, "%.2f km · %d:%02d:%02d%s",
             km, secs / 3600, (secs % 3600) / 60, secs % 60,
-            if (state?.isPaused == true) " · EN PAUSA" else "",
+            if (state?.isPaused == true) getString(cat.hudpro.opentracks.R.string.rec_notif_on_pause_suffix) else "",
         )
         val paused = state?.isPaused == true
 
@@ -293,7 +293,7 @@ class RecordingService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL)
-            .setContentTitle(if (paused) "Gravació en pausa" else "Gravant activitat")
+            .setContentTitle(getString(if (paused) cat.hudpro.opentracks.R.string.rec_notif_paused else cat.hudpro.opentracks.R.string.rec_notif_recording))
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setOngoing(true)
@@ -301,10 +301,10 @@ class RecordingService : Service() {
             .setContentIntent(openViewer)
             .addAction(
                 0,
-                if (paused) "Reprendre" else "Pausa",
+                getString(if (paused) cat.hudpro.opentracks.R.string.rec_action_resume else cat.hudpro.opentracks.R.string.rec_action_pause),
                 action(if (paused) ACTION_RESUME else ACTION_PAUSE, 1),
             )
-            .addAction(0, "Aturar", action(ACTION_STOP, 2))
+            .addAction(0, getString(cat.hudpro.opentracks.R.string.rec_action_stop), action(ACTION_STOP, 2))
             .build()
     }
 

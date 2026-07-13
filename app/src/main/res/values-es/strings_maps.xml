@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pantalla de capas de mapa -->
+    <string name="maps_title">Capas de mapa</string>
+    <string name="maps_tab_online">Online</string>
+    <string name="maps_tab_offline">Offline</string>
+    <string name="maps_base_map_title">Mapa base para el visor</string>
+    <string name="maps_default_map_name">mapa</string>
+    <string name="maps_download_area">Descargar área</string>
+    <string name="maps_import_mbtiles">Importar</string>
+    <string name="maps_empty_offline">Todavía no hay mapas offline. Descarga un área o importa un archivo .mbtiles (p. ej. el topográfico o la ortofoto oficiales del ICGC desde visors.icgc.cat/appdownloads).</string>
+    <string name="maps_size_sectors">%1$.1f MB · %2$d sectores</string>
+    <string name="maps_delete">Borrar</string>
+    <string name="maps_manage_sectors">Gestionar sectores</string>
+
+    <!-- Pantalla de sectores offline -->
+    <string name="maps_sectors_title">Sectores offline</string>
+    <string name="maps_add_sector">Añadir sector</string>
+    <string name="maps_no_sectors">Ningún sector. Añade uno descargando un área.</string>
+    <string name="maps_unknown_map_type">Tipo de mapa desconocido</string>
+    <string name="maps_redownloading">Volviendo a descargar el sector…</string>
+    <string name="maps_area_name">%1$s · área</string>
+    <string name="maps_delete_sector_title">Borrar sector</string>
+    <string name="maps_delete_sector_msg">Se borrarán las teselas de este sector que no comparta ningún otro.</string>
+    <string name="maps_cancel">Cancelar</string>
+    <string name="maps_sector_n">Sector %1$d</string>
+    <string name="maps_sector_meta">zoom %1$d–%2$d · %3$,d teselas · %4$.0f×%5$.0f km</string>
+    <string name="maps_redownload">Volver a descargar</string>
+
+    <!-- Pantalla de descarga de área -->
+    <string name="maps_back">Atrás</string>
+    <string name="maps_mode_route">Ruta</string>
+    <string name="maps_mode_province">Provincia</string>
+    <string name="maps_mode_visible">Área visible</string>
+    <string name="maps_mode_draw">Dibujar</string>
+    <string name="maps_route_hint">Área de la ruta seleccionada. Elige fuente y zoom y descarga.</string>
+    <string name="maps_visible_hint">Encuadra el mapa y vuelve a tocar «Área visible» para actualizar.</string>
+    <string name="maps_draw_hint">Arrastra sobre el mapa para dibujar el rectángulo.</string>
+    <string name="maps_zoom_range">Zoom %1$d – %2$d</string>
+    <string name="maps_estimate">≈ %1$,d teselas · %2$.0f MB</string>
+    <string name="maps_over_limit">Área/zoom demasiado grande (máx %1$dk). Reduce el zoom.</string>
+    <string name="maps_osm_warning">OSM desaconseja descargas masivas; para áreas grandes usa ICGC.</string>
+    <string name="maps_downloading">Descargando… %1$d / %2$d</string>
+    <string name="maps_download_done">Descarga completada ✓ — ya la puedes seleccionar en Mapas offline.</string>
+    <string name="maps_download">Descargar</string>
+</resources>

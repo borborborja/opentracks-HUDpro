@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Route detail screen -->
+    <string name="routes_route_fallback_title">Route</string>
+    <string name="routes_edit_trace">Edit trace</string>
+    <string name="routes_stat_distance">Distance</string>
+    <string name="routes_stat_ascent">Elevation gain +</string>
+    <string name="routes_stat_points">Points</string>
+    <string name="routes_distance_km_format">%1$.2f km</string>
+    <string name="routes_ascent_m_format">%1$d m</string>
+    <string name="routes_source_collection">Source: %1$s · Collection: %2$s</string>
+    <string name="routes_follow_this_route">Follow this route</string>
+    <string name="routes_active_follow_toast">Route active to follow</string>
+    <string name="routes_rename">Rename</string>
+    <string name="routes_collection">Collection</string>
+    <string name="routes_download_route_map">Download route map</string>
+    <string name="routes_delete">Delete</string>
+    <string name="routes_rename_route_title">Rename route</string>
+    <string name="routes_delete_route_title">Delete route</string>
+    <string name="routes_delete_confirm">Are you sure you want to delete «%1$s»?</string>
+
+    <!-- Route editor screen -->
+    <string name="routes_create_route">Create route</string>
+    <string name="routes_edit_route">Edit route</string>
+    <string name="routes_back">Back</string>
+    <string name="routes_undo">Undo</string>
+    <string name="routes_save">Save</string>
+    <string name="routes_cancel">Cancel</string>
+    <string name="routes_save_route_title">Save route</string>
+    <string name="routes_save_changes_title">Save changes</string>
+    <string name="routes_name_label">Name</string>
+    <string name="routes_snap_to_path">Snap to path</string>
+    <string name="routes_tap_map_to_add_points">Tap the map to add points.</string>
+    <string name="routes_new_route_default_name">New route</string>
+
+    <!-- Routing profiles -->
+    <string name="routing_hiking">Hiking</string>
+    <string name="routing_trekking">Bike/trekking</string>
+    <string name="routing_mtb">MTB</string>
+    <string name="routing_shortest">Shortest</string>
+</resources>

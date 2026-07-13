@@ -53,10 +53,10 @@ fun DataView(data: HudData, modifier: Modifier = Modifier, reloadKey: Any? = nul
     val cells = layout.fields.mapNotNull { field ->
         when {
             field == DataLayout.CLOCK ->
-                DataCell("Rellotge", clock, "", layout.spanOf(field), layout.colorOf(field))
+                DataCell(context.getString(cat.hudpro.opentracks.R.string.hudel_clock), clock, "", layout.spanOf(field), layout.colorOf(field))
             !data.following && field in followOnly -> null
             else -> runCatching { HudMetric.valueOf(field) }.getOrNull()?.let {
-                DataCell(it.label, it.value(data.metrics, data.units), it.unit(data.units), layout.spanOf(field), layout.colorOf(field))
+                DataCell(context.getString(it.labelRes), it.value(data.metrics, data.units), it.unit(data.units), layout.spanOf(field), layout.colorOf(field))
             }
         }
     }

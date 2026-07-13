@@ -1,13 +1,14 @@
 package cat.hudpro.opentracks.data.map
 
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.opentracks.model.Trackpoint
 
 /** How the recorded track polyline is colored in the viewer. */
-enum class TrackColorMode(val label: String) {
-    SINGLE("Color únic"),
-    SPEED("Per velocitat"),
-    ALTITUDE("Per altitud"),
-    HEART_RATE("Per pulsacions"),
+enum class TrackColorMode(val labelRes: Int) {
+    SINGLE(R.string.trackcolor_single),
+    SPEED(R.string.trackcolor_speed),
+    ALTITUDE(R.string.trackcolor_altitude),
+    HEART_RATE(R.string.trackcolor_heart_rate),
     ;
 
     /** The numeric value to color by for a trackpoint, or null if unavailable in this mode. */

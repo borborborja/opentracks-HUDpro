@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="metric_speed">Speed</string>
+    <string name="metric_avg_speed">Avg speed</string>
+    <string name="metric_max_speed">Max speed</string>
+    <string name="metric_distance">Distance</string>
+    <string name="metric_duration">Time</string>
+    <string name="metric_moving_time">Moving time</string>
+    <string name="metric_pace">Pace</string>
+    <string name="metric_heading">Heading</string>
+    <string name="metric_elev_gain">Elev. gain</string>
+    <string name="metric_altitude">Altitude</string>
+    <string name="metric_slope">Slope</string>
+    <string name="metric_vam">VAM</string>
+    <string name="metric_heart_rate">HR</string>
+    <string name="metric_cadence">Cadence</string>
+    <string name="metric_power">Power</string>
+    <string name="metric_remaining">Remaining</string>
+    <string name="metric_off_route">Deviation</string>
+    <string name="hudel_chart_speed">Speed chart</string>
+    <string name="hudel_chart_elevation">Elevation profile</string>
+    <string name="hudel_recenter">Recenter/follow</string>
+    <string name="hudel_compass">Compass</string>
+    <string name="hudel_zoom">Zoom</string>
+    <string name="hudel_record">Recording</string>
+    <string name="hudel_clock">Clock</string>
+</resources>

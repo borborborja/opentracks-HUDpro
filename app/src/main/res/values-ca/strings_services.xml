@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rec_notif_channel">Gravació d\'activitat</string>
+    <string name="rec_notif_recording">Gravant activitat</string>
+    <string name="rec_notif_paused">Gravació en pausa</string>
+    <string name="rec_notif_on_pause_suffix"> · EN PAUSA</string>
+    <string name="rec_action_pause">Pausa</string>
+    <string name="rec_action_resume">Reprendre</string>
+    <string name="rec_action_stop">Aturar</string>
+    <string name="dl_notif_channel">Descàrrega de mapes</string>
+    <string name="dl_notif_title">Descarregant mapa offline</string>
+    <string name="dl_notif_progress">%1$d / %2$d tessel·les</string>
+    <string name="ot_not_found">No s\'ha trobat OpenTracks amb l\'API pública. Instal·la\'l i activa-la.</string>
+    <string name="ot_launch_failed">No s\'ha pogut obrir OpenTracks. Activa l\'«API pública» als seus ajustos.</string>
+    <string name="share_export_title">Exportar «%1$s»</string>
+</resources>

@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
+import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.ui.theme.HudProTheme
 import cat.hudpro.opentracks.viewer.data.DataView
 import cat.hudpro.opentracks.viewer.hud.HudOverlay
@@ -232,7 +233,7 @@ class MapViewerActivity : ComponentActivity() {
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Sortir del visor",
+                                contentDescription = androidx.compose.ui.res.stringResource(R.string.viewer_cd_exit),
                                 tint = Color.White,
                                 modifier = Modifier.size(20.dp),
                             )
@@ -483,7 +484,7 @@ class MapViewerActivity : ComponentActivity() {
                     android.Manifest.permission.ACCESS_COARSE_LOCATION,
                 ),
             )
-            android.widget.Toast.makeText(this, "Cal el permís d'ubicació per gravar", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(this, getString(R.string.viewer_toast_location_permission_record), android.widget.Toast.LENGTH_SHORT).show()
             return
         }
         requestNotificationPermission()
@@ -515,7 +516,7 @@ class MapViewerActivity : ComponentActivity() {
                 val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "activitat" }
                 EndurainUploadWorker.enqueue(this@MapViewerActivity, gpx, "$safe.gpx")
                 DebugLog.i("Record", "desada «$name» · ${pts.size} punts · Endurain encuat")
-                android.widget.Toast.makeText(this@MapViewerActivity, "Activitat desada", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(this@MapViewerActivity, getString(R.string.viewer_toast_activity_saved), android.widget.Toast.LENGTH_SHORT).show()
             }
             NativeRecording.clear()
             saveDialogFlow.value = null
@@ -545,7 +546,7 @@ class MapViewerActivity : ComponentActivity() {
         if (NativeRecording.isActive) {
             // The native engine is recording: don't let an OpenTracks dashboard steal the pipeline.
             DebugLog.w("Viewer", "dashboard ignorat: gravació nativa en curs")
-            android.widget.Toast.makeText(this, "Gravació pròpia en curs; tauler d'OpenTracks ignorat", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(this, getString(R.string.viewer_toast_native_recording_active), android.widget.Toast.LENGTH_SHORT).show()
             return
         }
         observeJob?.cancel()
@@ -662,7 +663,7 @@ class MapViewerActivity : ComponentActivity() {
                     if (s.points().any { it.latLong != null }) {
                         saveDialogFlow.value = s
                     } else {
-                        android.widget.Toast.makeText(this@MapViewerActivity, "Activitat sense punts, descartada", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(this@MapViewerActivity, getString(R.string.viewer_toast_activity_no_points), android.widget.Toast.LENGTH_SHORT).show()
                         cat.hudpro.opentracks.data.recording.NativeRecording.clear()
                         refreshRecordingHud()
                     }
@@ -833,7 +834,7 @@ private fun EditPageButton(onClick: () -> Unit) {
     ) {
         Icon(
             Icons.Filled.Edit,
-            contentDescription = "Editar la pantalla actual",
+            contentDescription = androidx.compose.ui.res.stringResource(R.string.viewer_cd_edit_page),
             tint = Color.White,
             modifier = Modifier.size(18.dp),
         )
@@ -843,17 +844,18 @@ private fun EditPageButton(onClick: () -> Unit) {
 /** Save/discard dialog for a finished native recording. */
 @Composable
 private fun SaveRecordingDialog(state: RecorderState, onSave: (String) -> Unit, onDiscard: () -> Unit) {
-    val defaultName = androidx.compose.runtime.remember {
-        "Activitat " + java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm")
+    val defaultName = androidx.compose.ui.res.stringResource(
+        R.string.viewer_default_activity_name,
+        java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm")
             .withZone(java.time.ZoneId.systemDefault())
-            .format(state.statistics.startTime ?: java.time.Instant.now())
-    }
+            .format(state.statistics.startTime ?: java.time.Instant.now()),
+    )
     val name = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(defaultName) }
     val km = state.statistics.totalDistanceMeter / 1000.0
     val secs = state.statistics.totalTime.inWholeSeconds
     androidx.compose.material3.AlertDialog(
         onDismissRequest = {}, // force an explicit choice; the data is gone otherwise
-        title = { androidx.compose.material3.Text("Desar activitat") },
+        title = { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_save_dialog_title)) },
         text = {
             androidx.compose.foundation.layout.Column {
                 androidx.compose.material3.Text(
@@ -863,17 +865,17 @@ private fun SaveRecordingDialog(state: RecorderState, onSave: (String) -> Unit, 
                     value = name.value,
                     onValueChange = { name.value = it },
                     singleLine = true,
-                    label = { androidx.compose.material3.Text("Nom") },
+                    label = { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_save_name_label)) },
                 )
             }
         },
         confirmButton = {
             androidx.compose.material3.TextButton(onClick = { onSave(name.value.trim().ifBlank { defaultName }) }) {
-                androidx.compose.material3.Text("Desar")
+                androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_save))
             }
         },
         dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDiscard) { androidx.compose.material3.Text("Descartar") }
+            androidx.compose.material3.TextButton(onClick = onDiscard) { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_discard)) }
         },
     )
 }

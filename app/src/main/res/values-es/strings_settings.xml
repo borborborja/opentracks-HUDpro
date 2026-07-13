@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Common -->
+    <string name="common_back">Atrás</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_tab_units">Unidades</string>
+    <string name="settings_tab_recording">Grabación</string>
+    <string name="settings_tab_sync">Sincronización</string>
+    <string name="settings_tab_appearance">Apariencia</string>
+    <string name="settings_tab_route">Ruta</string>
+    <string name="settings_tab_audio">Audio</string>
+    <string name="settings_tab_app">App</string>
+
+    <!-- Units -->
+    <string name="settings_units_distance">Distancia</string>
+    <string name="settings_units_kilometers">Kilómetros (km)</string>
+    <string name="settings_units_miles">Millas (mi)</string>
+    <string name="settings_units_elevation">Altitud y desnivel</string>
+    <string name="settings_units_meters">Metros (m)</string>
+    <string name="settings_units_feet">Pies (ft)</string>
+    <string name="settings_units_speed">Velocidad</string>
+    <string name="settings_units_note">El ritmo usa la unidad de distancia (min/km o min/mi); VAM y desviación, la de altitud.</string>
+
+    <!-- Sync -->
+    <string name="settings_sync_endurain">Endurain</string>
+    <string name="settings_sync_server_label">Servidor (https://…)</string>
+    <string name="settings_sync_api_key_label">API key (scope activities:upload)</string>
+    <string name="settings_sync_saved_testing">Guardado. Probando conexión…</string>
+    <string name="settings_sync_connected">Conectado ✓ (%1$s actividades en el servidor)</string>
+    <string name="settings_error">Error: %1$s</string>
+    <string name="settings_sync_save_test">Guardar y probar conexión</string>
+    <string name="settings_sync_upload_note">Los entrenamientos grabados se suben automáticamente a Endurain al detener la grabación (si la conexión está configurada). La cola reintenta si no hay red.</string>
+    <string name="settings_sync_coming_soon">Próximamente</string>
+    <string name="settings_sync_coming_soon_items">· Strava\n· Subida automática a Google Drive\n· Guardar los GPX en una carpeta del teléfono</string>
+
+    <!-- Recording -->
+    <string name="settings_rec_gps_interval">Intervalo GPS</string>
+    <string name="settings_rec_min_distance">Distancia mínima entre puntos: %1$d m</string>
+    <string name="settings_rec_max_accuracy">Precisión GPS máxima: %1$d m</string>
+    <string name="settings_rec_accuracy_note">Se descartan las posiciones con peor precisión.</string>
+    <string name="settings_rec_auto_pause">Auto-pausa cuando estás parado</string>
+    <string name="settings_rec_barometer">Usar barómetro para el desnivel</string>
+    <string name="settings_rec_ble_sensors">Sensores BLE (FC · cadencia · potencia)</string>
+    <string name="settings_rec_paired_sensors">Sensores emparejados: %1$d</string>
+    <string name="settings_rec_apply_note">Los cambios se aplican a la próxima grabación.</string>
+
+    <!-- App / update -->
+    <string name="settings_app_installed_version">Versión instalada</string>
+    <string name="settings_check_update">Buscar actualización</string>
+    <string name="settings_update_checking">Comprobando…</string>
+    <string name="settings_update_up_to_date">Estás en la última versión ✓</string>
+    <string name="settings_update_network_error">Error de red</string>
+    <string name="settings_update_downloading">Descargando… %1$d%%</string>
+    <string name="settings_update_new_version">Nueva versión v%1$s</string>
+    <string name="settings_update_download_install">Descargar e instalar</string>
+    <string name="settings_update_download_error">Error al descargar</string>
+    <string name="settings_debug_section">Depuración</string>
+    <string name="settings_debug_log_button">Registro de debug (log completo)</string>
+    <string name="settings_debug_full">Diagnóstico completo</string>
+    <string name="settings_debug_test_recording">Probar iniciar grabación</string>
+    <string name="settings_debug_copy">Copiar diagnóstico</string>
+    <string name="settings_about">Acerca de</string>
+    <string name="settings_about_desc">OpenTracks HUD Pro — fork de OSMDashboard con mapas ICGC, HUD y Endurain.</string>
+
+    <!-- Track appearance -->
+    <string name="settings_appearance_track">Apariencia del track</string>
+
+    <!-- Follow route -->
+    <string name="settings_route_follow">Ruta a seguir</string>
+    <string name="settings_route_width">Grosor %1$d</string>
+    <string name="settings_route_arrows">Flechas de dirección</string>
+    <string name="settings_route_progress">Mostrar progreso (recorrido atenuado)</string>
+    <string name="settings_route_off_route">Aviso fuera de ruta</string>
+    <string name="settings_route_threshold">Umbral de desviación: %1$d m</string>
+    <string name="settings_route_sound">Sonido</string>
+    <string name="settings_route_vibration">Vibración</string>
+
+    <!-- Audio announcements -->
+    <string name="settings_audio_title">Audio y avisos</string>
+    <string name="settings_audio_enable">Activar avisos de audio</string>
+    <string name="settings_audio_voice">Voz</string>
+    <string name="settings_audio_beeps">Pitidos</string>
+    <string name="settings_audio_language">Idioma</string>
+    <string name="settings_every_km">Cada %1$d km</string>
+    <string name="settings_every_min">Cada %1$d min</string>
+    <string name="settings_audio_announce_what">Qué se anuncia</string>
+    <string name="settings_audio_distance_time">Distancia y tiempo</string>
+    <string name="settings_audio_pace">Ritmo</string>
+    <string name="settings_audio_split_pace">Ritmo del último km</string>
+    <string name="settings_audio_elevation">Desnivel</string>
+    <string name="settings_audio_heart_rate">Pulsaciones</string>
+    <string name="settings_audio_off_route_spoken">Decir \'Fuera de ruta\' por voz</string>
+
+    <!-- Sensors screen -->
+    <string name="sensors_title">Sensores BLE</string>
+    <string name="sensors_intro">Empareja bandas de frecuencia cardíaca, sensores de cadencia y potenciómetros. Se conectan automáticamente al empezar a grabar.</string>
+    <string name="sensors_scan">Buscar sensores</string>
+    <string name="sensors_stop_scan">Detener el escaneo</string>
+    <string name="sensors_scan_error">Error de escaneo (%1$d)</string>
+    <string name="sensors_bluetooth_off">Bluetooth desactivado</string>
+    <string name="sensors_default_name">Sensor</string>
+    <string name="sensors_paired_name">Sensor emparejado</string>
+    <string name="sensors_scanning_hint">Buscando… enciende el sensor y acércalo.</string>
+    <string name="sensors_none">Ningún sensor. Toca «Buscar sensores».</string>
+
+    <!-- Debug log screen -->
+    <string name="debug_title">Registro de debug</string>
+    <string name="debug_loading">Cargando…</string>
+    <string name="debug_no_lines">(ninguna línea de HUD Pro)</string>
+    <string name="debug_refresh">Actualizar</string>
+    <string name="debug_share">Compartir</string>
+    <string name="debug_clear">Limpiar</string>
+    <string name="debug_share_subject">HUD Pro · registro de debug</string>
+    <string name="debug_share_chooser">Compartir registro</string>
+    <string name="debug_only_app">Solo HUD Pro</string>
+    <string name="debug_copy">Copiar</string>
+    <string name="debug_lines">%1$d líneas</string>
+
+    <!-- Track color modes -->
+    <string name="trackcolor_single">Color único</string>
+    <string name="trackcolor_speed">Por velocidad</string>
+    <string name="trackcolor_altitude">Por altitud</string>
+    <string name="trackcolor_heart_rate">Por pulsaciones</string>
+</resources>

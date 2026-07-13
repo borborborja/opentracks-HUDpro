@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Viewer top bar -->
+    <string name="viewer_tab_map">Mapa</string>
+    <string name="viewer_tab_data">Dades</string>
+    <string name="viewer_cd_exit">Sortir del visor</string>
+    <string name="viewer_cd_edit_page">Editar la pantalla actual</string>
+    <string name="viewer_cd_settings">Ajustos del visor</string>
+
+    <!-- HUD controls -->
+    <string name="viewer_cd_center">Centrar</string>
+    <string name="viewer_cd_north">Nord</string>
+    <string name="viewer_cd_zoom_in">Apropar</string>
+    <string name="viewer_cd_zoom_out">Allunyar</string>
+    <string name="viewer_cd_pause">Pausa</string>
+    <string name="viewer_cd_resume">Reprendre</string>
+    <string name="viewer_off_route">Fora de ruta · %1$d m</string>
+
+    <!-- Quick-settings sheet -->
+    <string name="viewer_qs_tab_map">Mapa</string>
+    <string name="viewer_qs_tab_route">Ruta</string>
+    <string name="viewer_qs_tab_options">Opcions</string>
+    <string name="viewer_qs_online_map">Mapa online</string>
+    <string name="viewer_qs_offline_map">Mapa offline</string>
+    <string name="viewer_qs_offline_subtitle">offline</string>
+    <string name="viewer_qs_route_to_follow">Ruta a seguir</string>
+    <string name="viewer_qs_route_none">Cap</string>
+    <string name="viewer_qs_route_none_subtitle">sense ruta</string>
+    <string name="viewer_qs_no_routes_yet">Encara no hi ha rutes. Crea\'n o importa\'n des de «Tracks a seguir».</string>
+    <string name="viewer_qs_map_orientation">Orientació del mapa</string>
+    <string name="viewer_qs_north_up">Nord amunt</string>
+    <string name="viewer_qs_heading_up">Segons direcció</string>
+    <string name="viewer_qs_adaptive_zoom">Zoom automàtic als girs de la ruta</string>
+    <string name="viewer_qs_adaptive_zoom_help">En seguiment: apropa el mapa en acostar-te a un gir/cruïlla de la ruta i l\'allunya als trams rectes.</string>
+    <string name="viewer_qs_keep_screen_on">Mantenir la pantalla encesa</string>
+    <string name="viewer_qs_fullscreen">Pantalla completa</string>
+
+    <!-- Toasts -->
+    <string name="viewer_toast_location_permission_record">Cal el permís d\'ubicació per gravar</string>
+    <string name="viewer_toast_native_recording_active">Gravació pròpia en curs; tauler d\'OpenTracks ignorat</string>
+    <string name="viewer_toast_activity_no_points">Activitat sense punts, descartada</string>
+    <string name="viewer_toast_activity_saved">Activitat desada</string>
+    <string name="viewer_toast_follow_route_empty">Ruta a seguir buida (id=%1$d)</string>
+
+    <!-- Save recording dialog -->
+    <string name="viewer_save_dialog_title">Desar activitat</string>
+    <string name="viewer_save_name_label">Nom</string>
+    <string name="viewer_save">Desar</string>
+    <string name="viewer_discard">Descartar</string>
+    <string name="viewer_default_activity_name">Activitat %1$s</string>
+    <string name="viewer_qs_route_meta">%1$.1f km · %2$d punts</string>
+</resources>
