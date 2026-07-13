@@ -287,7 +287,7 @@ class MapViewerActivity : ComponentActivity() {
                         pendingSave?.let { snap ->
                             SaveRecordingDialog(
                                 state = snap,
-                                onSave = { name -> saveNativeRecording(snap, name) },
+                                onSave = { name, folder, typeId -> saveNativeRecording(snap, name, folder, typeId) },
                                 onDiscard = {
                                     DebugLog.i("Record", "descartada")
                                     NativeRecording.clear()
@@ -497,7 +497,7 @@ class MapViewerActivity : ComponentActivity() {
     }
 
     /** Persists a finished native recording: library entry + GPX + Endurain upload. */
-    private fun saveNativeRecording(state: RecorderState, name: String) {
+    private fun saveNativeRecording(state: RecorderState, name: String, folder: String, activityType: String?) {
         lifecycleScope.launch {
             val pts = state.points()
                 .filter { it.latLong != null && !it.isPause }
@@ -511,7 +511,13 @@ class MapViewerActivity : ComponentActivity() {
                 HudProApplication.from(this@MapViewerActivity).trackRepository.insertRoute(
                     name, pts, cat.hudpro.opentracks.data.tracks.TrackSource.RECORDED, remoteId = null,
                     kind = cat.hudpro.opentracks.data.tracks.TrackKind.TRAINING,
+                    collection = folder, activityType = activityType,
                 )
+                if (folder != "General") {
+                    val p = cat.hudpro.opentracks.data.prefs.ViewerPreferences.get(this@MapViewerActivity)
+                    p.foldersTraining = p.foldersTraining + folder
+                }
+                cat.hudpro.opentracks.data.tracks.TrackMetadataBackfillWorker.enqueue(this@MapViewerActivity)
                 val gpx = Gpx.write(name, pts)
                 val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "activitat" }
                 EndurainUploadWorker.enqueue(this@MapViewerActivity, gpx, "$safe.gpx")
@@ -841,42 +847,40 @@ private fun EditPageButton(onClick: () -> Unit) {
     }
 }
 
-/** Save/discard dialog for a finished native recording. */
+/** Save/discard dialog for a finished native recording: name + folder + activity type. */
 @Composable
-private fun SaveRecordingDialog(state: RecorderState, onSave: (String) -> Unit, onDiscard: () -> Unit) {
+private fun SaveRecordingDialog(
+    state: RecorderState,
+    onSave: (name: String, folder: String, typeId: String?) -> Unit,
+    onDiscard: () -> Unit,
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = androidx.compose.runtime.remember { cat.hudpro.opentracks.data.prefs.ViewerPreferences.get(context) }
     val defaultName = androidx.compose.ui.res.stringResource(
         R.string.viewer_default_activity_name,
         java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm")
             .withZone(java.time.ZoneId.systemDefault())
             .format(state.statistics.startTime ?: java.time.Instant.now()),
     )
-    val name = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(defaultName) }
     val km = state.statistics.totalDistanceMeter / 1000.0
     val secs = state.statistics.totalTime.inWholeSeconds
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = {}, // force an explicit choice; the data is gone otherwise
-        title = { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_save_dialog_title)) },
-        text = {
-            androidx.compose.foundation.layout.Column {
-                androidx.compose.material3.Text(
-                    String.format(java.util.Locale.US, "%.2f km · %d:%02d:%02d", km, secs / 3600, (secs % 3600) / 60, secs % 60),
-                )
-                androidx.compose.material3.OutlinedTextField(
-                    value = name.value,
-                    onValueChange = { name.value = it },
-                    singleLine = true,
-                    label = { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_save_name_label)) },
-                )
-            }
-        },
-        confirmButton = {
-            androidx.compose.material3.TextButton(onClick = { onSave(name.value.trim().ifBlank { defaultName }) }) {
-                androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_save))
-            }
-        },
-        dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDiscard) { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_discard)) }
-        },
+    // Folders come from the DB (this runs outside the manager Activity) merged with prefs.
+    val folders by androidx.compose.runtime.produceState(initialValue = prefs.foldersTraining.toList().sorted()) {
+        val fromDb = HudProApplication.from(context).trackRepository
+            .collections(cat.hudpro.opentracks.data.tracks.TrackKind.TRAINING)
+        value = (prefs.foldersTraining + fromDb).filter { it != "General" }.distinct().sorted()
+    }
+    cat.hudpro.opentracks.manager.screens.TrackSaveDialog(
+        title = androidx.compose.ui.res.stringResource(R.string.viewer_save_dialog_title),
+        statsLine = String.format(java.util.Locale.US, "%.2f km · %d:%02d:%02d", km, secs / 3600, (secs % 3600) / 60, secs % 60),
+        defaultName = defaultName,
+        folders = folders,
+        activityTypes = cat.hudpro.opentracks.manager.screens.rememberActivityTypeOptions(prefs),
+        confirmLabel = androidx.compose.ui.res.stringResource(R.string.viewer_save),
+        dismissLabel = androidx.compose.ui.res.stringResource(R.string.viewer_discard),
+        onConfirm = onSave,
+        onDismiss = onDiscard,
+        forceChoice = true,
     )
 }
 

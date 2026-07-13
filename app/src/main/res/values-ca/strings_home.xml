@@ -45,4 +45,20 @@
     <string name="home_none_root">Cap (arrel)</string>
     <string name="home_new_folder_ellipsis">Nova carpeta…</string>
     <string name="home_create_and_move">Crear i moure</string>
+
+    <!-- Save dialog (recording/import) -->
+    <string name="save_type_label">Tipus d\'activitat</string>
+    <string name="save_folder_label">Carpeta</string>
+    <string name="home_import_save_training_title">Desa l\'entrenament</string>
+    <!-- Sort/filter -->
+    <string name="home_cd_sort">Ordena</string>
+    <string name="home_cd_filter">Filtra per tipus</string>
+    <string name="home_sort_date_desc">Més recents primer</string>
+    <string name="home_sort_date_asc">Més antigues primer</string>
+    <string name="home_sort_distance_desc">Més llargues primer</string>
+    <string name="home_sort_distance_asc">Més curtes primer</string>
+    <string name="home_sort_municipality">Per municipi</string>
+    <string name="home_sort_difficulty">Per dificultat</string>
+    <string name="home_sort_type">Per tipus</string>
+    <string name="home_filter_all_types">Tots els tipus</string>
 </resources>

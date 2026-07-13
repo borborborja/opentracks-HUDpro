@@ -1,6 +1,7 @@
 package cat.hudpro.opentracks.manager.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -64,6 +65,7 @@ fun RouteDetailScreen(
     var reloadTick by remember { mutableStateOf(0) }
     var showRename by remember { mutableStateOf(false) }
     var showCollection by remember { mutableStateOf(false) }
+    var showType by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
 
     LaunchedEffect(trackId, reloadTick) {
@@ -141,6 +143,7 @@ fun RouteDetailScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { showRename = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.routes_rename)) }
                     OutlinedButton(onClick = { showCollection = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.routes_collection)) }
+                    OutlinedButton(onClick = { showType = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.routes_type)) }
                 }
 
                 OutlinedButton(
@@ -182,6 +185,38 @@ fun RouteDetailScreen(
                 showCollection = false
             },
             onDismiss = { showCollection = false },
+        )
+    }
+    if (showType) {
+        val typeOptions = rememberActivityTypeOptions(prefs)
+        AlertDialog(
+            onDismissRequest = { showType = false },
+            title = { Text(stringResource(R.string.routes_assign_type_title)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    typeOptions.forEach { option ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    scope.launch { app.trackRepository.setActivityType(trackId, option.id); reloadTick++ }
+                                    showType = false
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                option.icon,
+                                contentDescription = null,
+                                tint = if (entity?.activityType == option.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                            )
+                            Text("  " + option.label)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showType = false }) { Text(stringResource(R.string.routes_cancel)) } },
         )
     }
     if (showDelete) {

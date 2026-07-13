@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="activity_type_walk">Walking</string>
+    <string name="activity_type_run">Running</string>
+    <string name="activity_type_trail_run">Trail running</string>
+    <string name="activity_type_road_bike">Road cycling</string>
+    <string name="activity_type_mtb">MTB</string>
+    <string name="activity_type_hike">Hiking</string>
+    <string name="activity_type_ski">Ski</string>
+    <string name="activity_type_skate">Skating</string>
+    <string name="activity_type_kayak">Kayak</string>
+    <string name="activity_type_swim">Swimming</string>
+    <string name="activity_type_none">No type</string>
+    <string name="difficulty_easy">Easy</string>
+    <string name="difficulty_moderate">Moderate</string>
+    <string name="difficulty_hard">Hard</string>
+    <string name="difficulty_very_hard">Very hard</string>
+</resources>

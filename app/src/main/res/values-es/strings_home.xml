@@ -45,4 +45,20 @@
     <string name="home_none_root">Ninguna (raíz)</string>
     <string name="home_new_folder_ellipsis">Nueva carpeta…</string>
     <string name="home_create_and_move">Crear y mover</string>
+
+    <!-- Save dialog (recording/import) -->
+    <string name="save_type_label">Tipo de actividad</string>
+    <string name="save_folder_label">Carpeta</string>
+    <string name="home_import_save_training_title">Guardar entrenamiento</string>
+    <!-- Sort/filter -->
+    <string name="home_cd_sort">Ordenar</string>
+    <string name="home_cd_filter">Filtrar por tipo</string>
+    <string name="home_sort_date_desc">Más recientes primero</string>
+    <string name="home_sort_date_asc">Más antiguas primero</string>
+    <string name="home_sort_distance_desc">Más largas primero</string>
+    <string name="home_sort_distance_asc">Más cortas primero</string>
+    <string name="home_sort_municipality">Por municipio</string>
+    <string name="home_sort_difficulty">Por dificultad</string>
+    <string name="home_sort_type">Por tipo</string>
+    <string name="home_filter_all_types">Todos los tipos</string>
 </resources>

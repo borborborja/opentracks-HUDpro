@@ -21,6 +21,7 @@ class RouteEditorController(private val map: MapLibreMap) {
 
     private var routeSource: GeoJsonSource? = null
     private var waypointSource: GeoJsonSource? = null
+    private var highlightSource: GeoJsonSource? = null
 
     fun init(onReady: () -> Unit) {
         map.setStyle(Style.Builder().fromJson(MapStyleFactory.rasterStyleJson(MapSource.ICGC_TOPO))) { style ->
@@ -47,6 +48,19 @@ class RouteEditorController(private val map: MapLibreMap) {
                 ),
             )
             waypointSource = wp
+
+            // Scrubber highlight (CircleLayer only: SymbolLayers break GeoJSON rendering on raster styles).
+            val hl = GeoJsonSource(HL_SOURCE, FeatureCollection.fromFeatures(emptyList()))
+            style.addSource(hl)
+            style.addLayer(
+                CircleLayer(HL_LAYER, HL_SOURCE).withProperties(
+                    PropertyFactory.circleRadius(8f),
+                    PropertyFactory.circleColor("#FFD166"),
+                    PropertyFactory.circleStrokeColor("#FFFFFF"),
+                    PropertyFactory.circleStrokeWidth(2f),
+                ),
+            )
+            highlightSource = hl
 
             // Center on Catalonia by default.
             map.moveCamera(org.maplibre.android.camera.CameraUpdateFactory.newLatLngZoom(LatLng(41.65, 1.95), 9.0))
@@ -84,10 +98,22 @@ class RouteEditorController(private val map: MapLibreMap) {
         routeSource?.setGeoJson(FeatureCollection.fromFeatures(feature))
     }
 
+    /** Shows the scrub marker at [point], or hides it when null. */
+    fun setHighlight(point: GeoPoint?) {
+        val features = if (point != null) {
+            listOf(Feature.fromGeometry(Point.fromLngLat(point.longitude, point.latitude)))
+        } else {
+            emptyList()
+        }
+        highlightSource?.setGeoJson(FeatureCollection.fromFeatures(features))
+    }
+
     private companion object {
         const val ROUTE_SOURCE = "editor-route-source"
         const val ROUTE_LAYER = "editor-route-layer"
         const val WP_SOURCE = "editor-wp-source"
         const val WP_LAYER = "editor-wp-layer"
+        const val HL_SOURCE = "editor-hl-source"
+        const val HL_LAYER = "editor-hl-layer"
     }
 }

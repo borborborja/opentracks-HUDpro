@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="training_fallback_title">Training</string>
+    <string name="training_stat_distance">Distance</string>
+    <string name="training_stat_total_time">Total time</string>
+    <string name="training_stat_moving_time">Moving time</string>
+    <string name="training_stat_avg_speed">Avg speed</string>
+    <string name="training_stat_max_speed">Max speed</string>
+    <string name="training_stat_ascent">Ascent</string>
+    <string name="training_stat_descent">Descent</string>
+    <string name="training_stat_avg_hr">Avg HR</string>
+    <string name="training_stat_max_hr">Max HR</string>
+    <string name="training_stat_avg_cadence">Avg cadence</string>
+    <string name="training_stat_avg_power">Avg power</string>
+    <string name="training_action_duplicate_route">Duplicate to routes to follow</string>
+    <string name="training_action_export">Export (GPX)</string>
+    <string name="training_action_rename">Rename</string>
+    <string name="training_action_type">Activity type</string>
+    <string name="training_action_move">Move to folder</string>
+    <string name="training_action_delete">Delete</string>
+    <string name="training_delete_confirm">Delete \"%1$s\"? This cannot be undone.</string>
+    <string name="training_duplicated_toast">Duplicated to routes to follow</string>
+    <string name="training_scrub_time">Time</string>
+    <string name="training_scrub_speed">Speed</string>
+    <string name="training_scrub_hr">HR</string>
+    <string name="training_scrub_altitude">Altitude</string>
+    <string name="training_chart_elevation">Elevation</string>
+    <string name="training_chart_speed">Speed</string>
+    <string name="training_chart_hr">Heart rate</string>
+    <string name="training_cd_more_actions">More actions</string>
+    <string name="training_cancel">Cancel</string>
+    <string name="training_save">Save</string>
+</resources>

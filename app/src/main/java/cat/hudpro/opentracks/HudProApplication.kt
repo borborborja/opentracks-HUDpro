@@ -19,7 +19,7 @@ class HudProApplication : Application() {
 
     val database: HudProDatabase by lazy {
         Room.databaseBuilder(this, HudProDatabase::class.java, "hudpro.db")
-            .addMigrations(HudProDatabase.MIGRATION_1_2, HudProDatabase.MIGRATION_2_3)
+            .addMigrations(HudProDatabase.MIGRATION_1_2, HudProDatabase.MIGRATION_2_3, HudProDatabase.MIGRATION_3_4)
             .build()
     }
     val trackRepository: TrackRepository by lazy {
@@ -54,6 +54,8 @@ class HudProApplication : Application() {
                 }
                 .build(),
         )
+        // Backfill ascent/start/municipality for tracks saved before DB v4 (and pending geocodes).
+        cat.hudpro.opentracks.data.tracks.TrackMetadataBackfillWorker.enqueue(this)
     }
 
     companion object {

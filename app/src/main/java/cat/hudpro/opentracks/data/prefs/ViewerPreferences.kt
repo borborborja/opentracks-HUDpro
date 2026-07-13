@@ -101,6 +101,31 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getStringSet(KEY_FOLDERS_ROUTE, emptySet()) ?: emptySet()
         set(value) = prefs.edit().putStringSet(KEY_FOLDERS_ROUTE, value).apply()
 
+    /** JSON list of user-defined activity types (see tracks.CustomActivityType). */
+    var customActivityTypesJson: String?
+        get() = prefs.getString(KEY_CUSTOM_ACTIVITY_TYPES, null)
+        set(value) = prefs.edit().putString(KEY_CUSTOM_ACTIVITY_TYPES, value).apply()
+
+    /** TrackSort name for the trainings tab. */
+    var trackSortTraining: String
+        get() = prefs.getString(KEY_SORT_TRAINING, "DATE_DESC") ?: "DATE_DESC"
+        set(value) = prefs.edit().putString(KEY_SORT_TRAINING, value).apply()
+
+    /** TrackSort name for the routes tab. */
+    var trackSortRoute: String
+        get() = prefs.getString(KEY_SORT_ROUTE, "DATE_DESC") ?: "DATE_DESC"
+        set(value) = prefs.edit().putString(KEY_SORT_ROUTE, value).apply()
+
+    /** Active activity-type filter (type id) for the trainings tab; null = all. */
+    var trackFilterTypeTraining: String?
+        get() = prefs.getString(KEY_FILTER_TYPE_TRAINING, null)
+        set(value) = prefs.edit().putString(KEY_FILTER_TYPE_TRAINING, value).apply()
+
+    /** Active activity-type filter (type id) for the routes tab; null = all. */
+    var trackFilterTypeRoute: String?
+        get() = prefs.getString(KEY_FILTER_TYPE_ROUTE, null)
+        set(value) = prefs.edit().putString(KEY_FILTER_TYPE_ROUTE, value).apply()
+
     /** MAC addresses of paired BLE fitness sensors (heart rate / cadence / power). */
     var bleSensorAddrs: Set<String>
         get() = prefs.getStringSet(KEY_BLE_SENSORS, emptySet()) ?: emptySet()
@@ -220,6 +245,11 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_ROUTE_VIEW_MODE = "route_view_mode"
         private const val KEY_FOLDERS_TRAINING = "folders_training"
         private const val KEY_FOLDERS_ROUTE = "folders_route"
+        private const val KEY_CUSTOM_ACTIVITY_TYPES = "custom_activity_types"
+        private const val KEY_SORT_TRAINING = "track_sort_training"
+        private const val KEY_SORT_ROUTE = "track_sort_route"
+        private const val KEY_FILTER_TYPE_TRAINING = "track_filter_type_training"
+        private const val KEY_FILTER_TYPE_ROUTE = "track_filter_type_route"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"
         private const val KEY_TRACK_COLOR_MODE = "track_color_mode"
         private const val KEY_TRACK_COLOR = "track_color"

@@ -11,7 +11,22 @@
     <string name="settings_tab_appearance">Appearance</string>
     <string name="settings_tab_route">Route</string>
     <string name="settings_tab_audio">Audio</string>
+    <string name="settings_tab_activity_types">Types</string>
     <string name="settings_tab_app">App</string>
+
+    <!-- Activity types -->
+    <string name="settings_types_predefined_header">Predefined types</string>
+    <string name="settings_types_custom_header">Custom types</string>
+    <string name="settings_types_add">Add custom type</string>
+    <string name="settings_types_add_title">New custom type</string>
+    <string name="settings_types_edit_title">Edit custom type</string>
+    <string name="settings_types_name_label">Name</string>
+    <string name="settings_types_icon_label">Icon</string>
+    <string name="settings_types_delete">Delete</string>
+    <string name="settings_types_delete_confirm">Delete the custom type «%1$s»? Tracks that use it will show no type.</string>
+    <string name="settings_types_empty_custom">No custom types. Add one with the button below.</string>
+    <string name="settings_types_save">Save</string>
+    <string name="settings_types_cancel">Cancel</string>
 
     <!-- Units -->
     <string name="settings_units_distance">Distance</string>

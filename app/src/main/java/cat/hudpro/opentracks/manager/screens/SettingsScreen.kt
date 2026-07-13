@@ -15,17 +15,25 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -45,6 +53,8 @@ import androidx.compose.ui.unit.dp
 import cat.hudpro.opentracks.BuildConfig
 import cat.hudpro.opentracks.R
 import cat.hudpro.opentracks.data.prefs.ViewerPreferences
+import cat.hudpro.opentracks.data.tracks.ActivityTypes
+import cat.hudpro.opentracks.data.tracks.CustomActivityType
 import cat.hudpro.opentracks.data.update.ApkInstaller
 import cat.hudpro.opentracks.data.update.UpdateInfo
 import cat.hudpro.opentracks.data.update.UpdateRepository
@@ -66,6 +76,7 @@ private val TABS = listOf(
     R.string.settings_tab_appearance,
     R.string.settings_tab_route,
     R.string.settings_tab_audio,
+    R.string.settings_tab_activity_types,
     R.string.settings_tab_app,
 )
 
@@ -93,6 +104,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}, onOpenSe
                     3 -> TrackAppearanceSection(prefs)
                     4 -> FollowRouteSection(prefs)
                     5 -> AudioAnnouncementsSection(prefs)
+                    6 -> ActivityTypesSection(prefs)
                     else -> AppSection(onOpenDebugLog)
                 }
             }
@@ -505,6 +517,170 @@ private fun AudioAnnouncementsSection(prefs: ViewerPreferences) {
         ToggleRow(stringResource(R.string.settings_audio_heart_rate), fHr) { fHr = it; prefs.annHeartRate = it }
         ToggleRow(stringResource(R.string.settings_audio_off_route_spoken), offSpoken) { offSpoken = it; prefs.offRouteSpoken = it }
     }
+}
+
+// --- Activity types (predefined list + custom type management) ---
+
+@Composable
+private fun ActivityTypesSection(prefs: ViewerPreferences) {
+    var custom by remember { mutableStateOf(ActivityTypes.decodeCustom(prefs.customActivityTypesJson)) }
+    var editing by remember { mutableStateOf<CustomActivityType?>(null) }
+    var showEditor by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf<CustomActivityType?>(null) }
+
+    fun persist(newList: List<CustomActivityType>) {
+        custom = newList
+        prefs.customActivityTypesJson = ActivityTypes.encodeCustom(newList)
+    }
+
+    Text(stringResource(R.string.settings_types_predefined_header), style = MaterialTheme.typography.labelMedium)
+    Card {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ActivityTypes.PREDEFINED.forEach { id ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(ActivityTypeCatalog.iconFor(id), contentDescription = null)
+                    Text(stringResource(ActivityTypeCatalog.labelRes(id)!!), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+    }
+
+    Text(
+        stringResource(R.string.settings_types_custom_header),
+        style = MaterialTheme.typography.labelMedium,
+        modifier = Modifier.padding(top = 8.dp),
+    )
+    if (custom.isEmpty()) {
+        Text(
+            stringResource(R.string.settings_types_empty_custom),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
+    } else {
+        Card {
+            Column(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                custom.forEach { type ->
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Icon(ActivityTypeCatalog.iconFor(type.iconId), contentDescription = null)
+                        Text(type.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { editing = type; showEditor = true }) {
+                            Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.settings_types_edit_title))
+                        }
+                        IconButton(onClick = { deleting = type }) {
+                            Icon(
+                                Icons.Filled.Delete,
+                                contentDescription = stringResource(R.string.settings_types_delete),
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    OutlinedButton(
+        onClick = { editing = null; showEditor = true },
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+    ) { Text(stringResource(R.string.settings_types_add)) }
+
+    if (showEditor) {
+        CustomTypeDialog(
+            initial = editing,
+            onDismiss = { showEditor = false },
+            onSave = { name, iconId ->
+                val current = editing
+                val newList = if (current == null) {
+                    custom + CustomActivityType(ActivityTypes.newCustomId(), name, iconId)
+                } else {
+                    custom.map { if (it.id == current.id) it.copy(name = name, iconId = iconId) else it }
+                }
+                persist(newList)
+                showEditor = false
+            },
+        )
+    }
+
+    deleting?.let { type ->
+        AlertDialog(
+            onDismissRequest = { deleting = null },
+            title = { Text(stringResource(R.string.settings_types_custom_header)) },
+            text = { Text(stringResource(R.string.settings_types_delete_confirm, type.name)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    persist(custom.filterNot { it.id == type.id })
+                    deleting = null
+                }) { Text(stringResource(R.string.settings_types_delete), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.settings_types_cancel)) }
+            },
+        )
+    }
+}
+
+@Composable
+private fun CustomTypeDialog(
+    initial: CustomActivityType?,
+    onDismiss: () -> Unit,
+    onSave: (name: String, iconId: String) -> Unit,
+) {
+    var name by remember { mutableStateOf(initial?.name ?: "") }
+    var iconId by remember { mutableStateOf(initial?.iconId ?: ActivityTypeCatalog.CURATED_ICON_IDS.first()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(stringResource(if (initial == null) R.string.settings_types_add_title else R.string.settings_types_edit_title))
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.settings_types_name_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(stringResource(R.string.settings_types_icon_label), style = MaterialTheme.typography.labelMedium)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ActivityTypeCatalog.CURATED_ICON_IDS.chunked(6).forEach { rowIds ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            rowIds.forEach { id ->
+                                val selected = id == iconId
+                                Box(
+                                    Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (selected) MaterialTheme.colorScheme.primaryContainer
+                                            else Color.Transparent,
+                                        )
+                                        .clickable { iconId = id },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        ActivityTypeCatalog.iconFor(id),
+                                        contentDescription = null,
+                                        tint = if (selected) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(name.trim(), iconId) }, enabled = name.isNotBlank()) {
+                Text(stringResource(R.string.settings_types_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_types_cancel)) }
+        },
+    )
 }
 
 // --- Shared bits ---

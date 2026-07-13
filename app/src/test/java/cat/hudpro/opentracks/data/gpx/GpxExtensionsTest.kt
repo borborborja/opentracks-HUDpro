@@ -45,4 +45,44 @@ class GpxExtensionsTest {
         assertThat(read.points[0].latitude).isEqualTo(41.0)
         assertThat(read.points[0].elevation).isEqualTo(100.0)
     }
+
+    @Test
+    fun sensorDataRoundTripsThroughWriteAndRead() {
+        val original = listOf(
+            GpxPoint(41.0, 2.0, 100.0, Instant.parse("2026-07-12T10:00:00Z"), heartRate = 150.0, cadence = 85.0, power = 210.0),
+            GpxPoint(41.001, 2.0, 101.0, Instant.parse("2026-07-12T10:00:05Z"), heartRate = 152.0, cadence = 86.0, power = 215.0),
+        )
+        val read = Gpx.read(Gpx.write("Sortida", original).byteInputStream()).points
+        assertThat(read).hasSize(2)
+        assertThat(read[0].heartRate).isEqualTo(150.0)
+        assertThat(read[0].cadence).isEqualTo(85.0)
+        assertThat(read[0].power).isEqualTo(210.0)
+        assertThat(read[1].heartRate).isEqualTo(152.0)
+    }
+
+    @Test
+    fun partialExtensionsReadBackAsNulls() {
+        val gpx = Gpx.write(
+            "Mixta",
+            listOf(
+                GpxPoint(41.0, 2.0, heartRate = 140.0),
+                GpxPoint(41.001, 2.0),
+            ),
+        )
+        val read = Gpx.read(gpx.byteInputStream()).points
+        assertThat(read[0].heartRate).isEqualTo(140.0)
+        assertThat(read[0].cadence).isNull()
+        assertThat(read[0].power).isNull()
+        assertThat(read[1].heartRate).isNull()
+    }
+
+    @Test
+    fun plainGpxReadsWithNullSensors() {
+        val read = Gpx.read(Gpx.write("Ruta", listOf(GpxPoint(41.0, 2.0), GpxPoint(41.001, 2.0))).byteInputStream()).points
+        assertThat(read).allSatisfy {
+            assertThat(it.heartRate).isNull()
+            assertThat(it.cadence).isNull()
+            assertThat(it.power).isNull()
+        }
+    }
 }

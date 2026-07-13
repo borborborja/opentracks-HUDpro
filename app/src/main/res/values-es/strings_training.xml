@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="training_fallback_title">Entrenamiento</string>
+    <string name="training_stat_distance">Distancia</string>
+    <string name="training_stat_total_time">Tiempo total</string>
+    <string name="training_stat_moving_time">Tiempo en movimiento</string>
+    <string name="training_stat_avg_speed">Vel. media</string>
+    <string name="training_stat_max_speed">Vel. máxima</string>
+    <string name="training_stat_ascent">Desnivel +</string>
+    <string name="training_stat_descent">Desnivel −</string>
+    <string name="training_stat_avg_hr">FC media</string>
+    <string name="training_stat_max_hr">FC máxima</string>
+    <string name="training_stat_avg_cadence">Cadencia media</string>
+    <string name="training_stat_avg_power">Potencia media</string>
+    <string name="training_action_duplicate_route">Duplicar en rutas para seguir</string>
+    <string name="training_action_export">Exportar (GPX)</string>
+    <string name="training_action_rename">Renombrar</string>
+    <string name="training_action_type">Tipo de actividad</string>
+    <string name="training_action_move">Mover a una carpeta</string>
+    <string name="training_action_delete">Eliminar</string>
+    <string name="training_delete_confirm">¿Eliminar \"%1$s\"? Esta acción no se puede deshacer.</string>
+    <string name="training_duplicated_toast">Duplicado en rutas para seguir</string>
+    <string name="training_scrub_time">Tiempo</string>
+    <string name="training_scrub_speed">Velocidad</string>
+    <string name="training_scrub_hr">FC</string>
+    <string name="training_scrub_altitude">Altitud</string>
+    <string name="training_chart_elevation">Elevación</string>
+    <string name="training_chart_speed">Velocidad</string>
+    <string name="training_chart_hr">Frecuencia cardíaca</string>
+    <string name="training_cd_more_actions">Más acciones</string>
+    <string name="training_cancel">Cancelar</string>
+    <string name="training_save">Guardar</string>
+</resources>

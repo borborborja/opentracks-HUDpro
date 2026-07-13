@@ -31,7 +31,14 @@ class TrackRepository(
      * Imports any supported track file (GPX/KML/KMZ/TCX, detected by [fileName]'s extension) as a
      * [kind] (route to follow or training). Throws IllegalArgumentException on unsupported formats.
      */
-    suspend fun importAny(uri: Uri, fileName: String?, fallbackName: String, kind: String): Long =
+    suspend fun importAny(
+        uri: Uri,
+        fileName: String?,
+        fallbackName: String,
+        kind: String,
+        collection: String = "General",
+        activityType: String? = null,
+    ): Long =
         withContext(Dispatchers.IO) {
             val route = contentResolver.openInputStream(uri).use { input ->
                 requireNotNull(input) { "Cannot open $uri" }
@@ -46,7 +53,10 @@ class TrackRepository(
             }
             require(route.points.size >= 2) { "El fitxer no conté cap track" }
             val name = route.name?.takeIf { it.isNotBlank() } ?: fallbackName
-            insertRoute(name, route.points, TrackSource.GPX_IMPORT, remoteId = null, kind = kind)
+            insertRoute(
+                name, route.points, TrackSource.GPX_IMPORT, remoteId = null, kind = kind,
+                collection = collection, activityType = activityType,
+            )
         }
 
     suspend fun insertRoute(
@@ -55,11 +65,14 @@ class TrackRepository(
         source: TrackSource,
         remoteId: Long?,
         kind: String = TrackKind.ROUTE,
+        collection: String = "General",
+        activityType: String? = null,
     ): Long = withContext(Dispatchers.IO) {
         val gpxText = Gpx.write(name, points)
         dao.insert(
             FollowTrackEntity(
                 name = name,
+                collection = collection,
                 source = source,
                 distanceMeters = routeDistance(points.map { it.toGeoPoint() }),
                 pointCount = points.size,
@@ -67,6 +80,11 @@ class TrackRepository(
                 gpx = gpxText,
                 remoteId = remoteId,
                 kind = kind,
+                activityType = activityType,
+                ascentM = ascent(points),
+                startLat = points.firstOrNull()?.latitude,
+                startLon = points.firstOrNull()?.longitude,
+                metaDone = true,
             ),
         )
     }
@@ -82,6 +100,27 @@ class TrackRepository(
     suspend fun setCollection(id: Long, collection: String) =
         withContext(Dispatchers.IO) { dao.setCollection(id, collection) }
 
+    suspend fun setActivityType(id: Long, type: String?) =
+        withContext(Dispatchers.IO) { dao.setActivityType(id, type) }
+
+    /** Existing folder names (collections) for [kind], for pickers outside the manager. */
+    suspend fun collections(kind: String): List<String> =
+        withContext(Dispatchers.IO) { dao.collections(kind) }
+
+    /** Copies a saved training into the routes-to-follow tab; returns the new id. */
+    suspend fun duplicateAsRoute(id: Long): Long? = withContext(Dispatchers.IO) {
+        val existing = dao.getById(id) ?: return@withContext null
+        dao.insert(
+            existing.copy(
+                id = 0,
+                kind = TrackKind.ROUTE,
+                collection = "General",
+                createdAt = now(),
+                remoteId = null,
+            ),
+        )
+    }
+
     /** Overwrites the geometry (and name) of an existing route, preserving its other metadata. */
     suspend fun updateRoute(id: Long, name: String, points: List<GpxPoint>) = withContext(Dispatchers.IO) {
         val existing = dao.getById(id) ?: return@withContext
@@ -91,6 +130,11 @@ class TrackRepository(
                 distanceMeters = routeDistance(points.map { it.toGeoPoint() }),
                 pointCount = points.size,
                 gpx = Gpx.write(name, points),
+                ascentM = ascent(points),
+                startLat = points.firstOrNull()?.latitude,
+                startLon = points.firstOrNull()?.longitude,
+                metaDone = true,
+                municipality = null,
             ),
         )
     }

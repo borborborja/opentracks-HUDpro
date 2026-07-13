@@ -11,7 +11,22 @@
     <string name="settings_tab_appearance">Aparença</string>
     <string name="settings_tab_route">Ruta</string>
     <string name="settings_tab_audio">Àudio</string>
+    <string name="settings_tab_activity_types">Tipus</string>
     <string name="settings_tab_app">App</string>
+
+    <!-- Activity types -->
+    <string name="settings_types_predefined_header">Tipus predefinits</string>
+    <string name="settings_types_custom_header">Tipus personalitzats</string>
+    <string name="settings_types_add">Afegeix un tipus personalitzat</string>
+    <string name="settings_types_add_title">Nou tipus personalitzat</string>
+    <string name="settings_types_edit_title">Edita el tipus personalitzat</string>
+    <string name="settings_types_name_label">Nom</string>
+    <string name="settings_types_icon_label">Icona</string>
+    <string name="settings_types_delete">Elimina</string>
+    <string name="settings_types_delete_confirm">Vols eliminar el tipus personalitzat «%1$s»? Les activitats que el facin servir quedaran sense tipus.</string>
+    <string name="settings_types_empty_custom">No hi ha tipus personalitzats. Afegeix-ne un amb el botó de sota.</string>
+    <string name="settings_types_save">Desa</string>
+    <string name="settings_types_cancel">Cancel·la</string>
 
     <!-- Units -->
     <string name="settings_units_distance">Distància</string>

@@ -11,7 +11,22 @@
     <string name="settings_tab_appearance">Apariencia</string>
     <string name="settings_tab_route">Ruta</string>
     <string name="settings_tab_audio">Audio</string>
+    <string name="settings_tab_activity_types">Tipos</string>
     <string name="settings_tab_app">App</string>
+
+    <!-- Activity types -->
+    <string name="settings_types_predefined_header">Tipos predefinidos</string>
+    <string name="settings_types_custom_header">Tipos personalizados</string>
+    <string name="settings_types_add">Añadir tipo personalizado</string>
+    <string name="settings_types_add_title">Nuevo tipo personalizado</string>
+    <string name="settings_types_edit_title">Editar tipo personalizado</string>
+    <string name="settings_types_name_label">Nombre</string>
+    <string name="settings_types_icon_label">Icono</string>
+    <string name="settings_types_delete">Eliminar</string>
+    <string name="settings_types_delete_confirm">¿Eliminar el tipo personalizado «%1$s»? Las actividades que lo usen quedarán sin tipo.</string>
+    <string name="settings_types_empty_custom">No hay tipos personalizados. Añade uno con el botón de abajo.</string>
+    <string name="settings_types_save">Guardar</string>
+    <string name="settings_types_cancel">Cancelar</string>
 
     <!-- Units -->
     <string name="settings_units_distance">Distancia</string>

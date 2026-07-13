@@ -18,6 +18,7 @@ import cat.hudpro.opentracks.manager.screens.RouteDetailScreen
 import cat.hudpro.opentracks.manager.screens.SensorsScreen
 import cat.hudpro.opentracks.manager.screens.RouteEditorScreen
 import cat.hudpro.opentracks.manager.screens.SettingsScreen
+import cat.hudpro.opentracks.manager.screens.TrainingDetailScreen
 
 object Routes {
     const val HOME = "home"
@@ -30,6 +31,7 @@ object Routes {
     const val SENSORS = "sensors"
     const val CREATE_ROUTE = "create_route"
     const val ROUTE_DETAIL = "route_detail"
+    const val TRAINING_DETAIL = "training_detail"
     const val EDIT_ROUTE = "edit_route"
     const val DOWNLOAD_AREA = "download_area"
 }
@@ -47,6 +49,7 @@ fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null) {
                 onOpenSettings = { nav.navigate(Routes.SETTINGS) },
                 onOpenLayers = { nav.navigate(Routes.LAYERS) },
                 onOpenRoute = { id -> nav.navigate("${Routes.ROUTE_DETAIL}/$id") },
+                onOpenTraining = { id -> nav.navigate("${Routes.TRAINING_DETAIL}/$id") },
                 onEditRoute = { id -> nav.navigate("${Routes.EDIT_ROUTE}/$id") },
                 onCreateRoute = { nav.navigate(Routes.CREATE_ROUTE) },
                 onDownloadRouteMap = { bbox ->
@@ -122,6 +125,13 @@ fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null) {
                     nav.navigate("${Routes.DOWNLOAD_AREA}?w=${bbox.west}&s=${bbox.south}&e=${bbox.east}&n=${bbox.north}")
                 },
             )
+        }
+        composable(
+            route = "${Routes.TRAINING_DETAIL}/{trackId}",
+            arguments = listOf(navArgument("trackId") { type = NavType.LongType }),
+        ) { entry ->
+            val id = entry.arguments?.getLong("trackId") ?: 0L
+            TrainingDetailScreen(trackId = id, onBack = { nav.popBackStack() })
         }
         composable(
             route = "${Routes.EDIT_ROUTE}/{trackId}",

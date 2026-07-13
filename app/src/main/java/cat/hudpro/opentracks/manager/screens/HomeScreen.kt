@@ -25,10 +25,13 @@ import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
@@ -45,6 +48,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -96,7 +100,7 @@ import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.Style
 
-private const val ROOT = "General"
+internal const val ROOT = "General"
 
 /**
  * Home = route manager: the always-visible «Entrenament» button (map background) on top, then the
@@ -110,6 +114,7 @@ fun HomeScreen(
     onOpenSettings: () -> Unit = {},
     onOpenLayers: () -> Unit = {},
     onOpenRoute: (Long) -> Unit = {},
+    onOpenTraining: (Long) -> Unit = {},
     onEditRoute: (Long) -> Unit = {},
     onCreateRoute: () -> Unit = {},
     onDownloadRouteMap: (cat.hudpro.opentracks.data.map.BoundingBox) -> Unit = {},
@@ -122,10 +127,21 @@ fun HomeScreen(
     val all by remember { app.trackRepository.observeSummaries() }.collectAsStateWithLifecycle(initialValue = emptyList())
     var tab by remember { mutableIntStateOf(0) }
     val kind = if (tab == 0) TrackKind.TRAINING else TrackKind.ROUTE
-    val tracks = all.filter { it.kind == kind }
 
     var viewMode by remember { mutableStateOf(prefs.routeViewMode) }
     var currentFolder by remember { mutableStateOf<String?>(null) }
+    // Sort/filter, persisted per tab.
+    var sort by remember(tab) {
+        mutableStateOf(cat.hudpro.opentracks.data.tracks.TrackSort.byName(if (tab == 0) prefs.trackSortTraining else prefs.trackSortRoute))
+    }
+    var filterType by remember(tab) {
+        mutableStateOf(if (tab == 0) prefs.trackFilterTypeTraining else prefs.trackFilterTypeRoute)
+    }
+    val customTypes = remember(prefs.customActivityTypesJson) {
+        cat.hudpro.opentracks.data.tracks.ActivityTypes.decodeCustom(prefs.customActivityTypesJson)
+    }
+    val typeOptions = rememberActivityTypeOptions(prefs)
+    val tracks = cat.hudpro.opentracks.data.tracks.TrackSortFilter.apply(all.filter { it.kind == kind }, sort, filterType)
     val expanded = remember { mutableStateMapOf<String, Boolean>() }
     var activeId by remember { mutableLongStateOf(prefs.activeFollowTrackId) }
 
@@ -138,6 +154,7 @@ fun HomeScreen(
 
     // Dialog state.
     var pendingImport by remember { mutableStateOf<Pair<android.net.Uri, String?>?>(null) }
+    var pendingTrainingImport by remember { mutableStateOf<Pair<android.net.Uri, String?>?>(null) }
     var moveFor by remember { mutableStateOf<FollowTrackEntity?>(null) }
     var renameFor by remember { mutableStateOf<FollowTrackEntity?>(null) }
     var deleteFor by remember { mutableStateOf<FollowTrackEntity?>(null) }
@@ -170,7 +187,7 @@ fun HomeScreen(
     }
 
     val routeActions = RouteActions(
-        onOpen = { onOpenRoute(it.id) },
+        onOpen = { if (it.kind == TrackKind.TRAINING) onOpenTraining(it.id) else onOpenRoute(it.id) },
         onExport = ::exportTrack,
         onEdit = { t -> if (kind == TrackKind.ROUTE) onEditRoute(t.id) else renameFor = t },
         onMove = { moveFor = it },
@@ -223,6 +240,14 @@ fun HomeScreen(
                 }
                 IconButton(onClick = { newFolder = true }) {
                     Icon(Icons.Filled.CreateNewFolder, contentDescription = stringResource(R.string.home_new_folder))
+                }
+                SortMenuButton(sort) { s ->
+                    sort = s
+                    if (kind == TrackKind.TRAINING) prefs.trackSortTraining = s.name else prefs.trackSortRoute = s.name
+                }
+                FilterMenuButton(filterType, typeOptions) { f ->
+                    filterType = f
+                    if (kind == TrackKind.TRAINING) prefs.trackFilterTypeTraining = f else prefs.trackFilterTypeRoute = f
                 }
                 if (currentFolder != null) {
                     AssistChip(
@@ -283,9 +308,31 @@ fun HomeScreen(
             },
             dismissButton = {
                 TextButton(onClick = {
-                    doImport(context, scope, app, uri, fileName, TrackKind.TRAINING); pendingImport = null
+                    pendingTrainingImport = uri to fileName; pendingImport = null
                 }) { Text(stringResource(R.string.home_training)) }
             },
+        )
+    }
+
+    // Training import: same save dialog as when finishing a recording (name + folder + type).
+    pendingTrainingImport?.let { (uri, fileName) ->
+        val trainingFolders = (prefs.foldersTraining +
+            all.filter { it.kind == TrackKind.TRAINING }.map { it.collection })
+            .filter { it != ROOT }.distinct().sorted()
+        TrackSaveDialog(
+            title = stringResource(R.string.home_import_save_training_title),
+            statsLine = null,
+            defaultName = fileName?.substringBeforeLast('.') ?: stringResource(R.string.home_imported_default_name),
+            folders = trainingFolders,
+            activityTypes = typeOptions,
+            confirmLabel = stringResource(R.string.home_import),
+            dismissLabel = stringResource(R.string.home_cancel),
+            onConfirm = { name, folder, typeId ->
+                doImport(context, scope, app, uri, fileName, TrackKind.TRAINING, folder, typeId, name)
+                if (folder != ROOT) prefs.foldersTraining = prefs.foldersTraining + folder
+                pendingTrainingImport = null
+            },
+            onDismiss = { pendingTrainingImport = null },
         )
     }
 
@@ -364,14 +411,85 @@ private fun doImport(
     uri: android.net.Uri,
     fileName: String?,
     kind: String,
+    collection: String = ROOT,
+    activityType: String? = null,
+    nameOverride: String? = null,
 ) {
     scope.launch {
         runCatching {
-            app.trackRepository.importAny(uri, fileName, fileName?.substringBeforeLast('.') ?: context.getString(R.string.home_imported_default_name), kind)
+            val id = app.trackRepository.importAny(
+                uri, fileName,
+                nameOverride ?: fileName?.substringBeforeLast('.') ?: context.getString(R.string.home_imported_default_name),
+                kind, collection = collection, activityType = activityType,
+            )
+            // The file's own <name> wins inside importAny; the user's typed name must win over both.
+            nameOverride?.let { app.trackRepository.rename(id, it) }
+            cat.hudpro.opentracks.data.tracks.TrackMetadataBackfillWorker.enqueue(context)
         }.onFailure {
             android.widget.Toast.makeText(context, it.message ?: context.getString(R.string.home_import_error), android.widget.Toast.LENGTH_LONG).show()
         }.onSuccess {
             android.widget.Toast.makeText(context, context.getString(R.string.home_imported), android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
+@Composable
+private fun SortMenuButton(current: cat.hudpro.opentracks.data.tracks.TrackSort, onPick: (cat.hudpro.opentracks.data.tracks.TrackSort) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val labels = mapOf(
+        cat.hudpro.opentracks.data.tracks.TrackSort.DATE_DESC to R.string.home_sort_date_desc,
+        cat.hudpro.opentracks.data.tracks.TrackSort.DATE_ASC to R.string.home_sort_date_asc,
+        cat.hudpro.opentracks.data.tracks.TrackSort.DISTANCE_DESC to R.string.home_sort_distance_desc,
+        cat.hudpro.opentracks.data.tracks.TrackSort.DISTANCE_ASC to R.string.home_sort_distance_asc,
+        cat.hudpro.opentracks.data.tracks.TrackSort.MUNICIPALITY to R.string.home_sort_municipality,
+        cat.hudpro.opentracks.data.tracks.TrackSort.DIFFICULTY to R.string.home_sort_difficulty,
+        cat.hudpro.opentracks.data.tracks.TrackSort.TYPE to R.string.home_sort_type,
+    )
+    Box {
+        IconButton(onClick = { open = true }) {
+            Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = stringResource(R.string.home_cd_sort))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            labels.forEach { (s, res) ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(res)) },
+                    leadingIcon = { if (s == current) Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(18.dp)) },
+                    onClick = { open = false; onPick(s) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilterMenuButton(current: String?, options: List<ActivityTypeOption>, onPick: (String?) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) {
+            Icon(
+                Icons.Filled.FilterList,
+                contentDescription = stringResource(R.string.home_cd_filter),
+                tint = if (current != null) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+            )
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.home_filter_all_types)) },
+                leadingIcon = { if (current == null) Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(18.dp)) },
+                onClick = { open = false; onPick(null) },
+            )
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.label) },
+                    leadingIcon = {
+                        Icon(
+                            option.icon, contentDescription = null, Modifier.size(18.dp),
+                            tint = if (current == option.id) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                        )
+                    },
+                    onClick = { open = false; onPick(option.id) },
+                )
+            }
         }
     }
 }
@@ -464,15 +582,29 @@ private fun RouteRow(
             if (kind == TrackKind.ROUTE) {
                 RadioButton(selected = activeId == t.id, onClick = { actions.onFollow(t) })
             }
+            if (t.activityType != null) {
+                Icon(
+                    ActivityTypeCatalog.iconFor(t.activityType),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
             Column(Modifier.weight(1f).padding(start = 4.dp)) {
                 Text(t.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
                 if (detailed) {
+                    val difficulty = cat.hudpro.opentracks.data.tracks.DifficultyCalculator.bandOf(t.distanceMeters, t.ascentM)
+                    val extra = buildString {
+                        t.municipality?.let { append(" · ").append(it) }
+                        append(" · ").append(stringResource(difficultyLabel(difficulty)))
+                    }
                     Text(
                         stringResource(
                             R.string.home_route_detail_format,
                             t.distanceMeters / 1000.0, t.pointCount, t.source.name,
-                        ),
+                        ) + extra,
                         style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
                     )
                 } else {
                     Text(stringResource(R.string.home_distance_km, t.distanceMeters / 1000.0), style = MaterialTheme.typography.bodySmall)
@@ -608,11 +740,26 @@ private fun RouteTile(t: FollowTrackEntity, kind: String, activeId: Long, action
             }
             Box(Modifier.align(Alignment.TopEnd)) { RouteMenuTinted(t, kind, actions) }
             Column(Modifier.align(Alignment.BottomStart).padding(10.dp)) {
-                Text(t.name, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, style = MaterialTheme.typography.bodyMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (t.activityType != null) {
+                        Icon(
+                            ActivityTypeCatalog.iconFor(t.activityType),
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(Modifier.size(4.dp))
+                    }
+                    Text(t.name, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, style = MaterialTheme.typography.bodyMedium)
+                }
                 Text(
-                    stringResource(R.string.home_distance_km, t.distanceMeters / 1000.0),
+                    buildString {
+                        append(stringResource(R.string.home_distance_km, t.distanceMeters / 1000.0))
+                        t.municipality?.let { append(" · ").append(it) }
+                    },
                     color = Color(0xFFB8C4CE),
                     style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
                 )
             }
         }
@@ -646,7 +793,7 @@ private fun RouteMenuTinted(t: FollowTrackEntity, kind: String, actions: RouteAc
 // --- Shared dialogs ---
 
 @Composable
-private fun TextDialog(title: String, initial: String, confirm: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+internal fun TextDialog(title: String, initial: String, confirm: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var text by remember { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -660,7 +807,7 @@ private fun TextDialog(title: String, initial: String, confirm: String, onDismis
 }
 
 @Composable
-private fun MoveToFolderDialog(
+internal fun MoveToFolderDialog(
     folders: List<String>,
     current: String,
     onDismiss: () -> Unit,
@@ -694,7 +841,7 @@ private fun MoveToFolderDialog(
 }
 
 @Composable
-private fun FolderChoice(label: String, selected: Boolean, onPick: () -> Unit) {
+internal fun FolderChoice(label: String, selected: Boolean, onPick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(onClick = onPick).padding(vertical = 6.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,

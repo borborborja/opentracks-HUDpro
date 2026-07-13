@@ -51,7 +51,12 @@ object Gpx {
                 val lon = el.getAttribute("lon").toDoubleOrNull() ?: continue
                 val ele = childText(el, "ele")?.toDoubleOrNull()
                 val time = childText(el, "time")?.let { runCatching { Instant.parse(it) }.getOrNull() }
-                points.add(GpxPoint(lat, lon, ele, time))
+                // Sensor extensions: the parser is namespace-unaware, so prefixed tags are literal
+                // names; getElementsByTagName searches all descendants, incl. inside <extensions>.
+                val hr = (childText(el, "gpxtpx:hr") ?: childText(el, "hr"))?.toDoubleOrNull()
+                val cad = (childText(el, "gpxtpx:cad") ?: childText(el, "cad"))?.toDoubleOrNull()
+                val power = (childText(el, "power") ?: childText(el, "gpxtpx:power"))?.toDoubleOrNull()
+                points.add(GpxPoint(lat, lon, ele, time, heartRate = hr, cadence = cad, power = power))
             }
             if (points.isNotEmpty()) break
         }

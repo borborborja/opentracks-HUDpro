@@ -38,4 +38,6 @@
     <string name="routing_trekking">Bici/trekking</string>
     <string name="routing_mtb">BTT</string>
     <string name="routing_shortest">Más corto</string>
+    <string name="routes_type">Tipo</string>
+    <string name="routes_assign_type_title">Tipo de actividad</string>
 </resources>
