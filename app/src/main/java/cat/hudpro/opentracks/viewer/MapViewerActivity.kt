@@ -269,17 +269,31 @@ class MapViewerActivity : ComponentActivity() {
                                 fullscreen = prefs.fullscreen,
                                 adaptiveZoom = prefs.adaptiveZoom,
                                 onSelectBaseMap = { id ->
+                                    DebugLog.i("UI", "quick-settings · mapa base → $id")
                                     prefs.baseMapId = id
                                     controller?.let { c -> applyBaseMap(c, frame = false) { reapplyOverlays(c) } }
                                 },
                                 onSelectFollow = { id ->
+                                    DebugLog.i("UI", "quick-settings · ruta a seguir → id=$id")
                                     prefs.activeFollowTrackId = id
                                     controller?.let { reloadFollow(it, frame = true) }
                                 },
-                                onOrientation = { m -> prefs.mapOrientation = m; controller?.let { applyOrientation(it) } },
-                                onKeepScreenOn = { b -> prefs.keepScreenOn = b; applyKeepScreenOn(b) },
-                                onFullscreen = { b -> prefs.fullscreen = b; applyFullscreen(b) },
-                                onAdaptiveZoom = { b -> prefs.adaptiveZoom = b; adaptiveZoom = b },
+                                onOrientation = { m ->
+                                    DebugLog.i("UI", "quick-settings · orientació → $m")
+                                    prefs.mapOrientation = m; controller?.let { applyOrientation(it) }
+                                },
+                                onKeepScreenOn = { b ->
+                                    DebugLog.i("UI", "quick-settings · pantalla encesa → $b")
+                                    prefs.keepScreenOn = b; applyKeepScreenOn(b)
+                                },
+                                onFullscreen = { b ->
+                                    DebugLog.i("UI", "quick-settings · pantalla completa → $b")
+                                    prefs.fullscreen = b; applyFullscreen(b)
+                                },
+                                onAdaptiveZoom = { b ->
+                                    DebugLog.i("UI", "quick-settings · zoom adaptatiu → $b")
+                                    prefs.adaptiveZoom = b; adaptiveZoom = b
+                                },
                                 onDismiss = { settingsOpenFlow.value = false },
                             )
                         }
@@ -301,7 +315,10 @@ class MapViewerActivity : ComponentActivity() {
             }
         }
         pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) { currentPageFlow.value = position }
+            override fun onPageSelected(position: Int) {
+                DebugLog.d("UI", "pàgina → ${if (position == 0) "Mapa" else "Dades"}")
+                currentPageFlow.value = position
+            }
         })
         setContentView(
             FrameLayout(this).apply {
@@ -418,7 +435,9 @@ class MapViewerActivity : ComponentActivity() {
             distToTurnM < 350 -> 15.0
             else -> 14.0                       // long straight
         }
-        return if (kotlin.math.abs(target - currentZoom) >= 0.4) target else null
+        return (if (kotlin.math.abs(target - currentZoom) >= 0.4) target else null)?.also {
+            DebugLog.d("UI", "zoom adaptatiu · gir a ${distToTurnM?.toInt() ?: "-"}m → zoom $it (era ${"%.1f".format(currentZoom)})")
+        }
     }
 
     private fun applyKeepScreenOn(on: Boolean) {
@@ -710,14 +729,20 @@ class MapViewerActivity : ComponentActivity() {
                 bearingToRouteDeg = state.bearingToRouteDeg,
             )
             ctrl.updateFollowProgress(state.nearestIndex)
-            if (offRouteAlerter.update(state.offRouteMeters, offRouteThreshold) == cat.hudpro.opentracks.viewer.follow.OffRouteAlerter.Event.ENTERED) {
-                if (offRouteVibrate) AlertFeedback.vibrate(this@MapViewerActivity)
-                val spoken = offRouteSpoken && announceVoice && announcer != null
-                if (spoken) {
-                    announcer?.speak(cat.hudpro.opentracks.viewer.audio.AnnouncementText.offRoute(announceLang))
-                } else if (offRouteSound) {
-                    AlertFeedback.beep()
+            when (offRouteAlerter.update(state.offRouteMeters, offRouteThreshold)) {
+                cat.hudpro.opentracks.viewer.follow.OffRouteAlerter.Event.ENTERED -> {
+                    DebugLog.i("Follow", "FORA de ruta · ${state.offRouteMeters?.toInt()}m (llindar ${offRouteThreshold}m)")
+                    if (offRouteVibrate) AlertFeedback.vibrate(this@MapViewerActivity)
+                    val spoken = offRouteSpoken && announceVoice && announcer != null
+                    if (spoken) {
+                        announcer?.speak(cat.hudpro.opentracks.viewer.audio.AnnouncementText.offRoute(announceLang))
+                    } else if (offRouteSound) {
+                        AlertFeedback.beep()
+                    }
                 }
+                cat.hudpro.opentracks.viewer.follow.OffRouteAlerter.Event.EXITED ->
+                    DebugLog.i("Follow", "de nou EN ruta · ${state.offRouteMeters?.toInt()}m")
+                cat.hudpro.opentracks.viewer.follow.OffRouteAlerter.Event.NONE -> {}
             }
         }
 

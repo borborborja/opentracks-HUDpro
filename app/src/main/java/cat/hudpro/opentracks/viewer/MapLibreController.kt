@@ -140,8 +140,17 @@ class MapLibreController(private val map: MapLibreMap) {
         waypointSource = waypoints
     }
 
+    private var trackUpdateCount = 0
+
     fun updateTrack(segments: List<Segment>, frame: Boolean) {
         lastTrackSegments = segments
+        // High-frequency (1/s while recording): log a heartbeat every 30 updates.
+        if (trackUpdateCount++ % 30 == 0) {
+            cat.hudpro.opentracks.data.debug.DebugLog.d(
+                "Map",
+                "updateTrack #$trackUpdateCount · ${segments.size} segments · ${segments.sumOf { it.size }} punts · mode=$trackColorMode",
+            )
+        }
         if (trackColorMode == TrackColorMode.SINGLE) {
             // One feature per segment; constant color.
             val features = segments.mapNotNull { segment ->
@@ -193,6 +202,7 @@ class MapLibreController(private val map: MapLibreMap) {
     fun setTrackColorMode(mode: TrackColorMode, colorHex: String) {
         trackColorMode = mode
         trackColorHex = colorHex
+        cat.hudpro.opentracks.data.debug.DebugLog.d("Map", "setTrackColorMode · $mode · $colorHex")
         if (trackSource != null) updateTrack(lastTrackSegments, frame = false)
     }
 
@@ -213,6 +223,7 @@ class MapLibreController(private val map: MapLibreMap) {
 
     /** Applies the followed-route appearance (color, width, direction arrows, progress split). */
     fun setFollowRouteStyle(colorHex: String, width: Float, arrows: Boolean, progress: Boolean) {
+        cat.hudpro.opentracks.data.debug.DebugLog.d("Map", "setFollowRouteStyle · $colorHex w=$width fletxes=$arrows progrés=$progress")
         // Guard against a malformed stored color (would make the line fail to render).
         followColorHex = colorHex.takeIf { it.startsWith("#") && (it.length == 7 || it.length == 9) } ?: FOLLOW_COLOR
         followWidth = width
@@ -262,11 +273,21 @@ class MapLibreController(private val map: MapLibreMap) {
             .onFailure { map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(pts[0].latitude, pts[0].longitude), 13.0)) }
         // Claim the "already framed" flag so the track observer doesn't steal the camera back.
         hasFramedTrack = true
+        cat.hudpro.opentracks.data.debug.DebugLog.d("Map", "frameFollowRoute · ${pts.size} punts")
     }
+
+    private var lastLoggedProgressIdx = -100
 
     /** Splits the route into traveled ("done") and remaining at [nearestIndex] when progress is on. */
     fun updateFollowProgress(nearestIndex: Int) {
-        if (followProgress && followPoints.isNotEmpty()) drawFollow(nearestIndex.coerceIn(0, followPoints.size))
+        if (followProgress && followPoints.isNotEmpty()) {
+            // Log progress in ~25-point strides to keep the debug log readable.
+            if (kotlin.math.abs(nearestIndex - lastLoggedProgressIdx) >= 25) {
+                cat.hudpro.opentracks.data.debug.DebugLog.d("Map", "progrés ruta · punt $nearestIndex/${followPoints.size}")
+                lastLoggedProgressIdx = nearestIndex
+            }
+            drawFollow(nearestIndex.coerceIn(0, followPoints.size))
+        }
     }
 
     private fun drawFollow(splitIndex: Int) {
@@ -314,6 +335,7 @@ class MapLibreController(private val map: MapLibreMap) {
             map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 80))
         }
         hasFramedTrack = true
+        cat.hudpro.opentracks.data.debug.DebugLog.d("Map", "frameTrack · ${all.size} punts")
     }
 
     /**
@@ -341,7 +363,10 @@ class MapLibreController(private val map: MapLibreMap) {
     var headingUp: Boolean = false
         private set
 
-    fun setHeadingUp(enabled: Boolean) { headingUp = enabled }
+    fun setHeadingUp(enabled: Boolean) {
+        if (headingUp != enabled) cat.hudpro.opentracks.data.debug.DebugLog.d("Map", "orientació · ${if (enabled) "segons direcció" else "nord amunt"}")
+        headingUp = enabled
+    }
 
     // --- Interactive map controls (HUD) ---
 
@@ -371,7 +396,9 @@ class MapLibreController(private val map: MapLibreMap) {
     @android.annotation.SuppressLint("MissingPermission")
     fun recenterOnLocation(context: android.content.Context): Boolean {
         val loc = runCatching { map.locationComponent.lastKnownLocation }.getOrNull()
-            ?: lastKnownFromSystem(context) ?: return false
+            ?: lastKnownFromSystem(context)
+        cat.hudpro.opentracks.data.debug.DebugLog.d("Map", "recentrar · fix=${loc != null}" + (loc?.let { " acc=${it.accuracy}m" } ?: ""))
+        if (loc == null) return false
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(loc.latitude, loc.longitude), 15.0))
         return true
     }

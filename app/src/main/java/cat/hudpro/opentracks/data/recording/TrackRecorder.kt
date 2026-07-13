@@ -1,5 +1,6 @@
 package cat.hudpro.opentracks.data.recording
 
+import cat.hudpro.opentracks.data.debug.DebugLog
 import cat.hudpro.opentracks.data.opentracks.model.GeoPoint
 import cat.hudpro.opentracks.data.opentracks.model.Segment
 import cat.hudpro.opentracks.data.opentracks.model.TRACKPOINT_TYPE_TRACKPOINT
@@ -96,6 +97,11 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         check(startedAt == null) { "already started" }
         startedAt = time
         activeSince = time
+        DebugLog.i(
+            "Motor",
+            "start · acc≤${config.maxAccuracyM}m minDist=${config.minDistanceM}m " +
+                "warm-up=${config.startGoodFixes}×≤${config.startAccuracyM}m jitter=acc×${config.jitterFactor}",
+        )
     }
 
     fun onHeartRate(bpm: Double?) { heartRate = bpm }
@@ -117,6 +123,7 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         val sm = if (prev == null) alt else prev + PRESSURE_SMOOTHING * (alt - prev)
         smoothedPressureAlt = sm
         if (prev != null) {
+            if (!barometric) DebugLog.i("Motor", "baròmetre actiu: pren el control del desnivell")
             barometric = true
             pendingPressureDelta += sm - prev
             if (abs(pendingPressureDelta) >= PRESSURE_HYSTERESIS_M) {
@@ -161,6 +168,7 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         // New segment after the gap; reset the leg baseline so the crash gap adds no distance.
         lastLatLong = null
         lastPointTime = all.lastOrNull()?.time
+        DebugLog.i("Motor", "restore · ${all.size} punts · ${fmt(distanceM)}m · warm-up=${if (warmedUp) "obert" else "pendent"}")
     }
 
     /** Feeds a GPS fix. Returns the accepted [Trackpoint], or null if a filter rejected it. */
@@ -174,14 +182,24 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         time: Instant,
     ): Trackpoint? {
         if (paused || finished || startedAt == null) return null
-        if (accuracyM > config.maxAccuracyM) return null
+        if (accuracyM > config.maxAccuracyM) {
+            DebugLog.d("Motor", "fix refusat: precisió ${fmt(accuracyM)}m > màx ${config.maxAccuracyM}m")
+            return null
+        }
 
         // Warm-up gate: the very first point of the track needs a stable, precise fix, otherwise
         // the cold-start scatter gets recorded as a zigzag with phantom distance.
         if (!warmedUp) {
-            warmupGoodFixes = if (accuracyM <= config.startAccuracyM) warmupGoodFixes + 1 else 0
+            if (accuracyM <= config.startAccuracyM) {
+                warmupGoodFixes++
+                DebugLog.d("Motor", "warm-up: fix bo $warmupGoodFixes/${config.startGoodFixes} (${fmt(accuracyM)}m)")
+            } else {
+                if (warmupGoodFixes > 0) DebugLog.d("Motor", "warm-up reiniciat (${fmt(accuracyM)}m > ${config.startAccuracyM}m)")
+                warmupGoodFixes = 0
+            }
             if (warmupGoodFixes < config.startGoodFixes) return null
             warmedUp = true
+            DebugLog.i("Motor", "warm-up complet · GPS fixat (${fmt(accuracyM)}m)")
         }
 
         val here = GeoPoint(latitude, longitude)
@@ -193,10 +211,15 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
             legDistance = MetricsCalculator.distanceMeters(prevLatLong, here)
             dt = java.time.Duration.between(prevTime, time).toKotlinDuration()
             val dtSec = dt.inWholeMilliseconds / 1000.0
-            if (dtSec > 0 && legDistance / dtSec > config.maxImpliedSpeedMs) return null // GPS jump
+            if (dtSec > 0 && legDistance / dtSec > config.maxImpliedSpeedMs) {
+                DebugLog.w("Motor", "fix refusat: salt GPS ${fmt(legDistance / dtSec)} m/s (${fmt(legDistance)}m en ${fmt(dtSec)}s)")
+                return null
+            }
             // Jitter gate: ignore displacements below the min interval OR within the fix's own
             // uncertainty circle — while stopped, GPS scatter must not accumulate as distance.
-            if (legDistance < maxOf(config.minDistanceM, accuracyM * config.jitterFactor)) {
+            val jitterGate = maxOf(config.minDistanceM, accuracyM * config.jitterFactor)
+            if (legDistance < jitterGate) {
+                DebugLog.d("Motor", "fix refusat: jitter ${fmt(legDistance)}m < ${fmt(jitterGate)}m (acc ${fmt(accuracyM)}m)")
                 markIdleIfStopped(speedMs, time)
                 return null
             }
@@ -244,6 +267,15 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         currentSegment.add(point)
         lastLatLong = here
         lastPointTime = time
+        DebugLog.d(
+            "Motor",
+            "punt #${point.id} · leg=${fmt(legDistance)}m v=${fmt(speed * 3.6)}km/h acc=${fmt(accuracyM)}m" +
+                (alt?.let { " alt=${fmt(it)}m" } ?: "") +
+                (heartRate?.let { " fc=${it.toInt()}" } ?: "") +
+                (cadence?.let { " cad=${it.toInt()}" } ?: "") +
+                (power?.let { " pot=${it.toInt()}W" } ?: "") +
+                " · total=${fmt(distanceM)}m",
+        )
         return point
     }
 
@@ -253,12 +285,14 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         activeSince = null
         paused = true
         closeSegment()
+        DebugLog.i("Motor", "pausa · ${closedSegments.sumOf { it.size }} punts · ${fmt(distanceM)}m")
     }
 
     fun resume(time: Instant) {
         if (!paused || finished) return
         activeSince = time
         paused = false
+        DebugLog.i("Motor", "reprendre · nou segment, línia base reiniciada")
         // New segment starts on the next accepted fix; reset the leg baseline so the gap
         // between pause and resume doesn't count as distance.
         lastLatLong = null
@@ -271,6 +305,11 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         activeSince = null
         finished = true
         closeSegment()
+        DebugLog.i(
+            "Motor",
+            "stop · ${closedSegments.sumOf { it.size }} punts · ${fmt(distanceM)}m · " +
+                "+${fmt(gainM)}/-${fmt(lossM)}m · vmàx=${fmt(maxSpeedMs * 3.6)}km/h · baròmetre=$barometric",
+        )
     }
 
     fun snapshot(now: Instant): RecorderState {
@@ -323,7 +362,11 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         )
         currentSegment.add(idlePoint)
         lastPointTime = time
+        DebugLog.d("Motor", "parada detectada → marcador v=0 (#${idlePoint.id})")
     }
+
+    private fun fmt(v: Double): String = String.format(java.util.Locale.US, "%.1f", v)
+    private fun fmt(v: Float): String = fmt(v.toDouble())
 
     private fun activeDuration(now: Instant): Duration =
         activeSince?.let { java.time.Duration.between(it, now).toKotlinDuration() } ?: Duration.ZERO

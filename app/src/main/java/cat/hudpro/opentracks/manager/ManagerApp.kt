@@ -39,6 +39,11 @@ object Routes {
 @Composable
 fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null) {
     val nav = rememberNavController()
+    androidx.compose.runtime.LaunchedEffect(nav) {
+        nav.currentBackStackEntryFlow.collect { entry ->
+            cat.hudpro.opentracks.data.debug.DebugLog.d("UI", "pantalla → ${entry.destination.route}")
+        }
+    }
     // Launched directly on an editor (pencil in the viewer): back closes the activity, not Home.
     val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
     val backOrFinish: () -> Unit = { if (!nav.popBackStack()) activity?.finish() }
