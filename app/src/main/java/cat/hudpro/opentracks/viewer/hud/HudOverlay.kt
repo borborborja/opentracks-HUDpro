@@ -86,6 +86,20 @@ fun androidx.compose.foundation.layout.BoxScope.ZoneGroup(
 /** Height reserved at the top for the floating switcher (see ViewerSwitcher). */
 val SWITCHER_BAND = 44.dp
 
+/**
+ * Maps a point inside a canvas of [width]×[height] to the nearest [HudZone] (thirds grid). The
+ * non-existent middle-center resolves to MIDDLE_LEFT/MIDDLE_RIGHT by which half the point is in. Pure.
+ */
+fun zoneForPoint(x: Float, y: Float, width: Float, height: Float): HudZone {
+    val col = ((x / width) * 3).toInt().coerceIn(0, 2)
+    val row = ((y / height) * 3).toInt().coerceIn(0, 2)
+    return when (row) {
+        0 -> listOf(HudZone.TOP_LEFT, HudZone.TOP_CENTER, HudZone.TOP_RIGHT)[col]
+        1 -> if (col == 0 || (col == 1 && x < width / 2)) HudZone.MIDDLE_LEFT else HudZone.MIDDLE_RIGHT
+        else -> listOf(HudZone.BOTTOM_LEFT, HudZone.BOTTOM_CENTER, HudZone.BOTTOM_RIGHT)[col]
+    }
+}
+
 /** Maps a [HudZone] to a Compose [Alignment]. Pure. */
 fun zoneAlignment(zone: HudZone): Alignment = when (zone) {
     HudZone.TOP_LEFT -> Alignment.TopStart

@@ -1,47 +1,54 @@
 package cat.hudpro.opentracks.manager.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cat.hudpro.opentracks.data.prefs.ViewerPreferences
 import cat.hudpro.opentracks.viewer.hud.HudCatalog
+import cat.hudpro.opentracks.viewer.hud.HudCategory
 import cat.hudpro.opentracks.viewer.hud.HudData
-import cat.hudpro.opentracks.viewer.hud.HudDesignerCanvas
+import cat.hudpro.opentracks.viewer.hud.HudEditorCanvas
 import cat.hudpro.opentracks.viewer.hud.HudLayout
 import cat.hudpro.opentracks.viewer.hud.HudLayoutStore
+import cat.hudpro.opentracks.viewer.hud.HudZone
 import kotlin.time.Duration.Companion.minutes
 
 private val SAMPLE = HudData(
@@ -56,120 +63,206 @@ private val SAMPLE = HudData(
     routeProgress = 0.55f,
 )
 
+/**
+ * Full-screen WYSIWYG HUD edit mode: the exact viewer look (map + HUD), where widgets are dragged
+ * (magnetized zones), resized (corner handle) and configured (center gear). The top pill — where the
+ * viewer shows Mapa/Dades — is the widget multiselector dropdown; every change auto-saves.
+ */
 @Composable
 fun HudDesignerScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { ViewerPreferences.get(context) }
     var layout by remember { mutableStateOf(HudLayoutStore.load(prefs)) }
     var selected by remember { mutableStateOf<Int?>(null) }
+    var configFor by remember { mutableStateOf<Int?>(null) }
+    var menuOpen by remember { mutableStateOf(false) }
 
-    DetailScaffold(
-        title = "Diseñar HUD",
-        onBack = onBack,
-        actions = {
-            IconButton(onClick = { HudLayoutStore.save(prefs, layout) }) {
-                Icon(Icons.Filled.Save, contentDescription = "Guardar")
-            }
-        },
-    ) { modifier ->
-        Column(modifier.fillMaxSize()) {
-            // Live preview: real map + draggable HUD (fixed height so the scrollable controls below
-            // can't starve it to zero height).
-            Box(Modifier.fillMaxWidth().height(320.dp)) {
-                MapPreview(Modifier.fillMaxSize())
-                HudDesignerCanvas(
-                    layout = layout,
-                    data = SAMPLE,
-                    selectedIndex = selected,
-                    onSelect = { selected = it },
-                    onRemove = { i ->
-                        layout = layout.copy(widgets = layout.widgets.toMutableList().also { it.removeAt(i) })
-                        selected = null
-                    },
-                )
-            }
+    fun update(next: HudLayout) {
+        layout = next
+        HudLayoutStore.save(prefs, next) // live editing: always persisted
+    }
 
-            // Controls: presets, scale, palette. Scrollable so it never starves the preview.
-            Column(
-                Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+    Box(Modifier.fillMaxSize()) {
+        MapPreview(Modifier.fillMaxSize())
+        HudEditorCanvas(
+            layout = layout,
+            data = SAMPLE,
+            selectedIndex = selected,
+            onSelect = { selected = it },
+            onChange = ::update,
+            onConfigure = { configFor = it },
+            modifier = Modifier.safeDrawingPadding(),
+        )
+
+        // Top overlay: back arrow + the "Widgets ▾" pill (the editor's counterpart of Mapa/Dades).
+        Box(Modifier.fillMaxSize().safeDrawingPadding().padding(top = 8.dp)) {
+            RoundIconButton(
+                onClick = onBack,
+                modifier = Modifier.align(Alignment.TopStart).padding(start = 8.dp),
             ) {
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Presets:", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
-                    HudLayout.PRESETS.forEach { (name, preset) ->
-                        AssistChip(onClick = { layout = preset; selected = null }, label = { Text(name) })
-                    }
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Sortir", tint = Color.White, modifier = Modifier.size(20.dp))
+            }
+            Box(Modifier.align(Alignment.TopCenter)) {
+                Row(
+                    Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color(0x99000000))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { menuOpen = true }
+                        .padding(horizontal = 18.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Widgets", color = Color.White, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = Color.White)
                 }
-                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    Text("Mida", style = MaterialTheme.typography.labelLarge)
-                    Slider(
-                        value = layout.scale,
-                        onValueChange = { layout = layout.copy(scale = it) },
-                        valueRange = 0.7f..1.4f,
-                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-                    )
-                }
-                // Zone picker for the selected widget (reliable placement, no drag).
-                val sel = selected
-                if (sel != null && sel in layout.widgets.indices) {
-                    val current = layout.widgets[sel].zone
-                    Text("Mou «${layout.widgets[sel].element?.label ?: ""}» a una zona:",
-                        style = MaterialTheme.typography.labelLarge)
-                    ZonePicker(current) { zone -> layout = layout.moveToZone(sel, zone) }
-                } else {
-                    Text("Toca un widget per seleccionar-lo i moure'l a una zona.",
-                        style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                }
-
-                Text("Afegir / treure widgets", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp))
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    HudCatalog.elements.forEach { element ->
-                        val placed = layout.contains(element.id)
-                        FilterChip(
-                            selected = placed,
-                            onClick = {
-                                layout = if (placed) layout.remove(element.id) else layout.add(element.id)
-                                selected = null
-                            },
-                            label = { Text(element.label) },
-                        )
-                    }
-                }
-
-                Text(
-                    "L'aparença del track, la ruta a seguir, l'àudio i les unitats es configuren a Ajustos.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(top = 8.dp),
+                WidgetsDropdown(
+                    expanded = menuOpen,
+                    onDismiss = { menuOpen = false },
+                    layout = layout,
+                    onUpdate = { update(it); selected = null },
                 )
             }
+        }
+
+        // Per-widget settings dialog (center gear).
+        val cfg = configFor
+        if (cfg != null && cfg in layout.widgets.indices) {
+            WidgetConfigDialog(
+                layout = layout,
+                index = cfg,
+                onUpdate = ::update,
+                onRemove = { update(layout.copy(widgets = layout.widgets.toMutableList().also { it.removeAt(cfg) })); configFor = null; selected = null },
+                onDismiss = { configFor = null },
+            )
+        } else if (cfg != null) {
+            configFor = null
         }
     }
 }
 
-/** 3×3 grid of zone buttons (center-center is inactive) for placing the selected widget. */
+/** Multiselect dropdown: add/remove widgets live without leaving the editor; presets + global size. */
 @Composable
-private fun ZonePicker(current: cat.hudpro.opentracks.viewer.hud.HudZone, onPick: (cat.hudpro.opentracks.viewer.hud.HudZone) -> Unit) {
+private fun WidgetsDropdown(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    layout: HudLayout,
+    onUpdate: (HudLayout) -> Unit,
+) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        val groups = listOf(
+            "Mètriques" to HudCategory.METRIC,
+            "Gràfics" to HudCategory.CHART,
+            "Controls" to HudCategory.CONTROL,
+        )
+        groups.forEach { (title, category) ->
+            Text(
+                title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+            HudCatalog.elements.filter { it.category == category }.forEach { element ->
+                val placed = layout.contains(element.id)
+                Row(
+                    Modifier
+                        .clickable {
+                            onUpdate(if (placed) layout.remove(element.id) else layout.add(element.id))
+                        }
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = placed, onCheckedChange = null)
+                    Text(element.label, Modifier.padding(end = 16.dp))
+                }
+            }
+        }
+        HorizontalDivider(Modifier.padding(vertical = 6.dp))
+        Text(
+            "Presets",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+        Row(
+            Modifier.padding(horizontal = 12.dp).horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            HudLayout.PRESETS.forEach { (name, preset) ->
+                AssistChip(onClick = { onUpdate(preset) }, label = { Text(name) })
+            }
+        }
+        Text(
+            "Mida global",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+        Slider(
+            value = layout.scale,
+            onValueChange = { onUpdate(layout.copy(scale = it)) },
+            valueRange = 0.7f..1.4f,
+            modifier = Modifier.padding(horizontal = 16.dp).width(220.dp),
+        )
+    }
+}
+
+/** Per-widget settings: fine size, exact zone, remove. */
+@Composable
+private fun WidgetConfigDialog(
+    layout: HudLayout,
+    index: Int,
+    onUpdate: (HudLayout) -> Unit,
+    onRemove: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val widget = layout.widgets[index]
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(widget.element?.label ?: "Widget") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Mida: ${"%.0f".format(widget.scale * 100)}%", style = MaterialTheme.typography.labelLarge)
+                Slider(
+                    value = widget.scale,
+                    onValueChange = { onUpdate(layout.setWidgetScale(index, it)) },
+                    valueRange = HudLayout.MIN_WIDGET_SCALE..HudLayout.MAX_WIDGET_SCALE,
+                )
+                Text("Zona", style = MaterialTheme.typography.labelLarge)
+                ZonePicker(widget.zone) { zone -> onUpdate(layout.moveToZone(index, zone)) }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Fet") } },
+        dismissButton = {
+            TextButton(onClick = onRemove) { Text("Treure", color = MaterialTheme.colorScheme.error) }
+        },
+    )
+}
+
+/** 3×3 grid of zone buttons (center-center is inactive) for precise placement. */
+@Composable
+private fun ZonePicker(current: HudZone, onPick: (HudZone) -> Unit) {
     val grid = listOf(
-        listOf(cat.hudpro.opentracks.viewer.hud.HudZone.TOP_LEFT, cat.hudpro.opentracks.viewer.hud.HudZone.TOP_CENTER, cat.hudpro.opentracks.viewer.hud.HudZone.TOP_RIGHT),
-        listOf(cat.hudpro.opentracks.viewer.hud.HudZone.MIDDLE_LEFT, null, cat.hudpro.opentracks.viewer.hud.HudZone.MIDDLE_RIGHT),
-        listOf(cat.hudpro.opentracks.viewer.hud.HudZone.BOTTOM_LEFT, cat.hudpro.opentracks.viewer.hud.HudZone.BOTTOM_CENTER, cat.hudpro.opentracks.viewer.hud.HudZone.BOTTOM_RIGHT),
+        listOf(HudZone.TOP_LEFT, HudZone.TOP_CENTER, HudZone.TOP_RIGHT),
+        listOf(HudZone.MIDDLE_LEFT, null, HudZone.MIDDLE_RIGHT),
+        listOf(HudZone.BOTTOM_LEFT, HudZone.BOTTOM_CENTER, HudZone.BOTTOM_RIGHT),
     )
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         grid.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 row.forEach { zone ->
                     if (zone == null) {
-                        Box(Modifier.size(56.dp))
+                        Box(Modifier.size(48.dp))
                     } else {
                         val isSel = zone == current
                         Box(
                             Modifier
-                                .size(56.dp)
+                                .size(48.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
                                 .clickable { onPick(zone) },
-                            contentAlignment = androidx.compose.ui.Alignment.Center,
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 zone.label,
@@ -183,3 +276,18 @@ private fun ZonePicker(current: cat.hudpro.opentracks.viewer.hud.HudZone, onPick
     }
 }
 
+@Composable
+private fun RoundIconButton(onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Box(
+        modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(Color(0x99000000))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) { content() }
+}

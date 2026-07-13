@@ -169,6 +169,13 @@ data class HudLayout(
         return copy(widgets = widgets.toMutableList().also { it[index] = w })
     }
 
+    /** Sets one widget's individual scale, clamped to a sane range. */
+    fun setWidgetScale(index: Int, scale: Float): HudLayout {
+        if (index !in widgets.indices) return this
+        val w = widgets[index].copy(scale = scale.coerceIn(MIN_WIDGET_SCALE, MAX_WIDGET_SCALE))
+        return copy(widgets = widgets.toMutableList().also { it[index] = w })
+    }
+
     companion object {
         private fun m(metric: HudMetric, zone: HudZone) = HudWidget(HudCatalog.idOf(metric), zone)
 
@@ -208,5 +215,7 @@ data class HudLayout(
         )
         val DEFAULT = CYCLING
         val PRESETS = mapOf("Ciclisme" to CYCLING, "Trail" to TRAIL, "Esquí" to SKI)
+        const val MIN_WIDGET_SCALE = 0.6f
+        const val MAX_WIDGET_SCALE = 2.2f
     }
 }

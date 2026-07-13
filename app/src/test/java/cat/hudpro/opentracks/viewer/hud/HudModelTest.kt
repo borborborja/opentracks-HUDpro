@@ -54,4 +54,30 @@ class HudModelTest {
         assertThat(HudLayout.CYCLING.byZone(HudZone.BOTTOM_LEFT).map { it.elementId })
             .containsExactly(HudCatalog.idOf(HudMetric.SPEED), HudCatalog.idOf(HudMetric.AVG_SPEED))
     }
+
+    @Test
+    fun setWidgetScaleClamps() {
+        val layout = HudLayout.CYCLING
+        assertThat(layout.setWidgetScale(0, 5f).widgets[0].scale).isEqualTo(HudLayout.MAX_WIDGET_SCALE)
+        assertThat(layout.setWidgetScale(0, 0.1f).widgets[0].scale).isEqualTo(HudLayout.MIN_WIDGET_SCALE)
+        assertThat(layout.setWidgetScale(0, 1.5f).widgets[0].scale).isEqualTo(1.5f)
+        assertThat(layout.setWidgetScale(99, 1.5f)).isEqualTo(layout) // out of range → no-op
+    }
+
+    @Test
+    fun zoneForPointMapsThirdsGrid() {
+        val w = 900f
+        val h = 900f
+        assertThat(zoneForPoint(10f, 10f, w, h)).isEqualTo(HudZone.TOP_LEFT)
+        assertThat(zoneForPoint(450f, 10f, w, h)).isEqualTo(HudZone.TOP_CENTER)
+        assertThat(zoneForPoint(890f, 10f, w, h)).isEqualTo(HudZone.TOP_RIGHT)
+        assertThat(zoneForPoint(10f, 450f, w, h)).isEqualTo(HudZone.MIDDLE_LEFT)
+        assertThat(zoneForPoint(890f, 450f, w, h)).isEqualTo(HudZone.MIDDLE_RIGHT)
+        assertThat(zoneForPoint(10f, 890f, w, h)).isEqualTo(HudZone.BOTTOM_LEFT)
+        assertThat(zoneForPoint(450f, 890f, w, h)).isEqualTo(HudZone.BOTTOM_CENTER)
+        assertThat(zoneForPoint(890f, 890f, w, h)).isEqualTo(HudZone.BOTTOM_RIGHT)
+        // Center-center resolves to a side by the half the point falls in.
+        assertThat(zoneForPoint(430f, 450f, w, h)).isEqualTo(HudZone.MIDDLE_LEFT)
+        assertThat(zoneForPoint(470f, 450f, w, h)).isEqualTo(HudZone.MIDDLE_RIGHT)
+    }
 }
