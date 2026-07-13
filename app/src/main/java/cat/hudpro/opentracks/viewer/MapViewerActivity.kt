@@ -509,6 +509,7 @@ class MapViewerActivity : ComponentActivity() {
             if (pts.size >= 2) {
                 HudProApplication.from(this@MapViewerActivity).trackRepository.insertRoute(
                     name, pts, cat.hudpro.opentracks.data.tracks.TrackSource.RECORDED, remoteId = null,
+                    kind = cat.hudpro.opentracks.data.tracks.TrackKind.TRAINING,
                 )
                 val gpx = Gpx.write(name, pts)
                 val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "activitat" }

@@ -15,6 +15,12 @@ import kotlinx.coroutines.flow.Flow
 
 enum class TrackSource { GPX_IMPORT, ENDURAIN, RECORDED }
 
+/** What a saved track IS: a route to follow, or a recorded/imported training. */
+object TrackKind {
+    const val ROUTE = "ROUTE"
+    const val TRAINING = "TRAINING"
+}
+
 class Converters {
     @TypeConverter fun sourceToString(s: TrackSource): String = s.name
     @TypeConverter fun stringToSource(s: String): TrackSource = TrackSource.valueOf(s)
@@ -33,12 +39,17 @@ data class FollowTrackEntity(
     @ColumnInfo(name = "gpx") val gpx: String,
     /** Remote id when [source] is ENDURAIN. */
     @ColumnInfo(name = "remote_id") val remoteId: Long? = null,
+    /** [TrackKind.ROUTE] (to follow) or [TrackKind.TRAINING] (recorded/imported activity). */
+    val kind: String = TrackKind.ROUTE,
 )
 
 @Dao
 interface FollowTrackDao {
-    @Query("SELECT id, name, collection, source, distance_meters, point_count, created_at, remote_id, '' AS gpx FROM follow_tracks ORDER BY created_at DESC")
+    @Query("SELECT id, name, collection, source, distance_meters, point_count, created_at, remote_id, kind, '' AS gpx FROM follow_tracks ORDER BY created_at DESC")
     fun observeSummaries(): Flow<List<FollowTrackEntity>>
+
+    @Query("UPDATE follow_tracks SET collection = :newName WHERE collection = :oldName AND kind = :kind")
+    suspend fun renameCollection(oldName: String, newName: String, kind: String)
 
     @Query("SELECT * FROM follow_tracks WHERE id = :id")
     suspend fun getById(id: Long): FollowTrackEntity?
@@ -65,7 +76,7 @@ interface FollowTrackDao {
         cat.hudpro.opentracks.data.recording.RecordingEntity::class,
         cat.hudpro.opentracks.data.recording.RecordingPointEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -74,6 +85,14 @@ abstract class HudProDatabase : RoomDatabase() {
     abstract fun recordingDao(): cat.hudpro.opentracks.data.recording.RecordingDao
 
     companion object {
+        /** v3: route/training kind on follow_tracks (recorded tracks become trainings). */
+        val MIGRATION_2_3 = object : androidx.room.migration.Migration(2, 3) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE follow_tracks ADD COLUMN kind TEXT NOT NULL DEFAULT 'ROUTE'")
+                db.execSQL("UPDATE follow_tracks SET kind = 'TRAINING' WHERE source = 'RECORDED'")
+            }
+        }
+
         /** v2: crash-safe native recording tables. */
         val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {

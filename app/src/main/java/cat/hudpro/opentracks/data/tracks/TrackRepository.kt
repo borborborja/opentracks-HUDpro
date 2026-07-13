@@ -27,11 +27,34 @@ class TrackRepository(
         insertRoute(name, route.points, TrackSource.GPX_IMPORT, remoteId = null)
     }
 
+    /**
+     * Imports any supported track file (GPX/KML/KMZ/TCX, detected by [fileName]'s extension) as a
+     * [kind] (route to follow or training). Throws IllegalArgumentException on unsupported formats.
+     */
+    suspend fun importAny(uri: Uri, fileName: String?, fallbackName: String, kind: String): Long =
+        withContext(Dispatchers.IO) {
+            val route = contentResolver.openInputStream(uri).use { input ->
+                requireNotNull(input) { "Cannot open $uri" }
+                when (cat.hudpro.opentracks.data.gpx.formatFor(fileName)) {
+                    cat.hudpro.opentracks.data.gpx.TrackFormat.GPX -> Gpx.read(input)
+                    cat.hudpro.opentracks.data.gpx.TrackFormat.KML -> cat.hudpro.opentracks.data.gpx.Kml.read(input)
+                    cat.hudpro.opentracks.data.gpx.TrackFormat.KMZ -> cat.hudpro.opentracks.data.gpx.Kml.readKmz(input)
+                    cat.hudpro.opentracks.data.gpx.TrackFormat.TCX -> cat.hudpro.opentracks.data.gpx.Tcx.read(input)
+                    cat.hudpro.opentracks.data.gpx.TrackFormat.UNSUPPORTED ->
+                        throw IllegalArgumentException("Format no suportat: ${fileName ?: "?"}")
+                }
+            }
+            require(route.points.size >= 2) { "El fitxer no conté cap track" }
+            val name = route.name?.takeIf { it.isNotBlank() } ?: fallbackName
+            insertRoute(name, route.points, TrackSource.GPX_IMPORT, remoteId = null, kind = kind)
+        }
+
     suspend fun insertRoute(
         name: String,
         points: List<GpxPoint>,
         source: TrackSource,
         remoteId: Long?,
+        kind: String = TrackKind.ROUTE,
     ): Long = withContext(Dispatchers.IO) {
         val gpxText = Gpx.write(name, points)
         dao.insert(
@@ -43,9 +66,13 @@ class TrackRepository(
                 createdAt = now(),
                 gpx = gpxText,
                 remoteId = remoteId,
+                kind = kind,
             ),
         )
     }
+
+    suspend fun renameCollection(oldName: String, newName: String, kind: String) =
+        withContext(Dispatchers.IO) { dao.renameCollection(oldName, newName, kind) }
 
     /** Loads the full entity (including the GPX blob) for the detail/edit screens. */
     suspend fun get(id: Long): FollowTrackEntity? = withContext(Dispatchers.IO) { dao.getById(id) }

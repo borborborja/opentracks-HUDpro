@@ -19,7 +19,7 @@ class HudProApplication : Application() {
 
     val database: HudProDatabase by lazy {
         Room.databaseBuilder(this, HudProDatabase::class.java, "hudpro.db")
-            .addMigrations(HudProDatabase.MIGRATION_1_2)
+            .addMigrations(HudProDatabase.MIGRATION_1_2, HudProDatabase.MIGRATION_2_3)
             .build()
     }
     val trackRepository: TrackRepository by lazy {

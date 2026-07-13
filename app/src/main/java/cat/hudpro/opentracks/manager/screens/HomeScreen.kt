@@ -1,57 +1,715 @@
 package cat.hudpro.opentracks.manager.screens
 
+import android.provider.OpenableColumns
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.DirectionsRun
-import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CreateNewFolder
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.automirrored.filled.ViewQuilt
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cat.hudpro.opentracks.HudProApplication
+import cat.hudpro.opentracks.data.gpx.GpxShare
 import cat.hudpro.opentracks.data.map.MapSource
 import cat.hudpro.opentracks.data.map.MapStyleFactory
+import cat.hudpro.opentracks.data.opentracks.model.GeoPoint
 import cat.hudpro.opentracks.data.prefs.ViewerPreferences
+import cat.hudpro.opentracks.data.tracks.FollowTrackEntity
+import cat.hudpro.opentracks.data.tracks.PolylineSimplifier
+import cat.hudpro.opentracks.data.tracks.TrackKind
+import kotlinx.coroutines.launch
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.Style
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import cat.hudpro.opentracks.manager.Routes
+import java.util.Locale
 
-private data class Tile(val title: String, val subtitle: String, val icon: ImageVector, val route: String)
+private const val ROOT = "General"
 
 /**
- * Full-width "Visor" button whose background is a live (non-interactive) map centered on the user's
- * current position — a pretty doorway into the viewer.
+ * Home = route manager: the always-visible «Entrenament» button (map background) on top, then the
+ * Registrades/Per seguir tabs with three view modes (list / detailed / tiles-with-track), folders,
+ * per-route actions (open/export/edit/download-maps/delete) and multi-format import.
  */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeScreen(
+    onOpenViewer: () -> Unit,
+    onOpenSettings: () -> Unit = {},
+    onOpenLayers: () -> Unit = {},
+    onOpenRoute: (Long) -> Unit = {},
+    onEditRoute: (Long) -> Unit = {},
+    onCreateRoute: () -> Unit = {},
+    onDownloadRouteMap: (cat.hudpro.opentracks.data.map.BoundingBox) -> Unit = {},
+) {
+    val context = LocalContext.current
+    val app = remember { HudProApplication.from(context) }
+    val prefs = remember { ViewerPreferences.get(context) }
+    val scope = rememberCoroutineScope()
+
+    val all by remember { app.trackRepository.observeSummaries() }.collectAsStateWithLifecycle(initialValue = emptyList())
+    var tab by remember { mutableIntStateOf(0) }
+    val kind = if (tab == 0) TrackKind.TRAINING else TrackKind.ROUTE
+    val tracks = all.filter { it.kind == kind }
+
+    var viewMode by remember { mutableStateOf(prefs.routeViewMode) }
+    var currentFolder by remember { mutableStateOf<String?>(null) }
+    val expanded = remember { mutableStateMapOf<String, Boolean>() }
+    var activeId by remember { mutableLongStateOf(prefs.activeFollowTrackId) }
+
+    // Folders = user-created set ∪ collections present on this tab's tracks.
+    fun folderSet(): Set<String> = if (kind == TrackKind.TRAINING) prefs.foldersTraining else prefs.foldersRoute
+    fun saveFolderSet(set: Set<String>) {
+        if (kind == TrackKind.TRAINING) prefs.foldersTraining = set else prefs.foldersRoute = set
+    }
+    val folders = (folderSet() + tracks.map { it.collection }.filter { it != ROOT }).distinct().sorted()
+
+    // Dialog state.
+    var pendingImport by remember { mutableStateOf<Pair<android.net.Uri, String?>?>(null) }
+    var moveFor by remember { mutableStateOf<FollowTrackEntity?>(null) }
+    var renameFor by remember { mutableStateOf<FollowTrackEntity?>(null) }
+    var deleteFor by remember { mutableStateOf<FollowTrackEntity?>(null) }
+    var newFolder by remember { mutableStateOf(false) }
+    var folderRename by remember { mutableStateOf<String?>(null) }
+    var folderDelete by remember { mutableStateOf<String?>(null) }
+
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            }
+            val name = context.contentResolver.query(uri, null, null, null, null)?.use { c ->
+                val idx = c.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (idx >= 0 && c.moveToFirst()) c.getString(idx) else null
+            }
+            pendingImport = uri to name
+        }
+    }
+
+    // In tile mode, being inside a folder captures the back gesture (step out, don't exit).
+    BackHandler(enabled = currentFolder != null) { currentFolder = null }
+
+    fun exportTrack(t: FollowTrackEntity) {
+        scope.launch {
+            app.trackRepository.get(t.id)?.let { GpxShare.share(context, it.name, it.gpx) }
+        }
+    }
+
+    val routeActions = RouteActions(
+        onOpen = { onOpenRoute(it.id) },
+        onExport = ::exportTrack,
+        onEdit = { t -> if (kind == TrackKind.ROUTE) onEditRoute(t.id) else renameFor = t },
+        onMove = { moveFor = it },
+        onDownloadMap = { t ->
+            scope.launch { app.trackRepository.routeBoundingBox(t.id)?.let(onDownloadRouteMap) }
+        },
+        onDelete = { deleteFor = it },
+        onFollow = { t -> activeId = t.id; prefs.activeFollowTrackId = t.id },
+    )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("HUD Pro") },
+                actions = {
+                    IconButton(onClick = onOpenLayers) { Icon(Icons.Filled.Layers, contentDescription = "Capes de mapa") }
+                    IconButton(onClick = onOpenSettings) { Icon(Icons.Filled.Settings, contentDescription = "Ajustos") }
+                },
+            )
+        },
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
+            ViewerMapButton(onClick = onOpenViewer)
+
+            TabRow(selectedTabIndex = tab, modifier = Modifier.padding(top = 12.dp)) {
+                Tab(tab == 0, onClick = { tab = 0; currentFolder = null }, text = { Text("Registrades") })
+                Tab(tab == 1, onClick = { tab = 1; currentFolder = null }, text = { Text("Per seguir") })
+            }
+
+            // Toolbar: view mode, folders, import, create route.
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                IconButton(onClick = {
+                    viewMode = when (viewMode) {
+                        "LIST" -> "DETAILED"; "DETAILED" -> "TILES"; else -> "LIST"
+                    }
+                    prefs.routeViewMode = viewMode
+                }) {
+                    Icon(
+                        when (viewMode) {
+                            "LIST" -> Icons.AutoMirrored.Filled.ViewList
+                            "DETAILED" -> Icons.AutoMirrored.Filled.ViewQuilt
+                            else -> Icons.Filled.GridView
+                        },
+                        contentDescription = "Mode de vista",
+                    )
+                }
+                IconButton(onClick = { newFolder = true }) {
+                    Icon(Icons.Filled.CreateNewFolder, contentDescription = "Nova carpeta")
+                }
+                if (currentFolder != null) {
+                    AssistChip(
+                        onClick = { currentFolder = null },
+                        label = { Text(currentFolder ?: "") },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Sortir de la carpeta", Modifier.size(16.dp)) },
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+                OutlinedButton(onClick = { importLauncher.launch(arrayOf("*/*")) }) {
+                    Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(18.dp))
+                    Text(" Importar")
+                }
+                if (kind == TrackKind.ROUTE) {
+                    IconButton(onClick = onCreateRoute) { Icon(Icons.Filled.Edit, contentDescription = "Crear ruta") }
+                }
+            }
+
+            if (tracks.isEmpty() && folders.isEmpty()) {
+                Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        if (kind == TrackKind.TRAINING) {
+                            "Encara no hi ha entrenaments. Grava'n un des d'Entrenament o importa un fitxer."
+                        } else {
+                            "Encara no hi ha rutes. Importa un GPX/KML/TCX o crea'n una."
+                        },
+                    )
+                }
+            } else if (viewMode == "TILES") {
+                TilesView(
+                    tracks = tracks, folders = folders, currentFolder = currentFolder,
+                    kind = kind, activeId = activeId, actions = routeActions,
+                    onEnterFolder = { currentFolder = it },
+                    onFolderMenu = { name, action -> if (action == "rename") folderRename = name else folderDelete = name },
+                )
+            } else {
+                ListView(
+                    tracks = tracks, folders = folders, detailed = viewMode == "DETAILED",
+                    kind = kind, activeId = activeId, actions = routeActions,
+                    expanded = expanded,
+                    onFolderMenu = { name, action -> if (action == "rename") folderRename = name else folderDelete = name },
+                )
+            }
+        }
+    }
+
+    // --- Dialogs ---
+
+    pendingImport?.let { (uri, fileName) ->
+        AlertDialog(
+            onDismissRequest = { pendingImport = null },
+            title = { Text("Importar «${fileName ?: "fitxer"}»") },
+            text = { Text("Com vols desar-lo?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    doImport(context, scope, app, uri, fileName, TrackKind.ROUTE); pendingImport = null
+                }) { Text("Ruta per seguir") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    doImport(context, scope, app, uri, fileName, TrackKind.TRAINING); pendingImport = null
+                }) { Text("Entrenament") }
+            },
+        )
+    }
+
+    if (newFolder) {
+        TextDialog(title = "Nova carpeta", initial = "", confirm = "Crear", onDismiss = { newFolder = false }) { name ->
+            saveFolderSet(folderSet() + name)
+            newFolder = false
+        }
+    }
+
+    moveFor?.let { track ->
+        MoveToFolderDialog(
+            folders = folders,
+            current = track.collection,
+            onDismiss = { moveFor = null },
+            onMove = { folder ->
+                scope.launch { app.trackRepository.setCollection(track.id, folder) }
+                if (folder != ROOT) saveFolderSet(folderSet() + folder)
+                moveFor = null
+            },
+        )
+    }
+
+    renameFor?.let { track ->
+        TextDialog(title = "Reanomenar", initial = track.name, confirm = "Desar", onDismiss = { renameFor = null }) { name ->
+            scope.launch { app.trackRepository.rename(track.id, name) }
+            renameFor = null
+        }
+    }
+
+    deleteFor?.let { track ->
+        AlertDialog(
+            onDismissRequest = { deleteFor = null },
+            title = { Text("Esborrar «${track.name}»?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch { app.trackRepository.delete(track.id) }
+                    deleteFor = null
+                }) { Text("Esborrar", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { deleteFor = null }) { Text("Cancel·lar") } },
+        )
+    }
+
+    folderRename?.let { old ->
+        TextDialog(title = "Reanomenar carpeta", initial = old, confirm = "Desar", onDismiss = { folderRename = null }) { new ->
+            scope.launch { app.trackRepository.renameCollection(old, new, kind) }
+            saveFolderSet(folderSet() - old + new)
+            if (currentFolder == old) currentFolder = new
+            folderRename = null
+        }
+    }
+
+    folderDelete?.let { name ->
+        AlertDialog(
+            onDismissRequest = { folderDelete = null },
+            title = { Text("Esborrar la carpeta «$name»?") },
+            text = { Text("Les rutes de dins tornaran a l'arrel (no s'esborren).") },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch { app.trackRepository.renameCollection(name, ROOT, kind) }
+                    saveFolderSet(folderSet() - name)
+                    if (currentFolder == name) currentFolder = null
+                    folderDelete = null
+                }) { Text("Esborrar", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { folderDelete = null }) { Text("Cancel·lar") } },
+        )
+    }
+}
+
+private fun doImport(
+    context: android.content.Context,
+    scope: kotlinx.coroutines.CoroutineScope,
+    app: HudProApplication,
+    uri: android.net.Uri,
+    fileName: String?,
+    kind: String,
+) {
+    scope.launch {
+        runCatching {
+            app.trackRepository.importAny(uri, fileName, fileName?.substringBeforeLast('.') ?: "Importat", kind)
+        }.onFailure {
+            android.widget.Toast.makeText(context, it.message ?: "Error important", android.widget.Toast.LENGTH_LONG).show()
+        }.onSuccess {
+            android.widget.Toast.makeText(context, "Importat ✓", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
+/** Per-route callbacks bundled to keep signatures sane. */
+private data class RouteActions(
+    val onOpen: (FollowTrackEntity) -> Unit,
+    val onExport: (FollowTrackEntity) -> Unit,
+    val onEdit: (FollowTrackEntity) -> Unit,
+    val onMove: (FollowTrackEntity) -> Unit,
+    val onDownloadMap: (FollowTrackEntity) -> Unit,
+    val onDelete: (FollowTrackEntity) -> Unit,
+    val onFollow: (FollowTrackEntity) -> Unit,
+)
+
+// --- List / detailed modes (folders collapse/expand) ---
+
+@Composable
+private fun ListView(
+    tracks: List<FollowTrackEntity>,
+    folders: List<String>,
+    detailed: Boolean,
+    kind: String,
+    activeId: Long,
+    actions: RouteActions,
+    expanded: MutableMap<String, Boolean>,
+    onFolderMenu: (String, String) -> Unit,
+) {
+    val root = tracks.filter { it.collection == ROOT }
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(root, key = { it.id }) { t ->
+            RouteRow(t, detailed, kind, activeId, actions)
+        }
+        folders.forEach { folder ->
+            val children = tracks.filter { it.collection == folder }
+            item(key = "folder-$folder") {
+                FolderHeader(
+                    name = folder,
+                    count = children.size,
+                    expanded = expanded[folder] == true,
+                    onToggle = { expanded[folder] = !(expanded[folder] == true) },
+                    onMenu = { action -> onFolderMenu(folder, action) },
+                )
+            }
+            if (expanded[folder] == true) {
+                items(children, key = { it.id }) { t ->
+                    Box(Modifier.padding(start = 16.dp)) { RouteRow(t, detailed, kind, activeId, actions) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FolderHeader(name: String, count: Int, expanded: Boolean, onToggle: () -> Unit, onMenu: (String) -> Unit) {
+    var menu by remember { mutableStateOf(false) }
+    Card {
+        Row(
+            Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Text("  $name", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("$count  ", style = MaterialTheme.typography.bodySmall)
+            Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
+            Box {
+                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Accions de carpeta") }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(text = { Text("Reanomenar") }, onClick = { menu = false; onMenu("rename") })
+                    DropdownMenuItem(text = { Text("Esborrar carpeta") }, onClick = { menu = false; onMenu("delete") })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RouteRow(
+    t: FollowTrackEntity,
+    detailed: Boolean,
+    kind: String,
+    activeId: Long,
+    actions: RouteActions,
+) {
+    Card {
+        Row(
+            Modifier.fillMaxWidth().clickable { actions.onOpen(t) }.padding(start = 8.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (kind == TrackKind.ROUTE) {
+                RadioButton(selected = activeId == t.id, onClick = { actions.onFollow(t) })
+            }
+            Column(Modifier.weight(1f).padding(start = 4.dp)) {
+                Text(t.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+                if (detailed) {
+                    Text(
+                        String.format(
+                            Locale.US, "%.1f km · %d punts · %s",
+                            t.distanceMeters / 1000.0, t.pointCount, t.source.name,
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                } else {
+                    Text(String.format(Locale.US, "%.1f km", t.distanceMeters / 1000.0), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            RouteMenu(t, kind, actions)
+        }
+    }
+}
+
+@Composable
+private fun RouteMenu(t: FollowTrackEntity, kind: String, actions: RouteActions) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Accions") }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(text = { Text("Obrir") }, onClick = { open = false; actions.onOpen(t) })
+            DropdownMenuItem(text = { Text("Exportar (GPX)") }, onClick = { open = false; actions.onExport(t) })
+            DropdownMenuItem(
+                text = { Text(if (kind == TrackKind.ROUTE) "Editar traçat" else "Reanomenar") },
+                onClick = { open = false; actions.onEdit(t) },
+            )
+            DropdownMenuItem(text = { Text("Mou a carpeta…") }, onClick = { open = false; actions.onMove(t) })
+            if (kind == TrackKind.ROUTE) {
+                DropdownMenuItem(text = { Text("Baixar mapes") }, onClick = { open = false; actions.onDownloadMap(t) })
+            }
+            DropdownMenuItem(
+                text = { Text("Esborrar", color = MaterialTheme.colorScheme.error) },
+                onClick = { open = false; actions.onDelete(t) },
+            )
+        }
+    }
+}
+
+// --- Tiles mode (folders are entered; back chip/gesture exits) ---
+
+@Composable
+private fun TilesView(
+    tracks: List<FollowTrackEntity>,
+    folders: List<String>,
+    currentFolder: String?,
+    kind: String,
+    activeId: Long,
+    actions: RouteActions,
+    onEnterFolder: (String) -> Unit,
+    onFolderMenu: (String, String) -> Unit,
+) {
+    val visible = if (currentFolder == null) tracks.filter { it.collection == ROOT } else tracks.filter { it.collection == currentFolder }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        if (currentFolder == null) {
+            gridItems(folders, key = { "folder-$it" }) { folder ->
+                FolderTile(
+                    name = folder,
+                    count = tracks.count { it.collection == folder },
+                    onOpen = { onEnterFolder(folder) },
+                    onMenu = { action -> onFolderMenu(folder, action) },
+                )
+            }
+        }
+        gridItems(visible, key = { it.id }) { t ->
+            RouteTile(t, kind, activeId, actions)
+        }
+    }
+}
+
+@Composable
+private fun FolderTile(name: String, count: Int, onOpen: () -> Unit, onMenu: (String) -> Unit) {
+    var menu by remember { mutableStateOf(false) }
+    Card(onClick = onOpen, modifier = Modifier.height(110.dp)) {
+        Box(Modifier.fillMaxSize().padding(12.dp)) {
+            Icon(Icons.Filled.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+            Box(Modifier.align(Alignment.TopEnd)) {
+                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Accions de carpeta") }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(text = { Text("Reanomenar") }, onClick = { menu = false; onMenu("rename") })
+                    DropdownMenuItem(text = { Text("Esborrar carpeta") }, onClick = { menu = false; onMenu("delete") })
+                }
+            }
+            Column(Modifier.align(Alignment.BottomStart)) {
+                Text(name, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text("$count rutes", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RouteTile(t: FollowTrackEntity, kind: String, activeId: Long, actions: RouteActions) {
+    val context = LocalContext.current
+    val app = remember { HudProApplication.from(context) }
+    // Lazily load + simplify the geometry for the background thumbnail.
+    val points by produceState<List<GeoPoint>>(initialValue = emptyList(), t.id) {
+        value = runCatching {
+            PolylineSimplifier.simplify(app.trackRepository.loadRoute(t.id), epsilonMeters = 30.0, maxPoints = 80)
+        }.getOrDefault(emptyList())
+    }
+    Card(onClick = { actions.onOpen(t) }, modifier = Modifier.height(120.dp)) {
+        Box(Modifier.fillMaxSize()) {
+            // Track polyline as the tile background.
+            Canvas(Modifier.fillMaxSize().background(Color(0xFF22303C))) {
+                if (points.size >= 2) {
+                    val minLat = points.minOf { it.latitude }; val maxLat = points.maxOf { it.latitude }
+                    val minLon = points.minOf { it.longitude }; val maxLon = points.maxOf { it.longitude }
+                    val spanLat = (maxLat - minLat).takeIf { it > 1e-9 } ?: 1e-9
+                    val spanLon = (maxLon - minLon).takeIf { it > 1e-9 } ?: 1e-9
+                    val pad = 14f
+                    val w = size.width - 2 * pad
+                    val h = size.height - 2 * pad
+                    var prev: Offset? = null
+                    points.forEach { p ->
+                        val o = Offset(
+                            pad + ((p.longitude - minLon) / spanLon * w).toFloat(),
+                            pad + ((maxLat - p.latitude) / spanLat * h).toFloat(),
+                        )
+                        prev?.let { drawLine(Color(0xFF66D9E8), it, o, strokeWidth = 4f, cap = StrokeCap.Round) }
+                        prev = o
+                    }
+                }
+                drawRect(Brush.verticalGradient(listOf(Color(0x00000000), Color(0xAA000000))))
+            }
+            if (kind == TrackKind.ROUTE) {
+                IconButton(onClick = { actions.onFollow(t) }, modifier = Modifier.align(Alignment.TopStart)) {
+                    Icon(
+                        if (activeId == t.id) Icons.Filled.Star else Icons.Filled.StarBorder,
+                        contentDescription = "Ruta activa",
+                        tint = if (activeId == t.id) Color(0xFFFFD166) else Color.White,
+                    )
+                }
+            }
+            Box(Modifier.align(Alignment.TopEnd)) { RouteMenuTinted(t, kind, actions) }
+            Column(Modifier.align(Alignment.BottomStart).padding(10.dp)) {
+                Text(t.name, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    String.format(Locale.US, "%.1f km", t.distanceMeters / 1000.0),
+                    color = Color(0xFFB8C4CE),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RouteMenuTinted(t: FollowTrackEntity, kind: String, actions: RouteActions) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Accions", tint = Color.White) }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(text = { Text("Obrir") }, onClick = { open = false; actions.onOpen(t) })
+            DropdownMenuItem(text = { Text("Exportar (GPX)") }, onClick = { open = false; actions.onExport(t) })
+            DropdownMenuItem(
+                text = { Text(if (kind == TrackKind.ROUTE) "Editar traçat" else "Reanomenar") },
+                onClick = { open = false; actions.onEdit(t) },
+            )
+            DropdownMenuItem(text = { Text("Mou a carpeta…") }, onClick = { open = false; actions.onMove(t) })
+            if (kind == TrackKind.ROUTE) {
+                DropdownMenuItem(text = { Text("Baixar mapes") }, onClick = { open = false; actions.onDownloadMap(t) })
+            }
+            DropdownMenuItem(
+                text = { Text("Esborrar", color = MaterialTheme.colorScheme.error) },
+                onClick = { open = false; actions.onDelete(t) },
+            )
+        }
+    }
+}
+
+// --- Shared dialogs ---
+
+@Composable
+private fun TextDialog(title: String, initial: String, confirm: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    var text by remember { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true) },
+        confirmButton = {
+            TextButton(onClick = { if (text.isNotBlank()) onConfirm(text.trim()) }) { Text(confirm) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel·lar") } },
+    )
+}
+
+@Composable
+private fun MoveToFolderDialog(
+    folders: List<String>,
+    current: String,
+    onDismiss: () -> Unit,
+    onMove: (String) -> Unit,
+) {
+    var newName by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Mou a carpeta") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                FolderChoice("Cap (arrel)", current == ROOT) { onMove(ROOT) }
+                folders.forEach { f -> FolderChoice(f, current == f) { onMove(f) } }
+                OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    singleLine = true,
+                    label = { Text("Nova carpeta…") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { if (newName.isNotBlank()) onMove(newName.trim()) },
+                enabled = newName.isNotBlank(),
+            ) { Text("Crear i moure") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel·lar") } },
+    )
+}
+
+@Composable
+private fun FolderChoice(label: String, selected: Boolean, onPick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(onClick = onPick).padding(vertical = 6.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            Icons.Filled.Folder,
+            contentDescription = null,
+            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+            modifier = Modifier.size(20.dp),
+        )
+        Text("  $label", fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+    }
+}
+
+// --- The always-visible «Entrenament» doorway (map background) ---
+
 @Composable
 private fun ViewerMapButton(onClick: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -59,13 +717,12 @@ private fun ViewerMapButton(onClick: () -> Unit) {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(120.dp)
+            .height(110.dp)
             .clip(RoundedCornerShape(16.dp)),
     ) {
         AndroidView(
             factory = {
                 mapView.getMapAsync { map ->
-                    // Use the user's online base map (fall back to ICGC if an offline one is active).
                     val baseId = ViewerPreferences.get(context).baseMapId
                         ?.takeUnless { it.startsWith(cat.hudpro.opentracks.data.map.OfflineMap.OFFLINE_PREFIX) }
                     map.setStyle(Style.Builder().fromJson(MapStyleFactory.rasterStyleJson(MapSource.byId(baseId))))
@@ -82,7 +739,6 @@ private fun ViewerMapButton(onClick: () -> Unit) {
             },
             modifier = Modifier.fillMaxSize(),
         )
-        // Legibility scrim + label + click catcher (the MapView never sees the touch).
         Box(
             Modifier
                 .fillMaxSize()
@@ -90,10 +746,10 @@ private fun ViewerMapButton(onClick: () -> Unit) {
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
-            androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Map, contentDescription = null, tint = Color.White)
                 Text(
-                    "  Visor",
+                    "  Entrenament",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -122,48 +778,4 @@ private fun lastKnownLatLng(context: android.content.Context): LatLng? {
         if (loc != null) return LatLng(loc.latitude, loc.longitude)
     }
     return null
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun HomeScreen(onOpenViewer: () -> Unit, onNavigate: (String) -> Unit, onOpenSettings: () -> Unit = {}) {
-    val tiles = listOf(
-        Tile("Capas de mapa", "Online i offline", Icons.Filled.Layers, Routes.LAYERS),
-        Tile("Tracks a seguir", "GPX i col·leccions", Icons.AutoMirrored.Filled.DirectionsRun, Routes.TRACKS),
-        Tile("Endurain", "Pujar i sincronitzar", Icons.Filled.CloudUpload, Routes.ENDURAIN),
-    )
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("HUD Pro") },
-                actions = {
-                    androidx.compose.material3.IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Ajustos")
-                    }
-                },
-            )
-        },
-    ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-            ViewerMapButton(onClick = onOpenViewer)
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(vertical = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(tiles) { tile ->
-                    Card(onClick = { onNavigate(tile.route) }, modifier = Modifier.height(140.dp)) {
-                        Box(Modifier.fillMaxSize().padding(16.dp)) {
-                            Icon(tile.icon, contentDescription = null, modifier = Modifier.align(Alignment.TopStart))
-                            Column(Modifier.align(Alignment.BottomStart)) {
-                                Text(tile.title, fontWeight = FontWeight.Bold)
-                                Text(tile.subtitle, style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }

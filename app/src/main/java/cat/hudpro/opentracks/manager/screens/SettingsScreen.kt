@@ -57,7 +57,7 @@ private sealed interface UpdateState {
     data class Error(val message: String) : UpdateState
 }
 
-private val TABS = listOf("Unitats", "Gravació", "Aparença", "Ruta", "Àudio", "App")
+private val TABS = listOf("Unitats", "Gravació", "Sincronització", "Aparença", "Ruta", "Àudio", "App")
 
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}, onOpenSensors: () -> Unit = {}) {
@@ -79,9 +79,10 @@ fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}, onOpenSe
                 when (tab) {
                     0 -> UnitsSection(prefs)
                     1 -> RecordingSection(prefs, onOpenSensors)
-                    2 -> TrackAppearanceSection(prefs)
-                    3 -> FollowRouteSection(prefs)
-                    4 -> AudioAnnouncementsSection(prefs)
+                    2 -> SyncSection()
+                    3 -> TrackAppearanceSection(prefs)
+                    4 -> FollowRouteSection(prefs)
+                    5 -> AudioAnnouncementsSection(prefs)
                     else -> AppSection(onOpenDebugLog)
                 }
             }
@@ -117,6 +118,64 @@ private fun UnitsSection(prefs: ViewerPreferences) {
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
         modifier = Modifier.padding(top = 8.dp),
+    )
+}
+
+// --- Sync (Endurain now; more services later) ---
+
+@Composable
+private fun SyncSection() {
+    val context = LocalContext.current
+    val endurainPrefs = remember { cat.hudpro.opentracks.data.prefs.EndurainPreferences.get(context) }
+    val scope = rememberCoroutineScope()
+    var host by remember { mutableStateOf(endurainPrefs.host ?: "") }
+    var apiKey by remember { mutableStateOf(endurainPrefs.apiKey ?: "") }
+    var status by remember { mutableStateOf<String?>(null) }
+
+    Text("Endurain", style = MaterialTheme.typography.titleSmall)
+    androidx.compose.material3.OutlinedTextField(
+        value = host,
+        onValueChange = { host = it },
+        label = { Text("Servidor (https://…)") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    androidx.compose.material3.OutlinedTextField(
+        value = apiKey,
+        onValueChange = { apiKey = it },
+        label = { Text("API key (scope activities:upload)") },
+        singleLine = true,
+        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Button(
+        onClick = {
+            endurainPrefs.host = host
+            endurainPrefs.apiKey = apiKey
+            status = "Desat. Provant connexió…"
+            scope.launch {
+                val repo = cat.hudpro.opentracks.data.endurain.EndurainRepository(endurainPrefs)
+                status = repo.testConnection().fold(
+                    onSuccess = { "Connectat ✓ ($it activitats al servidor)" },
+                    onFailure = { "Error: ${it.message}" },
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+    ) { Text("Guardar i provar connexió") }
+    status?.let { Card { Text(it, Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium) } }
+    Text(
+        "Els entrenaments gravats es pugen automàticament a Endurain en aturar la gravació (si la " +
+            "connexió està configurada). La cua reintenta si no hi ha xarxa.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
+    )
+
+    Text("Properament", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp))
+    Text(
+        "· Strava\n· Pujada automàtica a Google Drive\n· Desar els GPX en una carpeta del telèfon",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
     )
 }
 

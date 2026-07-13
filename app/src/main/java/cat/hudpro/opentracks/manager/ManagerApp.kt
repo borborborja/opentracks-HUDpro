@@ -7,7 +7,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cat.hudpro.opentracks.data.map.BoundingBox
-import cat.hudpro.opentracks.manager.screens.EndurainScreen
 import cat.hudpro.opentracks.manager.screens.DataDesignerScreen
 import cat.hudpro.opentracks.manager.screens.DebugLogScreen
 import cat.hudpro.opentracks.manager.screens.HomeScreen
@@ -19,7 +18,6 @@ import cat.hudpro.opentracks.manager.screens.RouteDetailScreen
 import cat.hudpro.opentracks.manager.screens.SensorsScreen
 import cat.hudpro.opentracks.manager.screens.RouteEditorScreen
 import cat.hudpro.opentracks.manager.screens.SettingsScreen
-import cat.hudpro.opentracks.manager.screens.TrackLibraryScreen
 
 object Routes {
     const val HOME = "home"
@@ -27,8 +25,6 @@ object Routes {
     const val DATA = "data"
     const val LAYERS = "layers"
     const val OFFLINE_SECTORS = "offline_sectors"
-    const val TRACKS = "tracks"
-    const val ENDURAIN = "endurain"
     const val SETTINGS = "settings"
     const val DEBUG_LOG = "debug_log"
     const val SENSORS = "sensors"
@@ -48,8 +44,14 @@ fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null) {
         composable(Routes.HOME) {
             HomeScreen(
                 onOpenViewer = onOpenViewer,
-                onNavigate = { nav.navigate(it) },
                 onOpenSettings = { nav.navigate(Routes.SETTINGS) },
+                onOpenLayers = { nav.navigate(Routes.LAYERS) },
+                onOpenRoute = { id -> nav.navigate("${Routes.ROUTE_DETAIL}/$id") },
+                onEditRoute = { id -> nav.navigate("${Routes.EDIT_ROUTE}/$id") },
+                onCreateRoute = { nav.navigate(Routes.CREATE_ROUTE) },
+                onDownloadRouteMap = { bbox ->
+                    nav.navigate("${Routes.DOWNLOAD_AREA}?w=${bbox.west}&s=${bbox.south}&e=${bbox.east}&n=${bbox.north}")
+                },
             )
         }
         composable(Routes.SETTINGS) {
@@ -104,16 +106,6 @@ fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null) {
             }
             DownloadAreaScreen(onBack = { nav.popBackStack() }, initialBbox = initial)
         }
-        composable(Routes.TRACKS) {
-            TrackLibraryScreen(
-                onBack = { nav.popBackStack() },
-                onCreateRoute = { nav.navigate(Routes.CREATE_ROUTE) },
-                onOpenRoute = { id -> nav.navigate("${Routes.ROUTE_DETAIL}/$id") },
-                onDownloadRouteMap = { bbox ->
-                    nav.navigate("${Routes.DOWNLOAD_AREA}?w=${bbox.west}&s=${bbox.south}&e=${bbox.east}&n=${bbox.north}")
-                },
-            )
-        }
         composable(Routes.CREATE_ROUTE) {
             RouteEditorScreen(onBack = { nav.popBackStack() }, onSaved = { nav.popBackStack() })
         }
@@ -138,6 +130,5 @@ fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null) {
             val id = entry.arguments?.getLong("trackId") ?: 0L
             RouteEditorScreen(trackId = id, onBack = { nav.popBackStack() }, onSaved = { nav.popBackStack() })
         }
-        composable(Routes.ENDURAIN) { EndurainScreen(onBack = { nav.popBackStack() }) }
     }
 }

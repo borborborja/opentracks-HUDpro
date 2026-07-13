@@ -86,6 +86,21 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_REC_BAROMETER, true)
         set(value) = prefs.edit().putBoolean(KEY_REC_BAROMETER, value).apply()
 
+    /** Route-manager view mode: "LIST", "DETAILED" or "TILES". */
+    var routeViewMode: String
+        get() = prefs.getString(KEY_ROUTE_VIEW_MODE, "DETAILED") ?: "DETAILED"
+        set(value) = prefs.edit().putString(KEY_ROUTE_VIEW_MODE, value).apply()
+
+    /** User-created (possibly empty) folders for trainings. */
+    var foldersTraining: Set<String>
+        get() = prefs.getStringSet(KEY_FOLDERS_TRAINING, emptySet()) ?: emptySet()
+        set(value) = prefs.edit().putStringSet(KEY_FOLDERS_TRAINING, value).apply()
+
+    /** User-created (possibly empty) folders for routes to follow. */
+    var foldersRoute: Set<String>
+        get() = prefs.getStringSet(KEY_FOLDERS_ROUTE, emptySet()) ?: emptySet()
+        set(value) = prefs.edit().putStringSet(KEY_FOLDERS_ROUTE, value).apply()
+
     /** MAC addresses of paired BLE fitness sensors (heart rate / cadence / power). */
     var bleSensorAddrs: Set<String>
         get() = prefs.getStringSet(KEY_BLE_SENSORS, emptySet()) ?: emptySet()
@@ -202,6 +217,9 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_REC_AUTO_PAUSE = "rec_auto_pause"
         private const val KEY_REC_BAROMETER = "rec_barometer"
         private const val KEY_BLE_SENSORS = "ble_sensors"
+        private const val KEY_ROUTE_VIEW_MODE = "route_view_mode"
+        private const val KEY_FOLDERS_TRAINING = "folders_training"
+        private const val KEY_FOLDERS_ROUTE = "folders_route"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"
         private const val KEY_TRACK_COLOR_MODE = "track_color_mode"
         private const val KEY_TRACK_COLOR = "track_color"
