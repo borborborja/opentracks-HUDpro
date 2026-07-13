@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="home_title">HUD Pro</string>
+    <string name="home_title">Rumb</string>
     <string name="home_cd_map_layers">Map layers</string>
     <string name="home_cd_settings">Settings</string>
     <string name="home_tab_recorded">Recorded</string>

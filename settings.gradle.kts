@@ -16,5 +16,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "OpenTracksHUDpro"
+rootProject.name = "Rumb"
 include(":app")

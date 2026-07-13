@@ -77,7 +77,7 @@
     <string name="settings_debug_test_recording">Provar iniciar gravació</string>
     <string name="settings_debug_copy">Copiar diagnòstic</string>
     <string name="settings_about">Quant a</string>
-    <string name="settings_about_desc">OpenTracks HUD Pro — fork d\'OSMDashboard amb mapes ICGC, HUD i Endurain.</string>
+    <string name="settings_about_desc">Rumb — gravador d\'activitats GPS amb HUD en viu, mapes ICGC i sincronització amb Endurain.</string>
 
     <!-- Track appearance -->
     <string name="settings_appearance_track">Aparença del track</string>
@@ -123,13 +123,13 @@
     <!-- Debug log screen -->
     <string name="debug_title">Registre de debug</string>
     <string name="debug_loading">Carregant…</string>
-    <string name="debug_no_lines">(cap línia de HUD Pro)</string>
+    <string name="debug_no_lines">(cap línia de Rumb)</string>
     <string name="debug_refresh">Actualitzar</string>
     <string name="debug_share">Compartir</string>
     <string name="debug_clear">Netejar</string>
-    <string name="debug_share_subject">HUD Pro · registre de debug</string>
+    <string name="debug_share_subject">Rumb · registre de debug</string>
     <string name="debug_share_chooser">Compartir registre</string>
-    <string name="debug_only_app">Només HUD Pro</string>
+    <string name="debug_only_app">Només Rumb</string>
     <string name="debug_copy">Copiar</string>
     <string name="debug_lines">%1$d línies</string>
 
@@ -138,4 +138,8 @@
     <string name="trackcolor_speed">Per velocitat</string>
     <string name="trackcolor_altitude">Per altitud</string>
     <string name="trackcolor_heart_rate">Per pulsacions</string>
+    <string name="settings_licenses_title">Llicències de codi obert</string>
+    <string name="settings_licenses_show">Mostra llicències i atribucions</string>
+    <string name="settings_licenses_hide">Amaga</string>
+    <string name="settings_licenses_body">Rumb conté codi derivat d\'aquests projectes de codi obert:\n\n· OpenTracks — lògica del motor de gravació (filtratge GPS, estadístiques). Apache License 2.0. github.com/OpenTracksApp/OpenTracks\n· OSMDashboard — integració amb la Dashboard API d\'OpenTracks. Apache License 2.0. codeberg.org/OpenTracksApp/OSMDashboard\n· MapLibre GL Native — renderitzat de mapes. BSD 2-Clause.\n· AndroidX / Jetpack Compose, Kotlin, OkHttp, kotlinx.serialization — Apache License 2.0.\n\nDades i serveis:\n· Dades de mapa © col·laboradors d\'OpenStreetMap (ODbL)\n· Mapes © Institut Cartogràfic i Geològic de Catalunya (ICGC), CC-BY 4.0\n· Geocodificació per Nominatim © col·laboradors d\'OpenStreetMap\n\nTextos complets: fitxers LICENSE i NOTICE al repositori.</string>
 </resources>

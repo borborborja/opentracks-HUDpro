@@ -1,0 +1,23 @@
+package cat.rumb.app.viewer.hud
+
+/**
+ * Callbacks for the interactive HUD controls (map centering, orientation, zoom). In the viewer these
+ * drive the MapLibre camera; in the designer preview they are no-ops ([disabled]).
+ */
+data class HudControls(
+    val followEnabled: Boolean = true,
+    val onRecenter: () -> Unit = {},
+    val onToggleFollow: () -> Unit = {},
+    val onNorth: () -> Unit = {},
+    val onZoomIn: () -> Unit = {},
+    val onZoomOut: () -> Unit = {},
+    // Recording control (native engine): start/stop plus pause/resume while recording.
+    val onStartRecording: () -> Unit = {},
+    val onStopRecording: () -> Unit = {},
+    val onPauseRecording: () -> Unit = {},
+    val onResumeRecording: () -> Unit = {},
+) {
+    companion object {
+        val disabled = HudControls()
+    }
+}

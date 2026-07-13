@@ -7,15 +7,15 @@ plugins {
 }
 
 android {
-    namespace = "cat.hudpro.opentracks"
+    namespace = "cat.rumb.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "cat.hudpro.opentracks"
+        applicationId = "cat.rumb.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 52
-        versionName = "0.52.0"
+        versionCode = 53
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

@@ -43,12 +43,12 @@ jobs:
       - name: Rename APK
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/HUDpro-${GITHUB_REF_NAME}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "dist/Rumb-${GITHUB_REF_NAME}.apk"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: HUDpro-apk
+          name: Rumb-apk
           path: dist/*.apk
 
       - name: Publish GitHub Release
