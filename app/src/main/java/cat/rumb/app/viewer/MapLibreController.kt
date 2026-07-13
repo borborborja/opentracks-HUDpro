@@ -438,6 +438,22 @@ class MapLibreController(private val map: MapLibreMap) {
         return true
     }
 
+    /** Current GPS accuracy (m) from the location component or the OS providers, or null. */
+    @android.annotation.SuppressLint("MissingPermission")
+    fun currentAccuracyM(context: android.content.Context): Float? {
+        val loc = runCatching { map.locationComponent.lastKnownLocation }.getOrNull()
+            ?: lastKnownFromSystem(context) ?: return null
+        return if (loc.hasAccuracy()) loc.accuracy else null
+    }
+
+    /** Last known position as a GeoPoint (location component, then OS providers), or null. */
+    @android.annotation.SuppressLint("MissingPermission")
+    fun lastKnownGeoPoint(context: android.content.Context): cat.rumb.app.data.opentracks.model.GeoPoint? {
+        val loc = runCatching { map.locationComponent.lastKnownLocation }.getOrNull()
+            ?: lastKnownFromSystem(context) ?: return null
+        return cat.rumb.app.data.opentracks.model.GeoPoint(loc.latitude, loc.longitude)
+    }
+
     /** Fallback: the most recent fix from the OS location providers (independent of MapLibre's engine). */
     @android.annotation.SuppressLint("MissingPermission")
     private fun lastKnownFromSystem(context: android.content.Context): android.location.Location? {

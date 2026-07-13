@@ -59,6 +59,8 @@ fun ViewerQuickSettings(
     onOrientation: (String) -> Unit,
     onKeepScreenOn: (Boolean) -> Unit,
     onFullscreen: (Boolean) -> Unit,
+    countdown: Boolean = false,
+    onCountdown: (Boolean) -> Unit = {},
     onAdaptiveZoom: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     competing: Boolean = false,
@@ -77,6 +79,7 @@ fun ViewerQuickSettings(
     var orient by remember { mutableStateOf(orientation) }
     var keep by remember { mutableStateOf(keepScreenOn) }
     var full by remember { mutableStateOf(fullscreen) }
+    var cd by remember { mutableStateOf(countdown) }
     var autoZoom by remember { mutableStateOf(adaptiveZoom) }
 
     val tabs = TABS + if (competing) listOf(R.string.viewer_qs_tab_competition) else emptyList()
@@ -104,6 +107,8 @@ fun ViewerQuickSettings(
                     onOrientation = { orient = it; onOrientation(it) },
                     onKeepScreenOn = { keep = it; onKeepScreenOn(it) },
                     onFullscreen = { full = it; onFullscreen(it) },
+                    countdown = cd,
+                    onCountdown = { cd = it; onCountdown(it) },
                     onAdaptiveZoom = { autoZoom = it; onAdaptiveZoom(it) },
                 )
             }
@@ -156,6 +161,8 @@ private fun OptionsTab(
     onOrientation: (String) -> Unit,
     onKeepScreenOn: (Boolean) -> Unit,
     onFullscreen: (Boolean) -> Unit,
+    countdown: Boolean = false,
+    onCountdown: (Boolean) -> Unit = {},
     onAdaptiveZoom: (Boolean) -> Unit,
 ) {
     Text(stringResource(R.string.viewer_qs_map_orientation), style = MaterialTheme.typography.labelLarge)
@@ -173,6 +180,7 @@ private fun OptionsTab(
     HorizontalDivider(Modifier.padding(vertical = 8.dp))
     ToggleRow(stringResource(R.string.viewer_qs_keep_screen_on), keepScreenOn, onKeepScreenOn)
     ToggleRow(stringResource(R.string.viewer_qs_fullscreen), fullscreen, onFullscreen)
+    ToggleRow(stringResource(R.string.viewer_qs_countdown), countdown, onCountdown)
 }
 
 @Composable

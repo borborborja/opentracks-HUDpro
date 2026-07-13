@@ -58,4 +58,12 @@
     <string name="viewer_qs_halo_help">Green: you are ahead of the ghost. Red: you are behind. Blue: even (within ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Show estimated seconds</string>
     <string name="viewer_toast_ghost_failed">Could not load the ghost (track without timestamps)</string>
+    <string name="viewer_qs_countdown">3-2-1 countdown when starting</string>
+    <string name="countdown_waiting_gps">Waiting for GPS signal…</string>
+    <string name="countdown_go">GO!</string>
+    <string name="countdown_cancel_hint">Tap to cancel</string>
+    <string name="countdown_gps_timeout">No precise GPS fix — recording not started</string>
+    <string name="comp_at_start">At the start point</string>
+    <string name="comp_start_distance">Start point: %1$d m away</string>
+    <string name="comp_start_distance_km">Start point: %1$.1f km away</string>
 </resources>

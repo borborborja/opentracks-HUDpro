@@ -58,4 +58,12 @@
     <string name="viewer_qs_halo_help">Verd: vas per davant del fantasma. Vermell: vas per darrere. Blau: empat (dins de ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Mostra els segons estimats</string>
     <string name="viewer_toast_ghost_failed">No s\'ha pogut carregar el fantasma (track sense marques de temps)</string>
+    <string name="viewer_qs_countdown">Compte enrere 3-2-1 en registrar</string>
+    <string name="countdown_waiting_gps">Esperant senyal GPS…</string>
+    <string name="countdown_go">JA!</string>
+    <string name="countdown_cancel_hint">Toca per cancel·lar</string>
+    <string name="countdown_gps_timeout">Sense fix GPS precís — no s\'ha iniciat la gravació</string>
+    <string name="comp_at_start">Ets al punt de sortida</string>
+    <string name="comp_start_distance">Sortida a %1$d m</string>
+    <string name="comp_start_distance_km">Sortida a %1$.1f km</string>
 </resources>

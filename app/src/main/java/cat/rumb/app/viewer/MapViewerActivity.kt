@@ -93,6 +93,12 @@ class MapViewerActivity : ComponentActivity() {
     private val settingsOpenFlow = MutableStateFlow(false)
     /** Finished native recording awaiting the save/discard dialog. */
     private val saveDialogFlow = MutableStateFlow<RecorderState?>(null)
+
+    /** Pre-recording countdown: null hidden, -1 waiting for GPS, 3..1 digits, 0 = GO!. */
+    private val countdownFlow = MutableStateFlow<Int?>(null)
+
+    /** Competition pre-start: distance (m) to the reference's start point, null = hidden. */
+    private val startPointFlow = MutableStateFlow<Double?>(null)
     private var units = cat.rumb.app.viewer.hud.Units()
     private var lastWaypoints: List<cat.rumb.app.data.opentracks.model.Waypoint> = emptyList()
     private var adaptiveZoom = false
@@ -316,6 +322,11 @@ class MapViewerActivity : ComponentActivity() {
                                     DebugLog.i("UI", "quick-settings · zoom adaptatiu → $b")
                                     prefs.adaptiveZoom = b; adaptiveZoom = b
                                 },
+                                countdown = prefs.recCountdown,
+                                onCountdown = { b ->
+                                    DebugLog.i("UI", "quick-settings · compte enrere → $b")
+                                    prefs.recCountdown = b
+                                },
                                 onDismiss = { settingsOpenFlow.value = false },
                                 competing = competing,
                                 ghostCandidates = ghostCandidates,
@@ -350,6 +361,19 @@ class MapViewerActivity : ComponentActivity() {
                                 },
                             )
                         }
+                        // Competition pre-start pill: are we at the reference's start point?
+                        val startDist by startPointFlow.collectAsState()
+                        startDist?.let { d ->
+                            StartPointPill(d, Modifier.align(Alignment.TopCenter).padding(top = 56.dp))
+                        }
+                        // Fullscreen 3-2-1 countdown (renders above everything; tap cancels).
+                        val countdown by countdownFlow.collectAsState()
+                        countdown?.let { value ->
+                            CountdownOverlay(value) {
+                                DebugLog.i("Record", "compte enrere cancel·lat")
+                                countdownFlow.value = null
+                            }
+                        }
                     }
                 }
             }
@@ -377,6 +401,7 @@ class MapViewerActivity : ComponentActivity() {
             )
             ctrl.setHeadingUp(prefs.mapOrientation == "HEADING_UP")
             setupControls(ctrl)
+            if (competing) startPointTicker(ctrl)
             val onReady: () -> Unit = {
                 // Frame the active route when not recording (no live track to follow yet) so it's visible.
                 loadFollowRoute(prefs, ctrl, frame = reader?.isRecording != true && !NativeRecording.isActive)
@@ -533,9 +558,10 @@ class MapViewerActivity : ComponentActivity() {
         )
     }
 
-    /** Starts the native recording engine (permissions → service → pipeline). */
+    /** Starts the native recording engine (permissions → optional countdown → service). */
     private fun startNativeRecording(ctrl: MapLibreController) {
         if (NativeRecording.isActive) return
+        if (countdownFlow.value != null) return // countdown already running (double tap)
         if (!hasLocationPermission()) {
             locationPermLauncher.launch(
                 arrayOf(
@@ -546,6 +572,52 @@ class MapViewerActivity : ComponentActivity() {
             android.widget.Toast.makeText(this, getString(R.string.viewer_toast_location_permission_record), android.widget.Toast.LENGTH_SHORT).show()
             return
         }
+        val countdownOn = cat.rumb.app.data.prefs.ViewerPreferences.get(this).recCountdown
+        if (countdownOn) startWithCountdown(ctrl) else doStartNativeRecording(ctrl)
+    }
+
+    /**
+     * 3-2-1-GO! countdown, gated on GPS precision: no digit shows until the fix is at least as
+     * precise as the engine's warm-up gate (12 m), so the first fix after GO! isn't rejected.
+     * Tapping the overlay cancels (countdownFlow → null, checked at every step).
+     */
+    private fun startWithCountdown(ctrl: MapLibreController) {
+        lifecycleScope.launch {
+            countdownFlow.value = -1
+            DebugLog.i("Record", "compte enrere: esperant GPS")
+            val deadline = android.os.SystemClock.elapsedRealtime() + GPS_WAIT_TIMEOUT_MS
+            while (true) {
+                if (countdownFlow.value == null) return@launch // cancelled
+                val acc = ctrl.currentAccuracyM(this@MapViewerActivity)
+                if (acc != null && acc <= COUNTDOWN_ACCURACY_M) {
+                    DebugLog.i("Record", "compte enrere: GPS ok (${acc}m)")
+                    break
+                }
+                if (android.os.SystemClock.elapsedRealtime() > deadline) {
+                    countdownFlow.value = null
+                    android.widget.Toast.makeText(this@MapViewerActivity, getString(R.string.countdown_gps_timeout), android.widget.Toast.LENGTH_LONG).show()
+                    DebugLog.w("Record", "compte enrere abandonat: sense fix precís (últim: ${acc}m)")
+                    return@launch
+                }
+                kotlinx.coroutines.delay(500)
+            }
+            for (n in 3 downTo 1) {
+                if (countdownFlow.value == null) return@launch
+                countdownFlow.value = n
+                AlertFeedback.beep()
+                kotlinx.coroutines.delay(1000)
+            }
+            if (countdownFlow.value == null) return@launch
+            countdownFlow.value = 0
+            AlertFeedback.beeps(2)
+            doStartNativeRecording(ctrl)
+            kotlinx.coroutines.delay(700)
+            countdownFlow.value = null
+        }
+    }
+
+    private fun doStartNativeRecording(ctrl: MapLibreController) {
+        if (NativeRecording.isActive) return
         requestNotificationPermission()
         DebugLog.i("Record", "native start")
         RecordingService.start(this)
@@ -553,6 +625,26 @@ class MapViewerActivity : ComponentActivity() {
         followMode = true
         refreshRecordingHud()
         emitControls()
+    }
+
+    /**
+     * Competition pre-start ticker: while not recording, publishes the distance from the current
+     * position to the reference track's start point (the pill above the map).
+     */
+    private fun startPointTicker(ctrl: MapLibreController) {
+        lifecycleScope.launch {
+            while (true) {
+                val ghost = ghostEngine
+                startPointFlow.value = if (competing && ghost != null && !NativeRecording.isActive) {
+                    ctrl.lastKnownGeoPoint(this@MapViewerActivity)?.let {
+                        cat.rumb.app.viewer.hud.MetricsCalculator.distanceMeters(it, ghost.positionAt(0))
+                    }
+                } else {
+                    null
+                }
+                kotlinx.coroutines.delay(2000)
+            }
+        }
     }
 
     /** Persists a finished native recording: library entry + GPX + Endurain upload. */
@@ -949,6 +1041,13 @@ class MapViewerActivity : ComponentActivity() {
 
         /** Long extra: competition reference track id — launches the viewer in ghost-race mode. */
         const val EXTRA_COMPETITION_REF_ID = "competition_ref_id"
+
+        /** Countdown GPS gate: same threshold as the engine warm-up (RecorderConfig.startAccuracyM). */
+        private const val COUNTDOWN_ACCURACY_M = 12f
+        private const val GPS_WAIT_TIMEOUT_MS = 30_000L
+
+        /** Within this distance of the reference start, the competition pre-start pill turns green. */
+        private const val START_POINT_NEAR_M = 30.0
         private const val SPEED_HISTORY = 60
     }
 }
@@ -1008,6 +1107,27 @@ private fun SaveRecordingDialog(
         onConfirm = onSave,
         onDismiss = onDiscard,
         forceChoice = true,
+    )
+}
+
+/** Competition pre-start pill: green at the start point (≤30 m), amber with the distance otherwise. */
+@androidx.compose.runtime.Composable
+private fun StartPointPill(distanceM: Double, modifier: androidx.compose.ui.Modifier) {
+    val near = distanceM <= 30.0
+    val bg = if (near) androidx.compose.ui.graphics.Color(0xF22ECC71) else androidx.compose.ui.graphics.Color(0xF2F4A261)
+    val text = when {
+        near -> "✓ " + androidx.compose.ui.res.stringResource(R.string.comp_at_start)
+        distanceM > 999 -> androidx.compose.ui.res.stringResource(R.string.comp_start_distance_km, distanceM / 1000.0)
+        else -> androidx.compose.ui.res.stringResource(R.string.comp_start_distance, distanceM.toInt())
+    }
+    androidx.compose.material3.Text(
+        text,
+        color = androidx.compose.ui.graphics.Color.White,
+        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+        modifier = modifier
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(24.dp))
+            .background(bg)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     )
 }
 

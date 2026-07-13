@@ -146,6 +146,11 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_COMPETITION_SECONDS, true)
         set(value) = prefs.edit().putBoolean(KEY_COMPETITION_SECONDS, value).apply()
 
+    /** Fullscreen 3-2-1 countdown before a recording starts (after the GPS precision gate). */
+    var recCountdown: Boolean
+        get() = prefs.getBoolean(KEY_REC_COUNTDOWN, false)
+        set(value) = prefs.edit().putBoolean(KEY_REC_COUNTDOWN, value).apply()
+
     /** User's maximum heart rate (bpm), drives the competition HR-zone analysis. */
     var userMaxHr: Int
         get() = prefs.getInt(KEY_USER_MAX_HR, 190)
@@ -280,6 +285,7 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_COMPETITION_HALO = "competition_halo"
         private const val KEY_COMPETITION_SECONDS = "competition_seconds"
         private const val KEY_USER_MAX_HR = "user_max_hr"
+        private const val KEY_REC_COUNTDOWN = "rec_countdown"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"
         private const val KEY_TRACK_COLOR_MODE = "track_color_mode"
         private const val KEY_TRACK_COLOR = "track_color"
