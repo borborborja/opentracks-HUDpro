@@ -87,6 +87,10 @@
     <string name="settings_route_width">Gruix %1$d</string>
     <string name="settings_route_arrows">Fletxes de direcció</string>
     <string name="settings_route_progress">Mostrar progrés (recorregut atenuat)</string>
+    <string name="settings_route_tracking_point">Punt de seguiment</string>
+    <string name="settings_tracking_dot">Punt</string>
+    <string name="settings_tracking_arrow">Fletxa</string>
+    <string name="settings_route_tracking_size">Mida</string>
     <string name="settings_route_off_route">Avís fora de ruta</string>
     <string name="settings_route_threshold">Llindar de desviació: %1$d m</string>
     <string name="settings_route_sound">So</string>

@@ -87,6 +87,10 @@
     <string name="settings_route_width">Width %1$d</string>
     <string name="settings_route_arrows">Direction arrows</string>
     <string name="settings_route_progress">Show progress (dimmed covered track)</string>
+    <string name="settings_route_tracking_point">Tracking point</string>
+    <string name="settings_tracking_dot">Dot</string>
+    <string name="settings_tracking_arrow">Arrow</string>
+    <string name="settings_route_tracking_size">Size</string>
     <string name="settings_route_off_route">Off-route alert</string>
     <string name="settings_route_threshold">Deviation threshold: %1$d m</string>
     <string name="settings_route_sound">Sound</string>

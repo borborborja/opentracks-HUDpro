@@ -11,9 +11,12 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.Style
+import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.LineLayer
+import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
@@ -57,6 +60,10 @@ class MapLibreController(private val map: MapLibreMap) {
         const val FOLLOW_ARROW_LAYER = "follow-arrow-layer"
         const val GHOST_SOURCE = "ghost-source"
         const val GHOST_LAYER = "ghost-layer"
+        const val TRACKING_SOURCE = "tracking-source"
+        const val TRACKING_DOT_LAYER = "tracking-dot-layer"
+        const val TRACKING_ARROW_LAYER = "tracking-arrow-layer"
+        const val TRACKING_ARROW_ICON = "tracking-arrow-icon"
         const val TRACK_COLOR = "#E63946"
         const val FOLLOW_COLOR = "#3A86FF"
         const val MAX_COLOR_SEGMENTS = 500
@@ -155,9 +162,107 @@ class MapLibreController(private val map: MapLibreMap) {
         )
         // Re-apply the last known ghost position so a base-map switch keeps the dot.
         lastGhost?.let { setGhost(it) }
+
+        // Tracking point (user position): a custom marker so colour/size/shape are configurable
+        // (the native puck can't be scaled). Dot = CircleLayer; arrow = SymbolLayer with a code-drawn
+        // icon that rotates to the travel bearing. Only one is visible per the chosen style.
+        val tracking = GeoJsonSource(TRACKING_SOURCE, FeatureCollection.fromFeatures(emptyList()))
+        style.addSource(tracking)
+        style.addImage(TRACKING_ARROW_ICON, arrowBitmap(trackingColorHex))
+        style.addLayer(
+            CircleLayer(TRACKING_DOT_LAYER, TRACKING_SOURCE).withProperties(
+                PropertyFactory.circleRadius(7f * trackingSize),
+                PropertyFactory.circleColor(trackingColorHex),
+                PropertyFactory.circleStrokeColor("#FFFFFF"),
+                PropertyFactory.circleStrokeWidth(2f),
+                PropertyFactory.visibility(if (trackingStyle == "ARROW") Property.NONE else Property.VISIBLE),
+            ),
+        )
+        style.addLayer(
+            SymbolLayer(TRACKING_ARROW_LAYER, TRACKING_SOURCE).withProperties(
+                PropertyFactory.iconImage(TRACKING_ARROW_ICON),
+                PropertyFactory.iconSize(trackingSize),
+                PropertyFactory.iconRotate(Expression.get("bearing")),
+                PropertyFactory.iconAllowOverlap(true),
+                PropertyFactory.iconIgnorePlacement(true),
+                PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
+                PropertyFactory.visibility(if (trackingStyle == "ARROW") Property.VISIBLE else Property.NONE),
+            ),
+        )
+        lastTrackingPoint?.let { setTrackingMarker(it, lastTrackingBearing) }
     }
 
     private var lastGhost: GeoPoint? = null
+
+    // Tracking-point marker state.
+    private var trackingStyle: String = "DOT"
+    private var trackingColorHex: String = FOLLOW_COLOR
+    private var trackingSize: Float = 1.0f
+    private var lastTrackingPoint: GeoPoint? = null
+    private var lastTrackingBearing: Double? = null
+
+    /** A navigation arrow (pointing north) drawn in [colorHex], to be rotated by the travel bearing. */
+    private fun arrowBitmap(colorHex: String): android.graphics.Bitmap {
+        val s = 72
+        val bmp = android.graphics.Bitmap.createBitmap(s, s, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(bmp)
+        val fill = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = runCatching { android.graphics.Color.parseColor(colorHex) }.getOrDefault(android.graphics.Color.parseColor(FOLLOW_COLOR))
+            style = android.graphics.Paint.Style.FILL
+        }
+        val stroke = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.WHITE
+            style = android.graphics.Paint.Style.STROKE
+            strokeWidth = 5f
+            strokeJoin = android.graphics.Paint.Join.ROUND
+        }
+        val p = android.graphics.Path().apply {
+            moveTo(s * 0.5f, s * 0.10f)
+            lineTo(s * 0.86f, s * 0.90f)
+            lineTo(s * 0.5f, s * 0.66f)
+            lineTo(s * 0.14f, s * 0.90f)
+            close()
+        }
+        c.drawPath(p, fill)
+        c.drawPath(p, stroke)
+        return bmp
+    }
+
+    /** Applies the tracking-point style; regenerates the arrow icon for the chosen colour/size. */
+    fun setTrackingPointStyle(style: String, colorHex: String, size: Float) {
+        trackingStyle = style
+        trackingColorHex = colorHex
+        trackingSize = size.coerceIn(0.4f, 2.5f)
+        val s = map.style ?: return
+        s.addImage(TRACKING_ARROW_ICON, arrowBitmap(colorHex))
+        s.getLayer(TRACKING_DOT_LAYER)?.setProperties(
+            PropertyFactory.circleColor(colorHex),
+            PropertyFactory.circleRadius(7f * trackingSize),
+            PropertyFactory.visibility(if (style == "ARROW") Property.NONE else Property.VISIBLE),
+        )
+        s.getLayer(TRACKING_ARROW_LAYER)?.setProperties(
+            PropertyFactory.iconSize(trackingSize),
+            PropertyFactory.visibility(if (style == "ARROW") Property.VISIBLE else Property.NONE),
+        )
+    }
+
+    /** Moves the tracking marker to [point] (null clears it), carrying [bearingDeg] for the arrow. */
+    fun setTrackingMarker(point: GeoPoint?, bearingDeg: Double?) {
+        lastTrackingPoint = point
+        if (bearingDeg != null) lastTrackingBearing = bearingDeg
+        val src = map.style?.getSourceAs<GeoJsonSource>(TRACKING_SOURCE) ?: return
+        if (point == null) {
+            src.setGeoJson(FeatureCollection.fromFeatures(emptyList<Feature>()))
+        } else {
+            val f = Feature.fromGeometry(Point.fromLngLat(point.longitude, point.latitude))
+            f.addNumberProperty("bearing", (lastTrackingBearing ?: 0.0))
+            src.setGeoJson(FeatureCollection.fromFeatures(listOf(f)))
+        }
+    }
+
+    @android.annotation.SuppressLint("MissingPermission")
+    fun lastLocation(): android.location.Location? =
+        runCatching { map.locationComponent.lastKnownLocation }.getOrNull()
 
     /** Moves the ghost dot to [point], or clears it when null. */
     fun setGhost(point: GeoPoint?) {
@@ -414,10 +519,19 @@ class MapLibreController(private val map: MapLibreMap) {
         map.getStyle { style ->
             val lc = map.locationComponent
             if (!lc.isLocationComponentActivated) {
+                // Hide the built-in puck (transparent drawables + no accuracy ring): the location
+                // engine still runs and feeds lastKnownLocation, but our own marker is what's drawn.
+                val opts = org.maplibre.android.location.LocationComponentOptions.builder(context.applicationContext)
+                    .foregroundDrawable(cat.rumb.app.R.drawable.ic_transparent)
+                    .backgroundDrawable(cat.rumb.app.R.drawable.ic_transparent)
+                    .bearingDrawable(cat.rumb.app.R.drawable.ic_transparent)
+                    .accuracyAlpha(0f)
+                    .build()
                 lc.activateLocationComponent(
                     org.maplibre.android.location.LocationComponentActivationOptions
                         .builder(context.applicationContext, style)
                         .useDefaultLocationEngine(true)
+                        .locationComponentOptions(opts)
                         .build(),
                 )
             }

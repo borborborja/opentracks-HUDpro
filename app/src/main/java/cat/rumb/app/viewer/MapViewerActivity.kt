@@ -470,8 +470,10 @@ class MapViewerActivity : ComponentActivity() {
                 prefs.trackColor,
             )
             ctrl.setHeadingUp(prefs.mapOrientation == "HEADING_UP")
+            ctrl.setTrackingPointStyle(prefs.trackingPointStyle, prefs.trackingPointColor, prefs.trackingPointSize)
             setupControls(ctrl)
             if (competing) startPointTicker(ctrl)
+            startTrackingMarkerTicker(ctrl)
             val onReady: () -> Unit = {
                 // Frame the active route when not recording (no live track to follow yet) so it's visible.
                 loadFollowRoute(prefs, ctrl, frame = reader?.isRecording != true && !NativeRecording.isActive)
@@ -769,6 +771,25 @@ class MapViewerActivity : ComponentActivity() {
                     null
                 }
                 kotlinx.coroutines.delay(2000)
+            }
+        }
+    }
+
+    /** Feeds the custom tracking-point marker from the location engine (works recording or idle). */
+    private fun startTrackingMarkerTicker(ctrl: MapLibreController) {
+        lifecycleScope.launch {
+            while (true) {
+                val loc = ctrl.lastLocation()
+                if (loc != null) {
+                    // Prefer GPS course while moving; else the computed bearing; else keep the last.
+                    val bearing = if (loc.hasBearing() && loc.speed > 0.5f) loc.bearing.toDouble()
+                    else hudDataFlow.value.metrics.bearingDeg
+                    ctrl.setTrackingMarker(
+                        cat.rumb.app.data.opentracks.model.GeoPoint(loc.latitude, loc.longitude),
+                        bearing,
+                    )
+                }
+                kotlinx.coroutines.delay(1000)
             }
         }
     }
@@ -1245,6 +1266,9 @@ class MapViewerActivity : ComponentActivity() {
         // Pick up layout changes made in the editors (pencil button) while we were paused.
         hudLayoutFlow.value = HudLayoutStore.load(ViewerPreferences.get(this))
         dataReloadFlow.value++
+        // Reflect tracking-point changes made in general Settings while we were away.
+        val p = ViewerPreferences.get(this)
+        controller?.setTrackingPointStyle(p.trackingPointStyle, p.trackingPointColor, p.trackingPointSize)
         startWarmGps()
     }
     override fun onPause() { stopWarmGps(); mapView.onPause(); super.onPause() }

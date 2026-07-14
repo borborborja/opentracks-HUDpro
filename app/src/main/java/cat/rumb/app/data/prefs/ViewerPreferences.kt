@@ -208,6 +208,19 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_FOLLOW_PROGRESS, true)
         set(value) = prefs.edit().putBoolean(KEY_FOLLOW_PROGRESS, value).apply()
 
+    // --- Tracking point (the user's position marker): DOT | ARROW, color, size scale ---
+    var trackingPointStyle: String
+        get() = prefs.getString(KEY_TRACKING_STYLE, "DOT") ?: "DOT"
+        set(value) = prefs.edit().putString(KEY_TRACKING_STYLE, value).apply()
+
+    var trackingPointColor: String
+        get() = prefs.getString(KEY_TRACKING_COLOR, DEFAULT_FOLLOW_COLOR) ?: DEFAULT_FOLLOW_COLOR
+        set(value) = prefs.edit().putString(KEY_TRACKING_COLOR, value).apply()
+
+    var trackingPointSize: Float
+        get() = prefs.getFloat(KEY_TRACKING_SIZE, 1.0f)
+        set(value) = prefs.edit().putFloat(KEY_TRACKING_SIZE, value).apply()
+
     // --- Off-route alert ---
     var offRouteThresholdM: Int
         get() = prefs.getInt(KEY_OFFROUTE_THRESHOLD, 40)
@@ -317,6 +330,9 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_FOLLOW_WIDTH = "follow_width"
         private const val KEY_FOLLOW_ARROWS = "follow_arrows"
         private const val KEY_FOLLOW_PROGRESS = "follow_progress"
+        private const val KEY_TRACKING_STYLE = "tracking_point_style"
+        private const val KEY_TRACKING_COLOR = "tracking_point_color"
+        private const val KEY_TRACKING_SIZE = "tracking_point_size"
         private const val KEY_OFFROUTE_THRESHOLD = "offroute_threshold"
         private const val KEY_OFFROUTE_SOUND = "offroute_sound"
         private const val KEY_OFFROUTE_VIBRATE = "offroute_vibrate"

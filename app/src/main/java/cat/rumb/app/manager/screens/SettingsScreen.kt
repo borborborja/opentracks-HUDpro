@@ -492,6 +492,9 @@ private fun FollowRouteSection(prefs: ViewerPreferences) {
     var width by remember { mutableFloatStateOf(prefs.followWidth) }
     var arrows by remember { mutableStateOf(prefs.followArrows) }
     var progress by remember { mutableStateOf(prefs.followProgress) }
+    var tpStyle by remember { mutableStateOf(prefs.trackingPointStyle) }
+    var tpColor by remember { mutableStateOf(prefs.trackingPointColor) }
+    var tpSize by remember { mutableFloatStateOf(prefs.trackingPointSize) }
     var threshold by remember { mutableFloatStateOf(prefs.offRouteThresholdM.toFloat()) }
     var sound by remember { mutableStateOf(prefs.offRouteSound) }
     var vibrate by remember { mutableStateOf(prefs.offRouteVibrate) }
@@ -502,6 +505,23 @@ private fun FollowRouteSection(prefs: ViewerPreferences) {
     Slider(value = width, onValueChange = { width = it; prefs.followWidth = it }, valueRange = 3f..12f)
     ToggleRow(stringResource(R.string.settings_route_arrows), arrows) { arrows = it; prefs.followArrows = it }
     ToggleRow(stringResource(R.string.settings_route_progress), progress) { progress = it; prefs.followProgress = it }
+
+    Text(stringResource(R.string.settings_route_tracking_point), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(
+            selected = tpStyle == "DOT",
+            onClick = { tpStyle = "DOT"; prefs.trackingPointStyle = "DOT" },
+            label = { Text(stringResource(R.string.settings_tracking_dot)) },
+        )
+        FilterChip(
+            selected = tpStyle == "ARROW",
+            onClick = { tpStyle = "ARROW"; prefs.trackingPointStyle = "ARROW" },
+            label = { Text(stringResource(R.string.settings_tracking_arrow)) },
+        )
+    }
+    ColorPalette(palette, tpColor) { tpColor = it; prefs.trackingPointColor = it }
+    Text(stringResource(R.string.settings_route_tracking_size), style = MaterialTheme.typography.bodySmall)
+    Slider(value = tpSize, onValueChange = { tpSize = it; prefs.trackingPointSize = it }, valueRange = 0.6f..1.8f)
 
     Text(stringResource(R.string.settings_route_off_route), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
     Text(stringResource(R.string.settings_route_threshold, threshold.toInt()), style = MaterialTheme.typography.bodySmall)
