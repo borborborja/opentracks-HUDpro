@@ -27,6 +27,10 @@ class BleSensorManager(
 ) {
     private val gatts = mutableListOf<BluetoothGatt>()
     private var crank: BleParsers.CrankState? = null
+    // Android GATT allows one outstanding operation per connection: enabling notifications for a
+    // multi-characteristic sensor (e.g. power + cadence) must write CCC descriptors one at a time,
+    // each from the previous onDescriptorWrite — otherwise all but the first write is dropped.
+    private val pendingWrites = java.util.concurrent.ConcurrentHashMap<BluetoothGatt, ArrayDeque<android.bluetooth.BluetoothGattDescriptor>>()
 
     fun start(addresses: Set<String>) {
         if (!hasPermission(context)) {
@@ -50,6 +54,7 @@ class BleSensorManager(
     fun stop() {
         gatts.forEach { runCatching { it.disconnect(); it.close() } }
         gatts.clear()
+        pendingWrites.clear()
     }
 
     private val callback = object : BluetoothGattCallback() {
@@ -61,21 +66,19 @@ class BleSensorManager(
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+            // Collect every CCC descriptor first, then write them one at a time (serialized).
+            val queue = ArrayDeque<android.bluetooth.BluetoothGattDescriptor>()
             for ((service, characteristic) in MEASUREMENTS) {
                 val char = gatt.getService(service)?.getCharacteristic(characteristic) ?: continue
                 gatt.setCharacteristicNotification(char, true)
-                char.getDescriptor(CCC_DESCRIPTOR)?.let { descriptor ->
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        gatt.writeDescriptor(descriptor, android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
-                    } else {
-                        @Suppress("DEPRECATION")
-                        descriptor.value = android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                        @Suppress("DEPRECATION")
-                        gatt.writeDescriptor(descriptor)
-                    }
-                }
-                DebugLog.i("Record", "BLE: notificacions actives · ${gatt.device.address} · $characteristic")
+                char.getDescriptor(CCC_DESCRIPTOR)?.let { queue.add(it) }
             }
+            pendingWrites[gatt] = queue
+            writeNextDescriptor(gatt)
+        }
+
+        override fun onDescriptorWrite(gatt: BluetoothGatt, descriptor: android.bluetooth.BluetoothGattDescriptor, status: Int) {
+            writeNextDescriptor(gatt)
         }
 
         @Deprecated("pre-T callback")
@@ -87,6 +90,20 @@ class BleSensorManager(
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, value: ByteArray) {
             handle(characteristic.uuid, value)
         }
+    }
+
+    /** Writes the next queued CCC descriptor for [gatt]; called after each onDescriptorWrite. */
+    private fun writeNextDescriptor(gatt: BluetoothGatt) {
+        val descriptor = pendingWrites[gatt]?.removeFirstOrNull() ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            gatt.writeDescriptor(descriptor, android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+        } else {
+            @Suppress("DEPRECATION")
+            descriptor.value = android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            @Suppress("DEPRECATION")
+            gatt.writeDescriptor(descriptor)
+        }
+        DebugLog.i("Record", "BLE: notificacions actives · ${gatt.device.address} · ${descriptor.characteristic.uuid}")
     }
 
     private fun handle(uuid: UUID, data: ByteArray) {

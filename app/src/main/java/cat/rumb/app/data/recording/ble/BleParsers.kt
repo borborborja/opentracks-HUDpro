@@ -47,7 +47,10 @@ object BleParsers {
         // uint16 rollover-aware deltas; event time in 1/1024 s.
         val dRevs = (revs - prev.revolutions + 0x10000) % 0x10000
         val dTime = (time - prev.eventTime1024 + 0x10000) % 0x10000
-        if (dTime == 0 || dRevs == 0) return null to state
+        // dTime == 0: duplicate/stale packet, ignore. dRevs == 0 with time advancing: the crank is
+        // NOT turning (coasting/stopped) → report 0, otherwise the last non-zero cadence latches.
+        if (dTime == 0) return null to state
+        if (dRevs == 0) return 0.0 to state
         val rpm = dRevs * 60.0 * 1024.0 / dTime
         // Guard absurd values from stale/rolled data.
         return (rpm.takeIf { it < 300 }) to state

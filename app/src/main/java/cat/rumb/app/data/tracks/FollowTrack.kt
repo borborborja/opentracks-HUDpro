@@ -98,7 +98,7 @@ interface FollowTrackDao {
     @Query("DELETE FROM follow_tracks WHERE id = :id")
     suspend fun delete(id: Long)
 
-    @Query("SELECT remote_id FROM follow_tracks WHERE source = 'ENDURAIN'")
+    @Query("SELECT remote_id FROM follow_tracks WHERE source = 'ENDURAIN' AND remote_id IS NOT NULL")
     suspend fun knownRemoteIds(): List<Long>
 
     @Query("UPDATE follow_tracks SET activity_type = :type WHERE id = :id")

@@ -762,7 +762,7 @@ private fun RouteRow(
                 if (detailed) {
                     val difficulty = cat.rumb.app.data.tracks.DifficultyCalculator.bandOf(t.distanceMeters, t.ascentM)
                     val extra = buildString {
-                        t.municipality?.let { append(" · ").append(it) }
+                        t.municipality?.takeIf { it.isNotBlank() }?.let { append(" · ").append(it) }
                         append(" · ").append(stringResource(difficultyLabel(difficulty)))
                     }
                     Text(
@@ -970,7 +970,7 @@ private fun RouteTile(t: FollowTrackEntity, kind: String, activeId: Long, inComp
                 Text(
                     buildString {
                         append(stringResource(R.string.home_distance_km, t.distanceMeters / 1000.0))
-                        t.municipality?.let { append(" · ").append(it) }
+                        t.municipality?.takeIf { it.isNotBlank() }?.let { append(" · ").append(it) }
                     },
                     color = Color(0xFFB8C4CE),
                     style = MaterialTheme.typography.bodySmall,

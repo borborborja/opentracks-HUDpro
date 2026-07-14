@@ -38,7 +38,10 @@ class DesktopServer(
     private val app = RumbApplication.from(context)
     private val prefs = ViewerPreferences.get(context)
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
-    @Volatile private var token: String? = null
+    // Multiple clients (laptop + phone, or several tabs) can be authorized at once: a single token
+    // field would make each fresh PIN entry evict every prior session, bouncing the others to the
+    // PIN screen. Keep every issued token valid instead.
+    private val tokens = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
 
     override fun serve(session: IHTTPSession): Response {
         return try {
@@ -87,7 +90,7 @@ class DesktopServer(
         val pin = runCatching { json.decodeFromString<Map<String, String>>(body)["pin"] }.getOrNull()
         if (pin != null && pin == pinProvider()) {
             val t = java.util.UUID.randomUUID().toString()
-            token = t
+            tokens.add(t)
             val res = json(Response.Status.OK, OkDto(true))
             res.addHeader("Set-Cookie", "rumb_session=$t; Path=/; HttpOnly; SameSite=Strict")
             return res
@@ -96,9 +99,12 @@ class DesktopServer(
     }
 
     private fun authorized(session: IHTTPSession): Boolean {
-        val t = token ?: return false
+        if (tokens.isEmpty()) return false
         val cookie = session.headers["cookie"] ?: return false
-        return cookie.split(";").any { it.trim() == "rumb_session=$t" }
+        return cookie.split(";").any { c ->
+            val trimmed = c.trim()
+            trimmed.startsWith("rumb_session=") && tokens.contains(trimmed.removePrefix("rumb_session="))
+        }
     }
 
     // --- Read endpoints ---

@@ -662,6 +662,11 @@ class MapViewerActivity : ComponentActivity() {
     private fun doStartNativeRecording(ctrl: MapLibreController) {
         if (NativeRecording.isActive) return
         stopWarmGps() // the recording service takes over GPS; avoid two concurrent requests
+        // Reset per-recording state so a second run in the same viewer session behaves like the first
+        // (otherwise progress announcements and turn warnings stay latched from the previous run).
+        announceScheduler?.reset()
+        announcedTurns.clear()
+        offRouteAlerter.reset()
         requestNotificationPermission()
         DebugLog.i("Record", "native start")
         RecordingService.start(this)
@@ -833,9 +838,10 @@ class MapViewerActivity : ComponentActivity() {
                 offRouteSound = prefs.offRouteSound
                 offRouteVibrate = prefs.offRouteVibrate
                 following = true
-                // Always bring the route into view on (re)load so it can't stay off-screen. During
-                // recording, the live-follow camera takes over on the next update (followMode intact).
-                ctrl.frameFollowRoute()
+                // Frame the route only when asked (route selection / initial load). During a
+                // base-map change mid-recording the caller passes frame=false so the live-follow
+                // camera isn't yanked off the athlete's position.
+                if (frame) ctrl.frameFollowRoute()
                 DebugLog.i("Follow", "dibuixada · ${geo.size} punts · ${ctrl.followDebug()}")
             } else {
                 DebugLog.w("Follow", "ruta buida (id=$id): loadGpxRoute ha tornat 0 punts")

@@ -19,7 +19,7 @@ object TrackSortFilter {
             .thenByDescending { it.createdAt }
         TrackSort.DISTANCE_ASC -> compareBy<FollowTrackEntity> { it.distanceMeters }
             .thenByDescending { it.createdAt }
-        TrackSort.MUNICIPALITY -> compareBy<FollowTrackEntity, String?>(nullsLast(String.CASE_INSENSITIVE_ORDER)) { it.municipality }
+        TrackSort.MUNICIPALITY -> compareBy<FollowTrackEntity, String?>(nullsLast(String.CASE_INSENSITIVE_ORDER)) { it.municipality?.takeIf { m -> m.isNotBlank() } }
             .thenByDescending { it.createdAt }
         TrackSort.DIFFICULTY -> compareByDescending<FollowTrackEntity> {
             DifficultyCalculator.kmEffort(it.distanceMeters, it.ascentM)

@@ -326,6 +326,12 @@ class RecordingService : Service() {
     private fun refreshAutoPauseFromPrefs() {
         if (recorder == null) return
         val prefs = ViewerPreferences.get(this)
+        // If we're currently in an auto-created pause, resume first: the new (or null) detector
+        // wouldn't own that pause and would strand the recording paused forever.
+        if (autoPause?.isAutoPaused == true) {
+            doResume(manual = false)
+            DebugLog.i("Record", "auto-pausa: reprès per reconfiguració")
+        }
         autoPause = if (prefs.recAutoPause) AutoPause(idleAfterSec = prefs.recAutoPauseSec.toLong()) else null
         DebugLog.i("Record", "auto-pausa reconfigurada · on=${prefs.recAutoPause} · ${prefs.recAutoPauseSec}s")
     }

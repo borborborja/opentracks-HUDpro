@@ -17,18 +17,28 @@ class NominatimClient(
     private val client: OkHttpClient = OkHttpClient(),
 ) {
 
-    /** Municipality (city/town/village) at the coordinates, or null on any failure. Never throws. */
-    suspend fun municipality(lat: Double, lon: Double): String? = withContext(Dispatchers.IO) {
+    /** Reverse-geocode outcome: [Ok] (name may be null = geocoded but no place), or [Failed] (retry). */
+    sealed interface Reverse {
+        data class Ok(val name: String?) : Reverse
+        data object Failed : Reverse
+    }
+
+    /**
+     * Reverse-geocodes the coordinates. Distinguishes a successful lookup with no place name
+     * ([Reverse.Ok] with null) from a network/HTTP failure ([Reverse.Failed]) — the caller must not
+     * retry the former forever. Never throws.
+     */
+    suspend fun reverse(lat: Double, lon: Double): Reverse = withContext(Dispatchers.IO) {
         runCatching {
             val lang = java.util.Locale.getDefault().language.ifBlank { "en" }
             val url = "https://nominatim.openstreetmap.org/reverse" +
                 "?format=jsonv2&lat=$lat&lon=$lon&zoom=10&accept-language=$lang"
             val request = Request.Builder().url(url).header("User-Agent", userAgent).build()
             client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@runCatching null
-                parseMunicipality(response.body?.string() ?: return@runCatching null)
+                if (!response.isSuccessful) return@runCatching Reverse.Failed
+                Reverse.Ok(parseMunicipality(response.body?.string() ?: return@runCatching Reverse.Failed))
             }
-        }.getOrNull()
+        }.getOrDefault(Reverse.Failed)
     }
 
     companion object {

@@ -65,6 +65,22 @@ class BleParsersTest {
     }
 
     @Test
+    fun cadenceReportsZeroWhileCoasting() {
+        fun csc(revs: Int, time: Int) = byteArrayOf(
+            0x02,
+            (revs and 0xFF).toByte(), (revs shr 8).toByte(),
+            (time and 0xFF).toByte(), (time shr 8).toByte(),
+        )
+        val (_, s0) = BleParsers.parseCadence(csc(100, 0), null)
+        // Crank not turning: revs unchanged but time advances (coasting) → 0 rpm, not stale/null.
+        val (rpm, s1) = BleParsers.parseCadence(csc(100, 1024), s0)
+        assertThat(rpm).isEqualTo(0.0)
+        // A duplicate packet (time unchanged too) is still ignored (null).
+        val (rpmDup, _) = BleParsers.parseCadence(csc(100, 1024), s1)
+        assertThat(rpmDup).isNull()
+    }
+
+    @Test
     fun cadenceIgnoresWheelOnlyPacket() {
         // flags=0x01 (wheel only) → no cadence.
         val (rpm, state) = BleParsers.parseCadence(byteArrayOf(0x01, 0, 0, 0, 0, 0, 0), null)

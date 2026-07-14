@@ -45,7 +45,11 @@ class EndurainUploadWorker(context: Context, params: WorkerParameters) : Corouti
         /** Writes [gpx] to cache and enqueues an upload. Returns the queued file for reference. */
         fun enqueue(context: Context, gpx: String, fileName: String): File {
             val dir = File(context.cacheDir, "endurain_queue").apply { mkdirs() }
-            val file = File(dir, fileName)
+            // The cache filename must be unique per enqueue: two activities that sanitize to the same
+            // name (same-day auto-upload, both-blank manual saves) would otherwise clobber each other's
+            // queued bytes before the workers drain — losing one upload and duplicating the other.
+            val unique = "${System.currentTimeMillis()}-${java.util.UUID.randomUUID()}"
+            val file = File(dir, "$unique.gpx")
             file.writeText(gpx)
             val data: Data = workDataOf(KEY_PATH to file.absolutePath, KEY_NAME to fileName)
             val request = OneTimeWorkRequestBuilder<EndurainUploadWorker>()

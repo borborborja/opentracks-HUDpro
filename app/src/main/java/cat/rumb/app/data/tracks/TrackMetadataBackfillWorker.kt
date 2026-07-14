@@ -50,17 +50,23 @@ class TrackMetadataBackfillWorker(context: Context, params: WorkerParameters) : 
         val client = NominatimClient(
             "Rumb/${BuildConfig.VERSION_NAME} (github.com/borborborja/rumb)",
         )
-        var failures = 0
+        var networkFailures = 0
         for (item in pending) {
-            val name = client.municipality(item.startLat, item.startLon)
-            if (name != null) dao.setMunicipality(item.id, name) else failures++
+            when (val r = client.reverse(item.startLat, item.startLon)) {
+                is NominatimClient.Reverse.Ok ->
+                    // Write the name, or the "checked, no place" sentinel ("") so we never re-query it.
+                    dao.setMunicipality(item.id, r.name ?: MUNICIPALITY_CHECKED_NONE)
+                NominatimClient.Reverse.Failed -> networkFailures++ // transient → retry the run
+            }
             delay(1100)
         }
-        return if (failures > 0) Result.retry() else Result.success()
+        return if (networkFailures > 0) Result.retry() else Result.success()
     }
 
     companion object {
         private const val WORK_NAME = "track_metadata_backfill"
+        /** Sentinel written to `municipality` when reverse-geocoding succeeded but found no place. */
+        const val MUNICIPALITY_CHECKED_NONE = ""
 
         fun enqueue(context: Context) {
             val request = OneTimeWorkRequestBuilder<TrackMetadataBackfillWorker>()

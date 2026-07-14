@@ -115,7 +115,8 @@ object TrackStatsCalculator {
         val out = ArrayList<TrackSample>(maxSamples)
         var start = 0
         for (b in 0 until maxSamples) {
-            val end = (b + 1) * bucketSize
+            // Clamp the last bucket to the exact total so FP rounding can't drop the final point(s).
+            val end = if (b == maxSamples - 1) total else (b + 1) * bucketSize
             var i = start
             while (i < points.size && distances[i] <= end) i++
             if (i == start) continue // empty bucket

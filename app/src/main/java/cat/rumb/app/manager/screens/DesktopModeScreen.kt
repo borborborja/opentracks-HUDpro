@@ -1,6 +1,7 @@
 package cat.rumb.app.manager.screens
 
 import android.app.Activity
+import android.app.Application
 import android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,11 +15,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -26,32 +22,43 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import cat.rumb.app.R
 import cat.rumb.app.data.desktop.DesktopServer
 import cat.rumb.app.data.desktop.LocalAddress
 import cat.rumb.app.data.prefs.ViewerPreferences
 
 /**
- * Desktop mode: starts the embedded LAN web server while visible and shows the URL + PIN to type
- * on a computer's browser. The server lives exactly for the lifetime of this screen (started in a
- * DisposableEffect, stopped on dispose) and the screen is kept awake meanwhile.
+ * Owns the LAN server for the lifetime of the desktop-mode nav entry. Hosting it in a ViewModel
+ * (not a DisposableEffect) means a configuration change like rotation no longer tears the server
+ * down and restarts it — which would mint a fresh token and bounce every connected browser back to
+ * the PIN screen. onCleared fires only when the entry actually leaves the back stack.
+ */
+class DesktopModeViewModel(app: Application) : AndroidViewModel(app) {
+    val pin: String = (1000..9999).random().toString()
+    val ip: String? = LocalAddress.wifiIpv4()
+    private val server: DesktopServer? =
+        DesktopServer.startOnFreePort(app, ViewerPreferences.get(app).desktopServerPort) { pin }
+    val port: Int = server?.listeningPort ?: 0
+    val serverStarted: Boolean = server != null
+
+    override fun onCleared() {
+        server?.stop()
+    }
+}
+
+/**
+ * Desktop mode: shows the URL + PIN to type on a computer's browser while the embedded LAN web
+ * server (owned by [DesktopModeViewModel]) runs. The screen is kept awake meanwhile.
  */
 @Composable
 fun DesktopModeScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    val prefs = remember { ViewerPreferences.get(context) }
-    val pin = rememberSaveable { (1000..9999).random().toString() }
-    val ip = remember { LocalAddress.wifiIpv4() }
-
-    var server by remember { mutableStateOf<DesktopServer?>(null) }
-    var port by remember { mutableStateOf(0) }
-
-    DisposableEffect(Unit) {
-        val started = DesktopServer.startOnFreePort(context, prefs.desktopServerPort) { pin }
-        server = started
-        port = started?.listeningPort ?: 0
-        onDispose { started?.stop() }
-    }
+    val vm: DesktopModeViewModel = viewModel()
+    val pin = vm.pin
+    val ip = vm.ip
+    val port = vm.port
 
     // Keep the screen awake while desktop mode is on.
     val activity = context as? Activity
@@ -68,7 +75,7 @@ fun DesktopModeScreen(onBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
         ) {
-            if (ip == null || server == null) {
+            if (ip == null || !vm.serverStarted) {
                 Card {
                     Text(
                         stringResource(if (ip == null) R.string.desktop_no_wifi else R.string.desktop_server_error),
