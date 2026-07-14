@@ -77,16 +77,14 @@ class TileDownloader(
         private const val PROGRESS_EVERY = 25L
 
         /**
-         * Resolves a [MapSource] template to a concrete tile URL. Substitutes `{z}/{x}/{y}`, expands
-         * `{s}` to a rotating subdomain, and for TMS sources requests the inverted Y row
-         * (`2^z - 1 - y`) while callers keep passing logical XYZ coordinates.
+         * Resolves a [MapSource] template to a concrete tile URL: substitutes `{z}/{x}/{y}` and
+         * expands `{s}` to a rotating subdomain.
          */
         fun tileUrl(source: MapSource, z: Int, x: Int, y: Int): String {
-            val serverY = if (source.scheme == MapSource.Scheme.TMS) (1 shl z) - 1 - y else y
             var url = source.url
                 .replace("{z}", z.toString())
                 .replace("{x}", x.toString())
-                .replace("{y}", serverY.toString())
+                .replace("{y}", y.toString())
             source.subdomains?.takeIf { it.isNotEmpty() }?.let { subs ->
                 url = url.replace("{s}", subs[((x + y) % subs.length + subs.length) % subs.length].toString())
             }

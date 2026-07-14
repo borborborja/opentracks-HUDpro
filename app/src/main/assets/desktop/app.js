@@ -373,7 +373,7 @@ const BASE_MAPS = [
   { id: "icgc_orto", name: "ICGC Ortofoto", url: ICGC("orto"), attr: ICGC_ATTR, maxZoom: 20 },
   { id: "icgc_orto_hibrida", name: "ICGC Ortofoto híbrida", url: ICGC("orto-hibrida"), attr: ICGC_ATTR, maxZoom: 20 },
   { id: "icgc_geologic", name: "ICGC Geològic", url: ICGC("geologic"), attr: ICGC_ATTR, maxZoom: 20 },
-  { id: "ign_mtn", name: "IGN Topogràfic (Espanya)", url: "https://tms-mapa-raster.idee.es/1.0.0/mapa-raster/{z}/{y}/{x}.jpeg", attr: "© Instituto Geográfico Nacional (IGN España)", maxZoom: 18, tms: true },
+  { id: "ign_mtn", name: "IGN Topogràfic (Espanya)", url: "https://www.ign.es/wmts/mapa-raster?service=WMTS&request=GetTile&version=1.0.0&layer=MTN&style=default&tilematrixset=GoogleMapsCompatible&format=image/jpeg&TileMatrix={z}&TileRow={y}&TileCol={x}", attr: "© Instituto Geográfico Nacional (IGN España)", maxZoom: 19 },
   { id: "esri_imagery", name: "Esri Satèl·lit", url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", attr: "© Esri, Maxar, Earthstar Geographics", maxZoom: 19 },
   { id: "opentopomap", name: "OpenTopoMap", url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", attr: "© OpenTopoMap (CC-BY-SA) · © OpenStreetMap", maxZoom: 17, subdomains: "abc" },
   { id: "cyclosm", name: "CyclOSM", url: "https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png", attr: "© CyclOSM · © OpenStreetMap", maxZoom: 20, subdomains: "abc" },

@@ -22,7 +22,6 @@ object MapStyleFactory {
             tiles = expandTiles(source),
             attribution = source.attribution,
             maxZoom = source.maxZoom,
-            scheme = source.scheme,
             desaturate = desaturate,
         )
     }
@@ -56,7 +55,6 @@ object MapStyleFactory {
         tiles: List<String>,
         attribution: String,
         maxZoom: Int,
-        scheme: MapSource.Scheme = MapSource.Scheme.XYZ,
         desaturate: Boolean = false,
     ): String {
         val source = JSONObject()
@@ -65,8 +63,6 @@ object MapStyleFactory {
             .put("tileSize", 256)
             .put("attribution", attribution)
             .put("maxzoom", maxZoom)
-        // TMS sources number the Y row from the south; MapLibre flips it when scheme=tms.
-        if (scheme == MapSource.Scheme.TMS) source.put("scheme", "tms")
         return wrapRasterSource(source, desaturate)
     }
 

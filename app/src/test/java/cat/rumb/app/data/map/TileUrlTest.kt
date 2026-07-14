@@ -13,11 +13,9 @@ class TileUrlTest {
     }
 
     @Test
-    fun tmsSourceInvertsTheYRow() {
-        // z=5 → rows 0..31, so logical y=7 maps to server row 2^5-1-7 = 24.
+    fun ignWmtsSubstitutesMatrixRowCol() {
         val url = TileDownloader.tileUrl(MapSource.IGN_MTN, z = 5, x = 3, y = 7)
-        // Template order is {z}/{y}/{x}: expect .../5/24/3.jpeg
-        assertThat(url).contains("/5/24/3.jpeg")
+        assertThat(url).contains("TileMatrix=5").contains("TileRow=7").contains("TileCol=3")
         assertThat(url).doesNotContain("{")
     }
 

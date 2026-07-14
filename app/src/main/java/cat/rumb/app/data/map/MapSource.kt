@@ -15,8 +15,6 @@ enum class MapSource(
     val maxZoom: Int = 20,
     /** Tile-server subdomains to expand `{s}` (e.g. "abc"); null = no subdomain. */
     val subdomains: String? = null,
-    /** Tile numbering scheme. TMS inverts the Y row (used by IGN's *.idee.es endpoints). */
-    val scheme: Scheme = Scheme.XYZ,
     /** False = online only: excluded from offline region download and route prefetch. */
     val offlineAllowed: Boolean = true,
 ) {
@@ -66,15 +64,16 @@ enum class MapSource(
 
     // ---- Global / national sources (coverage beyond Catalonia) ----
 
-    /** IGN España MTN topographic — national coverage. TMS endpoint (inverted Y). */
+    /** IGN España MTN topographic — national coverage, via the WMTS GetTile endpoint (standard XYZ). */
     IGN_MTN(
         id = "ign_mtn",
         displayName = "IGN Topogràfic (Espanya)",
         kind = Kind.RASTER,
-        url = "https://tms-mapa-raster.idee.es/1.0.0/mapa-raster/{z}/{y}/{x}.jpeg",
+        url = "https://www.ign.es/wmts/mapa-raster?service=WMTS&request=GetTile&version=1.0.0" +
+            "&layer=MTN&style=default&tilematrixset=GoogleMapsCompatible&format=image/jpeg" +
+            "&TileMatrix={z}&TileRow={y}&TileCol={x}",
         attribution = "© Instituto Geográfico Nacional (IGN España)",
-        maxZoom = 18,
-        scheme = Scheme.TMS,
+        maxZoom = 19,
     ),
     /** Esri World Imagery — global satellite. Placeholder order is {z}/{y}/{x} (standard XYZ). */
     ESRI_IMAGERY(
@@ -107,8 +106,6 @@ enum class MapSource(
         subdomains = "abc",
         offlineAllowed = false,
     );
-
-    enum class Scheme { XYZ, TMS }
 
     enum class Kind { RASTER, VECTOR_STYLE }
 
