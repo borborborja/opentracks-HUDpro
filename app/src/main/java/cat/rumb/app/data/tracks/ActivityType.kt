@@ -26,6 +26,24 @@ object ActivityTypes {
 
     val PREDEFINED = listOf(WALK, RUN, TRAIL_RUN, ROAD_BIKE, MTB, HIKE, SKI, SKATE, KAYAK, SWIM)
 
+    /**
+     * Maps a Rumb activity-type id to a GPX `<type>` string (Strava/Endurain vocabulary). Returns
+     * null for unknown/custom types so the tag is omitted rather than guessed.
+     */
+    fun gpxType(id: String?): String? = when (id) {
+        WALK -> "walking"
+        RUN -> "running"
+        TRAIL_RUN -> "running"
+        ROAD_BIKE -> "cycling"
+        MTB -> "cycling"
+        HIKE -> "hiking"
+        SKI -> "skiing"
+        SKATE -> "inline skating"
+        KAYAK -> "kayaking"
+        SWIM -> "swimming"
+        else -> null
+    }
+
     private val json = Json { ignoreUnknownKeys = true }
 
     fun decodeCustom(encoded: String?): List<CustomActivityType> =

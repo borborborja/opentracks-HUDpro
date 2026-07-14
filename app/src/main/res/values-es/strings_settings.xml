@@ -56,7 +56,20 @@
     <string name="settings_sync_save_test">Guardar y probar conexión</string>
     <string name="settings_sync_upload_note">Los entrenamientos grabados se suben automáticamente a Endurain al detener la grabación (si la conexión está configurada). La cola reintenta si no hay red.</string>
     <string name="settings_sync_coming_soon">Próximamente</string>
-    <string name="settings_sync_coming_soon_items">· Strava\n· Subida automática a Google Drive\n· Guardar los GPX en una carpeta del teléfono</string>
+    <string name="settings_sync_coming_soon_items">· Strava\n· Subida automática a Google Drive</string>
+    <string name="settings_sync_status">Estado de sincronización</string>
+    <string name="settings_sync_last_upload">Última subida: %1$s</string>
+    <string name="settings_sync_pending_failed">%1$d pendientes · %2$d fallidas</string>
+    <string name="settings_sync_retry_failed">Reintentar las fallidas</string>
+    <string name="settings_sync_folder">Guardar en una carpeta</string>
+    <string name="settings_sync_folder_choose">Elegir carpeta</string>
+    <string name="settings_sync_folder_none">Ninguna carpeta elegida</string>
+    <string name="settings_sync_folder_enable">Guardar cada GPX automáticamente</string>
+    <string name="settings_sync_webdav">WebDAV (Nextcloud/ownCloud)</string>
+    <string name="settings_sync_webdav_url">URL (…/dav/files/usuario/Rumb)</string>
+    <string name="settings_sync_webdav_user">Usuario</string>
+    <string name="settings_sync_webdav_pass">Contraseña</string>
+    <string name="settings_sync_webdav_test">Guardar y probar</string>
 
     <!-- Recording -->
     <string name="settings_rec_gps_interval">Intervalo GPS</string>

@@ -56,7 +56,20 @@
     <string name="settings_sync_save_test">Save and test connection</string>
     <string name="settings_sync_upload_note">Recorded workouts are uploaded to Endurain automatically when the recording stops (if the connection is configured). The queue retries when there is no network.</string>
     <string name="settings_sync_coming_soon">Coming soon</string>
-    <string name="settings_sync_coming_soon_items">· Strava\n· Automatic upload to Google Drive\n· Save GPX files to a phone folder</string>
+    <string name="settings_sync_coming_soon_items">· Strava\n· Automatic upload to Google Drive</string>
+    <string name="settings_sync_status">Sync status</string>
+    <string name="settings_sync_last_upload">Last upload: %1$s</string>
+    <string name="settings_sync_pending_failed">%1$d pending · %2$d failed</string>
+    <string name="settings_sync_retry_failed">Retry failed</string>
+    <string name="settings_sync_folder">Save to folder</string>
+    <string name="settings_sync_folder_choose">Choose folder</string>
+    <string name="settings_sync_folder_none">No folder chosen</string>
+    <string name="settings_sync_folder_enable">Save each GPX automatically</string>
+    <string name="settings_sync_webdav">WebDAV (Nextcloud/ownCloud)</string>
+    <string name="settings_sync_webdav_url">URL (…/dav/files/user/Rumb)</string>
+    <string name="settings_sync_webdav_user">User</string>
+    <string name="settings_sync_webdav_pass">Password</string>
+    <string name="settings_sync_webdav_test">Save and test</string>
 
     <!-- Recording -->
     <string name="settings_rec_gps_interval">GPS interval</string>

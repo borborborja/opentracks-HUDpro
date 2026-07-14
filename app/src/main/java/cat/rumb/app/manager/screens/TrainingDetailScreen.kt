@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -276,6 +277,10 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
                     StatsCard(s, kcal)
                 }
 
+                if (cat.rumb.app.data.sync.SyncTargets.anyConfigured(context)) {
+                    TrainingSyncRow(trackId, entity?.name ?: "", points, entity?.activityType)
+                }
+
                 if (samples.size >= 2) {
                     Card {
                         StackedTrackChart(
@@ -413,6 +418,60 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
                 TextButton(onClick = { showDelete = false }) { Text(stringResource(R.string.training_cancel)) }
             },
         )
+    }
+}
+
+/** Per-service sync status chips for this training + a manual sync/retry action. */
+@Composable
+private fun TrainingSyncRow(
+    trackId: Long,
+    name: String,
+    points: List<cat.rumb.app.data.gpx.GpxPoint>,
+    activityType: String?,
+) {
+    val context = LocalContext.current
+    val app = remember { RumbApplication.from(context) }
+    val scope = rememberCoroutineScope()
+    val rows by app.database.syncStatusDao().forTrack(trackId)
+        .collectAsState(initial = emptyList())
+    val services = buildList {
+        if (cat.rumb.app.data.prefs.EndurainPreferences.get(context).isConfigured) {
+            add(cat.rumb.app.data.tracks.SyncService.ENDURAIN to "Endurain")
+        }
+        if (cat.rumb.app.data.prefs.WebDavPreferences.get(context).isConfigured) {
+            add(cat.rumb.app.data.tracks.SyncService.WEBDAV to "WebDAV")
+        }
+        if (cat.rumb.app.data.prefs.FolderExportPreferences.get(context).isEnabled) {
+            add(cat.rumb.app.data.tracks.SyncService.FOLDER to context.getString(R.string.settings_sync_folder))
+        }
+    }
+    if (services.isEmpty()) return
+    Card {
+        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(stringResource(R.string.training_sync_title), style = MaterialTheme.typography.titleSmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                services.forEach { (svc, label) ->
+                    val st = rows.firstOrNull { it.service == svc }?.status
+                    val (mark, color) = when (st) {
+                        cat.rumb.app.data.tracks.SyncState.UPLOADED -> "✓" to Color(0xFF2A9D8F)
+                        cat.rumb.app.data.tracks.SyncState.PENDING -> "…" to MaterialTheme.colorScheme.onSurfaceVariant
+                        cat.rumb.app.data.tracks.SyncState.FAILED -> "!" to MaterialTheme.colorScheme.error
+                        else -> "—" to MaterialTheme.colorScheme.outline
+                    }
+                    Text("$label $mark", style = MaterialTheme.typography.bodyMedium, color = color)
+                }
+            }
+            TextButton(onClick = {
+                scope.launch {
+                    val gpx = cat.rumb.app.data.gpx.Gpx.write(
+                        name, points, cat.rumb.app.data.tracks.ActivityTypes.gpxType(activityType),
+                    )
+                    cat.rumb.app.data.sync.SyncTargets.enqueueAll(
+                        context, trackId, cat.rumb.app.data.sync.SyncTargets.safeName(name) + ".gpx", gpx,
+                    )
+                }
+            }) { Text(stringResource(R.string.training_sync_now)) }
+        }
     }
 }
 

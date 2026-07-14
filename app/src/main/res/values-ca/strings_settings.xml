@@ -56,7 +56,20 @@
     <string name="settings_sync_save_test">Desar i provar connexió</string>
     <string name="settings_sync_upload_note">Els entrenaments gravats es pugen automàticament a Endurain en aturar la gravació (si la connexió està configurada). La cua reintenta si no hi ha xarxa.</string>
     <string name="settings_sync_coming_soon">Properament</string>
-    <string name="settings_sync_coming_soon_items">· Strava\n· Pujada automàtica a Google Drive\n· Desar els GPX en una carpeta del telèfon</string>
+    <string name="settings_sync_coming_soon_items">· Strava\n· Pujada automàtica a Google Drive</string>
+    <string name="settings_sync_status">Estat de sincronització</string>
+    <string name="settings_sync_last_upload">Última pujada: %1$s</string>
+    <string name="settings_sync_pending_failed">%1$d pendents · %2$d fallides</string>
+    <string name="settings_sync_retry_failed">Reintenta les fallides</string>
+    <string name="settings_sync_folder">Desar a una carpeta</string>
+    <string name="settings_sync_folder_choose">Tria una carpeta</string>
+    <string name="settings_sync_folder_none">Cap carpeta triada</string>
+    <string name="settings_sync_folder_enable">Desar cada GPX automàticament</string>
+    <string name="settings_sync_webdav">WebDAV (Nextcloud/ownCloud)</string>
+    <string name="settings_sync_webdav_url">URL (…/dav/files/usuari/Rumb)</string>
+    <string name="settings_sync_webdav_user">Usuari</string>
+    <string name="settings_sync_webdav_pass">Contrasenya</string>
+    <string name="settings_sync_webdav_test">Desar i provar</string>
 
     <!-- Recording -->
     <string name="settings_rec_gps_interval">Interval GPS</string>

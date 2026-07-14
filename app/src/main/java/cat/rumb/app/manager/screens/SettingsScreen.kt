@@ -34,7 +34,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -59,6 +62,8 @@ import cat.rumb.app.data.update.ApkInstaller
 import cat.rumb.app.data.update.UpdateInfo
 import cat.rumb.app.data.update.UpdateRepository
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 private sealed interface UpdateState {
     data object Idle : UpdateState
@@ -194,12 +199,128 @@ private fun SyncSection() {
         color = MaterialTheme.colorScheme.outline,
     )
 
+    SyncStatusSummary()
+    FolderExportBlock()
+    WebDavBlock()
+
     Text(stringResource(R.string.settings_sync_coming_soon), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp))
     Text(
         stringResource(R.string.settings_sync_coming_soon_items),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )
+}
+
+/** Sync outbox summary: last upload + pending/failed counts + retry-failed. */
+@Composable
+private fun SyncStatusSummary() {
+    val context = LocalContext.current
+    val app = remember { cat.rumb.app.RumbApplication.from(context) }
+    val scope = rememberCoroutineScope()
+    val counts by app.database.syncStatusDao().observeCounts().collectAsState(initial = emptyList())
+    val lastUpload by app.database.syncStatusDao().observeLastUploaded().collectAsState(initial = null)
+    val pending = counts.filter { it.status == cat.rumb.app.data.tracks.SyncState.PENDING }.sumOf { it.n }
+    val failed = counts.filter { it.status == cat.rumb.app.data.tracks.SyncState.FAILED }.sumOf { it.n }
+
+    Card(Modifier.fillMaxWidth().padding(top = 12.dp)) {
+        Column(Modifier.padding(12.dp)) {
+            Text(stringResource(R.string.settings_sync_status), style = MaterialTheme.typography.titleSmall)
+            val last = lastUpload?.let {
+                java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT)
+                    .format(java.util.Date(it))
+            } ?: "—"
+            Text(stringResource(R.string.settings_sync_last_upload, last), style = MaterialTheme.typography.bodyMedium)
+            Text(
+                stringResource(R.string.settings_sync_pending_failed, pending, failed),
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (failed > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (failed > 0) {
+                OutlinedButton(onClick = { scope.launch { cat.rumb.app.data.sync.SyncTargets.retryFailed(context) } }) {
+                    Text(stringResource(R.string.settings_sync_retry_failed))
+                }
+            }
+        }
+    }
+}
+
+/** Save each recorded GPX into a user-chosen folder (SAF). */
+@Composable
+private fun FolderExportBlock() {
+    val context = LocalContext.current
+    val prefs = remember { cat.rumb.app.data.prefs.FolderExportPreferences.get(context) }
+    var uri by remember { mutableStateOf(prefs.treeUri) }
+    var enabled by remember { mutableStateOf(prefs.enabled) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { picked ->
+        if (picked != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    picked,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+            }
+            prefs.treeUri = picked.toString(); uri = picked.toString()
+            prefs.enabled = true; enabled = true
+        }
+    }
+
+    Text(stringResource(R.string.settings_sync_folder), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp))
+    val folderLabel = uri?.let { android.net.Uri.parse(it).lastPathSegment ?: it } ?: stringResource(R.string.settings_sync_folder_none)
+    Text(folderLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+    OutlinedButton(onClick = { picker.launch(null) }, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.settings_sync_folder_choose))
+    }
+    if (uri != null) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.settings_sync_folder_enable), Modifier.weight(1f))
+            Switch(checked = enabled, onCheckedChange = { prefs.enabled = it; enabled = it })
+        }
+    }
+}
+
+/** Upload each recorded GPX to a WebDAV collection. */
+@Composable
+private fun WebDavBlock() {
+    val context = LocalContext.current
+    val prefs = remember { cat.rumb.app.data.prefs.WebDavPreferences.get(context) }
+    val scope = rememberCoroutineScope()
+    var url by remember { mutableStateOf(prefs.url ?: "") }
+    var user by remember { mutableStateOf(prefs.user ?: "") }
+    var pass by remember { mutableStateOf(prefs.pass ?: "") }
+    var status by remember { mutableStateOf<String?>(null) }
+
+    Text(stringResource(R.string.settings_sync_webdav), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp))
+    OutlinedTextField(url, { url = it }, label = { Text(stringResource(R.string.settings_sync_webdav_url)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+    OutlinedTextField(user, { user = it }, label = { Text(stringResource(R.string.settings_sync_webdav_user)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+    OutlinedTextField(
+        pass, { pass = it }, label = { Text(stringResource(R.string.settings_sync_webdav_pass)) }, singleLine = true,
+        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Button(
+        onClick = {
+            prefs.url = url; prefs.user = user; prefs.pass = pass
+            status = context.getString(R.string.settings_sync_saved_testing)
+            scope.launch {
+                status = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    runCatching {
+                        val body = "rumb webdav test".toByteArray()
+                            .toRequestBody("text/plain".toMediaType())
+                        val req = okhttp3.Request.Builder()
+                            .url("${url.trimEnd('/')}/.rumb-test.txt")
+                            .header("Authorization", okhttp3.Credentials.basic(user, pass))
+                            .put(body).build()
+                        okhttp3.OkHttpClient().newCall(req).execute().use { r ->
+                            if (r.isSuccessful) context.getString(R.string.settings_sync_connected, "WebDAV")
+                            else context.getString(R.string.settings_error, "HTTP ${r.code}")
+                        }
+                    }.getOrElse { context.getString(R.string.settings_error, "${it.message}") }
+                }
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+    ) { Text(stringResource(R.string.settings_sync_webdav_test)) }
+    status?.let { Card { Text(it, Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium) } }
 }
 
 // --- Native recording engine ---

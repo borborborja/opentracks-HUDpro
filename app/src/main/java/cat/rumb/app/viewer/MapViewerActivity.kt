@@ -842,10 +842,10 @@ class MapViewerActivity : ComponentActivity() {
                     p.foldersTraining = p.foldersTraining + folder
                 }
                 cat.rumb.app.data.tracks.TrackMetadataBackfillWorker.enqueue(this@MapViewerActivity)
-                val gpx = Gpx.write(name, pts)
-                val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "activitat" }
-                EndurainUploadWorker.enqueue(this@MapViewerActivity, gpx, "$safe.gpx")
-                DebugLog.i("Record", "desada «$name» · ${pts.size} punts · Endurain encuat")
+                val gpx = Gpx.write(name, pts, cat.rumb.app.data.tracks.ActivityTypes.gpxType(activityType))
+                val fileName = cat.rumb.app.data.sync.SyncTargets.safeName(name) + ".gpx"
+                cat.rumb.app.data.sync.SyncTargets.enqueueAll(this@MapViewerActivity, newId, fileName, gpx)
+                DebugLog.i("Record", "desada «$name» · ${pts.size} punts · sync encuat")
                 android.widget.Toast.makeText(this@MapViewerActivity, getString(R.string.viewer_toast_activity_saved), android.widget.Toast.LENGTH_SHORT).show()
             }
             // Purge the durable crash-safety rows only now that the track is saved (or too short).

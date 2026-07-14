@@ -14,6 +14,8 @@
     <string name="training_stat_avg_power">Avg power</string>
     <string name="training_action_duplicate_route">Duplicate to routes to follow</string>
     <string name="training_action_export">Export (GPX)</string>
+    <string name="training_sync_title">Sync</string>
+    <string name="training_sync_now">Sync now</string>
     <string name="training_laps_title">Laps</string>
     <string name="laps_edit">Edit laps</string>
     <string name="laps_edit_hint">Drag a handle to move a lap boundary.</string>

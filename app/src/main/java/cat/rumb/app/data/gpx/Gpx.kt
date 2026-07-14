@@ -73,14 +73,17 @@ object Gpx {
      * present, is written as Garmin TrackPointExtension elements — the de-facto standard consumed by
      * Strava/Garmin/Endurain.
      */
-    fun write(name: String, points: List<GpxPoint>): String {
+    fun write(name: String, points: List<GpxPoint>, type: String? = null): String {
         val hasExt = points.any { it.hasExtensions }
         val sw = StringWriter()
         sw.append("""<?xml version="1.0" encoding="UTF-8"?>""").append('\n')
         sw.append("""<gpx version="1.1" creator="Rumb" xmlns="http://www.topografix.com/GPX/1/1"""")
         if (hasExt) sw.append(""" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1"""")
         sw.append(">").append('\n')
-        sw.append("  <trk>\n    <name>").append(escape(name)).append("</name>\n    <trkseg>\n")
+        sw.append("  <trk>\n    <name>").append(escape(name)).append("</name>\n")
+        // <type> hints the activity type to consumers (Strava/Endurain) so they don't have to guess.
+        if (!type.isNullOrBlank()) sw.append("    <type>").append(escape(type)).append("</type>\n")
+        sw.append("    <trkseg>\n")
         for (p in points) {
             sw.append(String.format(Locale.US, "      <trkpt lat=\"%.7f\" lon=\"%.7f\">", p.latitude, p.longitude))
             sw.append('\n')

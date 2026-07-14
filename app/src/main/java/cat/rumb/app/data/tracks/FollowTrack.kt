@@ -163,18 +163,36 @@ interface FollowTrackDao {
 @Database(
     entities = [
         FollowTrackEntity::class,
+        SyncStatusEntity::class,
         cat.rumb.app.data.recording.RecordingEntity::class,
         cat.rumb.app.data.recording.RecordingPointEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
 abstract class RumbDatabase : RoomDatabase() {
     abstract fun followTrackDao(): FollowTrackDao
+    abstract fun syncStatusDao(): SyncStatusDao
     abstract fun recordingDao(): cat.rumb.app.data.recording.RecordingDao
 
     companion object {
+        /** v9: sync outbox — per-(track, service) upload status. */
+        val MIGRATION_8_9 = object : androidx.room.migration.Migration(8, 9) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sync_status` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`track_id` INTEGER NOT NULL, `service` TEXT NOT NULL, `status` TEXT NOT NULL, " +
+                        "`remote_ref` TEXT, `error` TEXT, `updated_at` INTEGER NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_sync_status_track_id_service` " +
+                        "ON `sync_status` (`track_id`, `service`)",
+                )
+            }
+        }
+
         /** v8: link a training to the route it was recorded while following. */
         val MIGRATION_7_8 = object : androidx.room.migration.Migration(7, 8) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
