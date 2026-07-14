@@ -22,19 +22,24 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.OpenInFull
+import androidx.compose.material.icons.filled.OpenWith
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -61,9 +66,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cat.rumb.app.R
 import cat.rumb.app.data.prefs.ViewerPreferences
+import cat.rumb.app.viewer.data.DATA_SAMPLE_SPARKLINE
+import cat.rumb.app.viewer.data.DataCatalog
+import cat.rumb.app.viewer.data.DataChart
+import cat.rumb.app.viewer.data.DataChartTilePreview
 import cat.rumb.app.viewer.data.DataLayout
 import cat.rumb.app.viewer.data.DataLayoutStore
+import cat.rumb.app.viewer.data.DataTab
 import cat.rumb.app.viewer.data.DataTileContent
+import cat.rumb.app.viewer.data.DataToggle
+import cat.rumb.app.viewer.data.SettingsToggleTile
+import cat.rumb.app.viewer.data.fieldLabelRes
+import cat.rumb.app.viewer.data.fieldSupportsGraph
 import cat.rumb.app.viewer.hud.HudMetric
 import cat.rumb.app.viewer.hud.LiveMetrics
 import cat.rumb.app.viewer.hud.Units
@@ -165,12 +179,6 @@ fun DataDesignerScreen(onBack: () -> Unit) {
                             Text(stringResource(R.string.editor_metrics), color = Color.White, fontWeight = FontWeight.Bold)
                             Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = Color.White)
                         }
-                        MetricsDropdown(
-                            expanded = menuOpen,
-                            onDismiss = { menuOpen = false },
-                            layout = layout,
-                            onUpdate = { update(it); selected = null },
-                        )
                     }
                     Box {
                         RoundDarkButton(onClick = { globalOpen = true }) {
@@ -197,6 +205,15 @@ fun DataDesignerScreen(onBack: () -> Unit) {
                 }
             }
 
+            // Tabbed add-tiles sheet (General / Competició / Ajustes).
+            if (menuOpen) {
+                AddTilesSheet(
+                    layout = layout,
+                    onUpdate = { update(it); selected = null },
+                    onDismiss = { menuOpen = false },
+                )
+            }
+
             // Per-tile settings dialog (clock gains the 24/12h chips).
             configFor?.let { field ->
                 if (layout.contains(field)) {
@@ -215,37 +232,59 @@ fun DataDesignerScreen(onBack: () -> Unit) {
     }
 }
 
-/** Multiselect dropdown: add/remove tiles live (the clock is just another row). */
+/** Tabbed add-tiles sheet: General / Competició / Ajustes. Competition tiles are addable always but
+ *  render only during a competition; settings tiles carry a live switch on the Dades screen. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MetricsDropdown(
-    expanded: Boolean,
-    onDismiss: () -> Unit,
+private fun AddTilesSheet(
     layout: DataLayout,
     onUpdate: (DataLayout) -> Unit,
+    onDismiss: () -> Unit,
 ) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        HudMetric.entries.forEach { metric ->
-            val placed = layout.contains(metric.name)
-            Row(
-                Modifier
-                    .clickable { onUpdate(if (placed) layout.remove(metric.name) else layout.add(metric.name)) }
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(checked = placed, onCheckedChange = null)
-                Text(androidx.compose.ui.res.stringResource(metric.labelRes), Modifier.padding(end = 16.dp))
+    val tabs = listOf(
+        DataTab.GENERAL to R.string.editor_tab_general,
+        DataTab.COMPETITION to R.string.editor_tab_competition,
+        DataTab.SETTINGS to R.string.editor_tab_settings,
+    )
+    var tab by remember { mutableStateOf(DataTab.GENERAL) }
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        TabRow(selectedTabIndex = tabs.indexOfFirst { it.first == tab }) {
+            tabs.forEach { (t, res) ->
+                Tab(selected = tab == t, onClick = { tab = t }, text = { Text(stringResource(res)) })
             }
         }
-        HorizontalDivider(Modifier.padding(vertical = 4.dp))
-        val clockOn = layout.contains(DataLayout.CLOCK)
-        Row(
+        if (tab == DataTab.COMPETITION) {
+            Text(
+                stringResource(R.string.editor_competition_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+            )
+        }
+        Column(
             Modifier
-                .clickable { onUpdate(if (clockOn) layout.remove(DataLayout.CLOCK) else layout.add(DataLayout.CLOCK)) }
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .fillMaxWidth()
+                .heightIn(max = 360.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 24.dp),
         ) {
-            Checkbox(checked = clockOn, onCheckedChange = null)
-            Text(stringResource(R.string.hudel_clock), Modifier.padding(end = 16.dp))
+            DataCatalog.forTab(tab).forEach { id ->
+                val placed = layout.contains(id)
+                val labelRes = fieldLabelRes(id)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onUpdate(if (placed) layout.remove(id) else layout.add(id)) }
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = placed, onCheckedChange = null)
+                    Text(
+                        if (labelRes != 0) stringResource(labelRes) else id,
+                        Modifier.padding(start = 4.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -281,6 +320,13 @@ private fun TileConfigDialog(
                             label = { Text("${n}x") },
                         )
                     }
+                }
+                if (fieldSupportsGraph(field)) {
+                    FilterChip(
+                        selected = layout.hasGraph(field),
+                        onClick = { onUpdate(layout.toggleGraph(field)) },
+                        label = { Text(stringResource(R.string.editor_show_graph)) },
+                    )
                 }
                 Text(stringResource(R.string.editor_value_color), style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -410,8 +456,11 @@ private fun EditableTile(
     modifier: Modifier = Modifier,
 ) {
     val isClock = field == DataLayout.CLOCK
-    val metric = if (isClock) null else runCatching { HudMetric.valueOf(field) }.getOrNull()
+    val toggle = DataToggle.byId(field)
+    val chart = DataChart.byId(field)
+    val metric = if (isClock || toggle != null || chart != null) null else runCatching { HudMetric.valueOf(field) }.getOrNull()
     var origin by remember { mutableStateOf(Offset.Zero) }
+    var moveOrigin by remember { mutableStateOf(Offset.Zero) }
     val interaction = remember { MutableInteractionSource() }
     val currentOnDragTo by rememberUpdatedState(onDragTo)
     val currentOnSpanStep by rememberUpdatedState(onSpanStep)
@@ -445,18 +494,29 @@ private fun EditableTile(
                     )
                 },
         ) {
-            // EXACT live-view tile (single source of truth → true WYSIWYG).
-            DataTileContent(
-                label = if (isClock) stringResource(R.string.hudel_clock) else metric?.let { stringResource(it.labelRes) } ?: field,
-                value = when {
-                    isClock && layout.clockH24 -> "18:42:07"
-                    isClock -> "6:42:07 PM"
-                    else -> metric?.value(SAMPLE_METRICS, units) ?: "—"
-                },
-                unit = if (isClock) "" else metric?.unit(units) ?: "",
-                colorHex = layout.colorOf(field),
-                modifier = Modifier.fillMaxWidth(),
-            )
+            // EXACT live-view tile look (single source of truth → true WYSIWYG).
+            when {
+                toggle != null -> SettingsToggleTile(
+                    label = stringResource(toggle.labelRes),
+                    hint = toggle.hintRes?.let { stringResource(it) },
+                    checked = false,
+                    onChange = {},
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                chart != null -> DataChartTilePreview(chart, Modifier.fillMaxWidth())
+                else -> DataTileContent(
+                    label = if (isClock) stringResource(R.string.hudel_clock) else metric?.let { stringResource(it.labelRes) } ?: field,
+                    value = when {
+                        isClock && layout.clockH24 -> "18:42:07"
+                        isClock -> "6:42:07 PM"
+                        else -> metric?.value(SAMPLE_METRICS, units) ?: "—"
+                    },
+                    unit = if (isClock) "" else metric?.unit(units) ?: "",
+                    colorHex = layout.colorOf(field),
+                    series = if (layout.hasGraph(field)) DATA_SAMPLE_SPARKLINE else null,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
         if (isSelected && !isDragging) {
             // Center gear: tile settings.
@@ -473,6 +533,28 @@ private fun EditableTile(
                     ),
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.editor_configure), tint = Color.White, modifier = Modifier.size(16.dp)) }
+            // Bottom-start handle: drag to move the tile (visible affordance, opposite the resize handle).
+            Box(
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .size(24.dp)
+                    .onGloballyPositioned { moveOrigin = it.boundsInRoot().topLeft }
+                    .clip(CircleShape)
+                    .background(Color(0xCC1D3557))
+                    .systemGestureExclusion()
+                    .pointerInput(field) {
+                        detectDragGestures(
+                            onDragStart = { onDragStart() },
+                            onDragEnd = { onDragEnd() },
+                            onDragCancel = { onDragEnd() },
+                            onDrag = { change, _ ->
+                                change.consume()
+                                currentOnDragTo(moveOrigin + change.position)
+                            },
+                        )
+                    },
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.OpenWith, contentDescription = stringResource(R.string.editor_move), tint = Color.White, modifier = Modifier.size(14.dp)) }
             // Bottom-end handle: horizontal drag snaps the span 1x↔2x↔3x.
             Box(
                 Modifier

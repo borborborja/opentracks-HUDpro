@@ -8,6 +8,12 @@
     <string name="editor_resize">Redimensionar</string>
     <string name="editor_done">Fet</string>
     <string name="editor_global_settings">Configuració global</string>
+    <string name="editor_move">Mou</string>
+    <string name="editor_show_graph">Gràfica</string>
+    <string name="editor_tab_general">General</string>
+    <string name="editor_tab_competition">Competició</string>
+    <string name="editor_tab_settings">Ajustos</string>
+    <string name="editor_competition_hint">S\'afegeixen ara, es mostren durant una competició.</string>
 
     <!-- HUD designer -->
     <string name="editor_widgets">Widgets</string>

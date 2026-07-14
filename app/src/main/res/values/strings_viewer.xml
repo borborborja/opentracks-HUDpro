@@ -69,4 +69,14 @@
     <string name="viewer_qs_auto_pause">Auto-pause when stopped</string>
     <string name="viewer_qs_auto_pause_secs">Pause after standing still for:</string>
     <string name="viewer_qs_turn_voice">Turn warnings (voice/beeps)</string>
+    <!-- Dades: fixed record button, graph tiles, settings-toggle tiles -->
+    <string name="data_record_start">Record</string>
+    <string name="data_chart_speed">Speed graph</string>
+    <string name="data_chart_elevation">Elevation profile</string>
+    <string name="data_toggle_auto_pause">Auto-pause</string>
+    <string name="data_toggle_turn_voice">Turn warnings</string>
+    <string name="data_toggle_adaptive_zoom">Adaptive zoom</string>
+    <string name="data_toggle_keep_screen">Keep screen on</string>
+    <string name="data_toggle_barometer">Barometer</string>
+    <string name="data_toggle_barometer_hint">Applies to the next recording</string>
 </resources>

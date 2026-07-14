@@ -69,4 +69,13 @@
     <string name="viewer_qs_auto_pause">Auto-pausa al detenerte</string>
     <string name="viewer_qs_auto_pause_secs">Pausa tras estar parado:</string>
     <string name="viewer_qs_turn_voice">Avisos de giro (voz/pitidos)</string>
+    <string name="data_record_start">Registrar</string>
+    <string name="data_chart_speed">Gráfica de velocidad</string>
+    <string name="data_chart_elevation">Perfil de altitud</string>
+    <string name="data_toggle_auto_pause">Auto-pausa</string>
+    <string name="data_toggle_turn_voice">Avisos de giro</string>
+    <string name="data_toggle_adaptive_zoom">Zoom adaptativo</string>
+    <string name="data_toggle_keep_screen">Mantener pantalla encendida</string>
+    <string name="data_toggle_barometer">Barómetro</string>
+    <string name="data_toggle_barometer_hint">Se aplica a la próxima grabación</string>
 </resources>

@@ -20,8 +20,16 @@ data class DataLayout(
     val colors: Map<String, String> = emptyMap(),
     /** Clock tile format: 24 h (default) or 12 h. */
     val clockH24: Boolean = true,
+    /** Field ids showing a mini-sparkline under the value (series-backed metrics only). */
+    val graphs: Set<String> = emptySet(),
 ) {
     fun colorOf(field: String): String? = colors[field]
+
+    fun hasGraph(field: String): Boolean = field in graphs
+
+    /** Toggles the per-tile mini-sparkline for [field]. */
+    fun toggleGraph(field: String): DataLayout =
+        copy(graphs = if (field in graphs) graphs - field else graphs + field)
 
     /** Sets (or clears with null) the value color of [field]. */
     fun setColor(field: String, hex: String?): DataLayout =

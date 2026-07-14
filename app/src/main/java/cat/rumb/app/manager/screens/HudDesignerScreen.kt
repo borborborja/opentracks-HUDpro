@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -24,8 +26,6 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -129,13 +129,15 @@ fun HudDesignerScreen(onBack: () -> Unit) {
                     Text(stringResource(R.string.editor_widgets), color = Color.White, fontWeight = FontWeight.Bold)
                     Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = Color.White)
                 }
-                WidgetsDropdown(
-                    expanded = menuOpen,
-                    onDismiss = { menuOpen = false },
-                    layout = layout,
-                    onUpdate = { update(it); selected = null },
-                )
             }
+        }
+
+        if (menuOpen) {
+            WidgetsSheet(
+                layout = layout,
+                onUpdate = { update(it); selected = null },
+                onDismiss = { menuOpen = false },
+            )
         }
 
         // Per-widget settings dialog (center gear).
@@ -154,70 +156,112 @@ fun HudDesignerScreen(onBack: () -> Unit) {
     }
 }
 
-/** Multiselect dropdown: add/remove widgets live without leaving the editor; presets + global size. */
+/** Competition-only HUD elements: addable always, but only rendered mid-competition. */
+private val HUD_COMPETITION_IDS = setOf(HudCatalog.idOf(cat.rumb.app.viewer.hud.HudMetric.GHOST_DELTA))
+
+/** Tabbed add-widgets sheet: General (elements by category) / Competició / Ajustes (presets + size). */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun WidgetsDropdown(
-    expanded: Boolean,
-    onDismiss: () -> Unit,
+private fun WidgetsSheet(
     layout: HudLayout,
     onUpdate: (HudLayout) -> Unit,
+    onDismiss: () -> Unit,
 ) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        val groups = listOf(
-            R.string.editor_metrics to HudCategory.METRIC,
-            R.string.editor_charts to HudCategory.CHART,
-            R.string.editor_controls to HudCategory.CONTROL,
-            R.string.editor_extra to HudCategory.EXTRA,
-        )
-        groups.forEach { (titleRes, category) ->
-            Text(
-                stringResource(titleRes),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
-            HudCatalog.elements.filter { it.category == category }.forEach { element ->
-                val placed = layout.contains(element.id)
-                Row(
-                    Modifier
-                        .clickable {
-                            onUpdate(if (placed) layout.remove(element.id) else layout.add(element.id))
+    val tabs = listOf(
+        0 to R.string.editor_tab_general,
+        1 to R.string.editor_tab_competition,
+        2 to R.string.editor_tab_settings,
+    )
+    var tab by remember { mutableStateOf(0) }
+
+    @Composable
+    fun elementRow(id: Int, labelRes: Int, elementId: String) {
+        val placed = layout.contains(elementId)
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable { onUpdate(if (placed) layout.remove(elementId) else layout.add(elementId)) }
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(checked = placed, onCheckedChange = null)
+            Text(stringResource(labelRes), Modifier.padding(start = 4.dp))
+        }
+    }
+
+    androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss) {
+        androidx.compose.material3.TabRow(selectedTabIndex = tab) {
+            tabs.forEach { (i, res) ->
+                androidx.compose.material3.Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(res)) })
+            }
+        }
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(max = 380.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 24.dp),
+        ) {
+            when (tab) {
+                0 -> {
+                    val groups = listOf(
+                        R.string.editor_metrics to HudCategory.METRIC,
+                        R.string.editor_charts to HudCategory.CHART,
+                        R.string.editor_controls to HudCategory.CONTROL,
+                        R.string.editor_extra to HudCategory.EXTRA,
+                    )
+                    groups.forEach { (titleRes, category) ->
+                        val items = HudCatalog.elements.filter { it.category == category && it.id !in HUD_COMPETITION_IDS }
+                        if (items.isNotEmpty()) {
+                            Text(
+                                stringResource(titleRes),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            )
+                            items.forEach { elementRow(0, it.labelRes, it.id) }
                         }
-                        .padding(horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Checkbox(checked = placed, onCheckedChange = null)
-                    Text(androidx.compose.ui.res.stringResource(element.labelRes), Modifier.padding(end = 16.dp))
+                    }
+                }
+                1 -> {
+                    Text(
+                        stringResource(R.string.editor_competition_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                    )
+                    HudCatalog.elements.filter { it.id in HUD_COMPETITION_IDS }.forEach { elementRow(1, it.labelRes, it.id) }
+                }
+                else -> {
+                    Text(
+                        stringResource(R.string.editor_presets),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                    Row(
+                        Modifier.padding(horizontal = 12.dp).horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        HudLayout.PRESETS.forEach { (nameRes, preset) ->
+                            AssistChip(onClick = { onUpdate(preset) }, label = { Text(stringResource(nameRes)) })
+                        }
+                    }
+                    Text(
+                        stringResource(R.string.editor_global_size),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                    Slider(
+                        value = layout.scale,
+                        onValueChange = { onUpdate(layout.copy(scale = it)) },
+                        valueRange = 0.7f..1.4f,
+                        modifier = Modifier.padding(horizontal = 16.dp).width(220.dp),
+                    )
                 }
             }
         }
-        HorizontalDivider(Modifier.padding(vertical = 6.dp))
-        Text(
-            stringResource(R.string.editor_presets),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-        Row(
-            Modifier.padding(horizontal = 12.dp).horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            HudLayout.PRESETS.forEach { (nameRes, preset) ->
-                AssistChip(onClick = { onUpdate(preset) }, label = { Text(stringResource(nameRes)) })
-            }
-        }
-        Text(
-            stringResource(R.string.editor_global_size),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-        Slider(
-            value = layout.scale,
-            onValueChange = { onUpdate(layout.copy(scale = it)) },
-            valueRange = 0.7f..1.4f,
-            modifier = Modifier.padding(horizontal = 16.dp).width(220.dp),
-        )
     }
 }
 

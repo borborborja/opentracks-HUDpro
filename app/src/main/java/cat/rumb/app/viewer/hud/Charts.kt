@@ -80,7 +80,7 @@ private fun ChartCard(
     }
 }
 
-private fun DrawScope.drawSeries(series: List<Float>, w: Float, h: Float, color: Color, baselineZero: Boolean) {
+internal fun DrawScope.drawSeries(series: List<Float>, w: Float, h: Float, color: Color, baselineZero: Boolean) {
     if (series.size < 2) return
     val min = if (baselineZero) 0f else (series.minOrNull() ?: 0f)
     val max = series.maxOrNull() ?: 1f

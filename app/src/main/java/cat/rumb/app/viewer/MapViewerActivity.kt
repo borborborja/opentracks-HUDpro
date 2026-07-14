@@ -242,7 +242,17 @@ class MapViewerActivity : ComponentActivity() {
                 RumbTheme {
                     val data by hudDataFlow.collectAsState()
                     val reload by dataReloadFlow.collectAsState()
-                    DataView(data, Modifier.safeDrawingPadding(), reloadKey = reload)
+                    val controls by controlsFlow.collectAsState()
+                    DataView(
+                        data,
+                        Modifier.safeDrawingPadding(),
+                        reloadKey = reload,
+                        onStartRecording = controls.onStartRecording,
+                        onStopRecording = controls.onStopRecording,
+                        onPauseRecording = controls.onPauseRecording,
+                        onResumeRecording = controls.onResumeRecording,
+                        onToggleSetting = { t, b -> onDataToggle(t, b) },
+                    )
                 }
             }
         }
@@ -546,6 +556,22 @@ class MapViewerActivity : ComponentActivity() {
     private fun applyKeepScreenOn(on: Boolean) {
         if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+
+    /** Applies a Dades settings-toggle tile: persists the pref and fires the same live effect the
+     *  quick-settings sheet uses. Barometer has no live effect (the service reads it at start). */
+    private fun onDataToggle(t: cat.rumb.app.viewer.data.DataToggle, b: Boolean) {
+        val prefs = ViewerPreferences.get(this)
+        when (t) {
+            cat.rumb.app.viewer.data.DataToggle.AUTO_PAUSE -> {
+                prefs.recAutoPause = b; RecordingService.refreshAutoPause(this)
+            }
+            cat.rumb.app.viewer.data.DataToggle.TURN_VOICE -> { prefs.turnVoice = b; turnVoiceOn = b }
+            cat.rumb.app.viewer.data.DataToggle.ADAPTIVE_ZOOM -> { prefs.adaptiveZoom = b; adaptiveZoom = b }
+            cat.rumb.app.viewer.data.DataToggle.KEEP_SCREEN -> { prefs.keepScreenOn = b; applyKeepScreenOn(b) }
+            cat.rumb.app.viewer.data.DataToggle.BAROMETER -> { prefs.recBarometer = b }
+        }
+        DebugLog.i("UI", "data-toggle · ${t.name} → $b")
     }
 
     @Suppress("DEPRECATION")
