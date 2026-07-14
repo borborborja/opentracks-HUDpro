@@ -12,6 +12,7 @@
     <string name="home_cd_create_route">Create route</string>
     <string name="home_empty_trainings">No trainings yet. Record one from Training or import a file.</string>
     <string name="home_empty_routes">No routes yet. Import a GPX/KML/TCX file or create one.</string>
+    <string name="home_route_follow_hint">You can follow a route by selecting it in the training viewer\'s settings.</string>
     <string name="home_import_dialog_title">Import «%1$s»</string>
     <string name="home_file_fallback">file</string>
     <string name="home_import_dialog_text">How do you want to save it?</string>

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,8 +45,6 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.automirrored.filled.ViewQuilt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -58,7 +57,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -68,7 +66,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -160,7 +157,6 @@ fun HomeScreen(
         it.id in activeCompIds || (it.competitionRefId != null && it.competitionRefId in activeCompIds)
     }.map { it.id }.toSet()
     val expanded = remember { mutableStateMapOf<String, Boolean>() }
-    var activeId by remember { mutableLongStateOf(prefs.activeFollowTrackId) }
 
     // Folders = user-created set ∪ collections present on this tab's tracks.
     fun folderSet(): Set<String> = if (kind == TrackKind.TRAINING) prefs.foldersTraining else prefs.foldersRoute
@@ -213,7 +209,6 @@ fun HomeScreen(
             scope.launch { app.trackRepository.routeBoundingBox(t.id)?.let(onDownloadRouteMap) }
         },
         onDelete = { deleteFor = it },
-        onFollow = { t -> activeId = t.id; prefs.activeFollowTrackId = t.id },
         onCompetition = { t ->
             val archivedRef = t.competitionRefId?.let { rid ->
                 all.firstOrNull { a -> a.id == rid && a.isCompetition && a.competitionArchived }
@@ -349,14 +344,14 @@ fun HomeScreen(
                 } else if (viewMode == "TILES") {
                     TilesView(
                         tracks = tracks, archived = archivedTracks, folders = folders, currentFolder = currentFolder,
-                        kind = kind, activeId = activeId, compIds = compMemberIds, actions = routeActions,
+                        kind = kind, compIds = compMemberIds, actions = routeActions,
                         onEnterFolder = { currentFolder = it },
                         onFolderMenu = { name, action -> if (action == "rename") folderRename = name else folderDelete = name },
                     )
                 } else {
                     ListView(
                         tracks = tracks, archived = archivedTracks, folders = folders, detailed = viewMode == "DETAILED",
-                        kind = kind, activeId = activeId, compIds = compMemberIds, actions = routeActions,
+                        kind = kind, compIds = compMemberIds, actions = routeActions,
                         expanded = expanded,
                         onFolderMenu = { name, action -> if (action == "rename") folderRename = name else folderDelete = name },
                     )
@@ -645,7 +640,6 @@ private data class RouteActions(
     val onMove: (FollowTrackEntity) -> Unit,
     val onDownloadMap: (FollowTrackEntity) -> Unit,
     val onDelete: (FollowTrackEntity) -> Unit,
-    val onFollow: (FollowTrackEntity) -> Unit,
     val onCompetition: (FollowTrackEntity) -> Unit,
     val onArchive: (FollowTrackEntity) -> Unit,
 )
@@ -659,7 +653,6 @@ private fun ListView(
     folders: List<String>,
     detailed: Boolean,
     kind: String,
-    activeId: Long,
     compIds: Set<Long>,
     actions: RouteActions,
     expanded: MutableMap<String, Boolean>,
@@ -668,7 +661,7 @@ private fun ListView(
     val root = tracks.filter { it.collection == ROOT }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(root, key = { it.id }) { t ->
-            RouteRow(t, detailed, kind, activeId, t.id in compIds, actions)
+            RouteRow(t, detailed, kind, t.id in compIds, actions)
         }
         folders.forEach { folder ->
             val children = tracks.filter { it.collection == folder }
@@ -683,7 +676,7 @@ private fun ListView(
             }
             if (expanded[folder] == true) {
                 items(children, key = { it.id }) { t ->
-                    Box(Modifier.padding(start = 16.dp)) { RouteRow(t, detailed, kind, activeId, t.id in compIds, actions) }
+                    Box(Modifier.padding(start = 16.dp)) { RouteRow(t, detailed, kind, t.id in compIds, actions) }
                 }
             }
         }
@@ -698,11 +691,25 @@ private fun ListView(
             }
             if (expanded[ARCHIVED_FOLDER] == true) {
                 items(archived, key = { it.id }) { t ->
-                    Box(Modifier.padding(start = 16.dp)) { RouteRow(t, detailed, kind, activeId, false, actions) }
+                    Box(Modifier.padding(start = 16.dp)) { RouteRow(t, detailed, kind, false, actions) }
                 }
             }
         }
+        if (kind == TrackKind.ROUTE) {
+            item(key = "route-follow-hint") { RouteFollowHint() }
+        }
     }
+}
+
+/** Trailing hint below the routes list: following a route is done from the viewer settings. */
+@Composable
+private fun RouteFollowHint() {
+    Text(
+        stringResource(R.string.home_route_follow_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
+    )
 }
 
 @Composable
@@ -748,7 +755,6 @@ private fun RouteRow(
     t: FollowTrackEntity,
     detailed: Boolean,
     kind: String,
-    activeId: Long,
     inCompetition: Boolean,
     actions: RouteActions,
 ) {
@@ -757,9 +763,6 @@ private fun RouteRow(
             Modifier.fillMaxWidth().clickable { actions.onOpen(t) }.padding(start = 8.dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (kind == TrackKind.ROUTE) {
-                RadioButton(selected = activeId == t.id, onClick = { actions.onFollow(t) })
-            }
             if (t.activityType != null) {
                 Icon(
                     ActivityTypeCatalog.iconFor(t.activityType),
@@ -846,7 +849,6 @@ private fun TilesView(
     folders: List<String>,
     currentFolder: String?,
     kind: String,
-    activeId: Long,
     compIds: Set<Long>,
     actions: RouteActions,
     onEnterFolder: (String) -> Unit,
@@ -878,7 +880,10 @@ private fun TilesView(
             }
         }
         gridItems(visible, key = { it.id }) { t ->
-            RouteTile(t, kind, activeId, t.id in compIds, actions)
+            RouteTile(t, kind, t.id in compIds, actions)
+        }
+        if (kind == TrackKind.ROUTE) {
+            item(span = { GridItemSpan(maxLineSpan) }, key = "route-follow-hint") { RouteFollowHint() }
         }
     }
 }
@@ -921,7 +926,7 @@ private fun FolderTile(name: String, count: Int, onOpen: () -> Unit, onMenu: (St
 }
 
 @Composable
-private fun RouteTile(t: FollowTrackEntity, kind: String, activeId: Long, inCompetition: Boolean, actions: RouteActions) {
+private fun RouteTile(t: FollowTrackEntity, kind: String, inCompetition: Boolean, actions: RouteActions) {
     val context = LocalContext.current
     val app = remember { RumbApplication.from(context) }
     // Lazily load + simplify the geometry for the background thumbnail.
@@ -953,15 +958,6 @@ private fun RouteTile(t: FollowTrackEntity, kind: String, activeId: Long, inComp
                     }
                 }
                 drawRect(Brush.verticalGradient(listOf(Color(0x00000000), Color(0xAA000000))))
-            }
-            if (kind == TrackKind.ROUTE) {
-                IconButton(onClick = { actions.onFollow(t) }, modifier = Modifier.align(Alignment.TopStart)) {
-                    Icon(
-                        if (activeId == t.id) Icons.Filled.Star else Icons.Filled.StarBorder,
-                        contentDescription = stringResource(R.string.home_cd_active_route),
-                        tint = if (activeId == t.id) Color(0xFFFFD166) else Color.White,
-                    )
-                }
             }
             Box(Modifier.align(Alignment.TopEnd)) { RouteMenuTinted(t, kind, actions) }
             Column(Modifier.align(Alignment.BottomStart).padding(10.dp)) {

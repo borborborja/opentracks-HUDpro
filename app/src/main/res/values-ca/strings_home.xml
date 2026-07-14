@@ -12,6 +12,7 @@
     <string name="home_cd_create_route">Crear ruta</string>
     <string name="home_empty_trainings">Encara no hi ha entrenaments. Grava\'n un des d\'Entrenament o importa un fitxer.</string>
     <string name="home_empty_routes">Encara no hi ha rutes. Importa un GPX/KML/TCX o crea\'n una.</string>
+    <string name="home_route_follow_hint">Pots seguir una ruta seleccionant-la als ajustos del visor d\'entrenament.</string>
     <string name="home_import_dialog_title">Importar «%1$s»</string>
     <string name="home_file_fallback">fitxer</string>
     <string name="home_import_dialog_text">Com vols desar-lo?</string>
