@@ -56,15 +56,22 @@ class TrackMetadataBackfillWorker(context: Context, params: WorkerParameters) : 
                 is NominatimClient.Reverse.Ok ->
                     // Write the name, or the "checked, no place" sentinel ("") so we never re-query it.
                     dao.setMunicipality(item.id, r.name ?: MUNICIPALITY_CHECKED_NONE)
+                // A permanent 4xx (e.g. 403 policy block) will never resolve: mark checked so the row
+                // leaves the queue instead of forcing an unbounded retry loop that re-hits Nominatim.
+                NominatimClient.Reverse.PermanentFail -> dao.setMunicipality(item.id, MUNICIPALITY_CHECKED_NONE)
                 NominatimClient.Reverse.Failed -> networkFailures++ // transient → retry the run
             }
             delay(1100)
         }
-        return if (networkFailures > 0) Result.retry() else Result.success()
+        // Retry transient failures, but cap attempts so a persistently unreachable Nominatim can't
+        // reschedule forever; leftover rows stay NULL and are retried on the next enqueue (next import).
+        return if (networkFailures > 0 && runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.success()
     }
 
     companion object {
         private const val WORK_NAME = "track_metadata_backfill"
+        /** Cap on WorkManager retries for transient geocoding failures (backoff would run forever). */
+        private const val MAX_RETRY_ATTEMPTS = 5
         /** Sentinel written to `municipality` when reverse-geocoding succeeded but found no place. */
         const val MUNICIPALITY_CHECKED_NONE = ""
 

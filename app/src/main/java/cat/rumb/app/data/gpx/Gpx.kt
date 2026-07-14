@@ -50,7 +50,7 @@ object Gpx {
                 val lat = el.getAttribute("lat").toDoubleOrNull() ?: continue
                 val lon = el.getAttribute("lon").toDoubleOrNull() ?: continue
                 val ele = childText(el, "ele")?.toDoubleOrNull()
-                val time = childText(el, "time")?.let { runCatching { Instant.parse(it) }.getOrNull() }
+                val time = childText(el, "time")?.let { parseTrackTime(it) }
                 // Sensor extensions: the parser is namespace-unaware, so prefixed tags are literal
                 // names; getElementsByTagName searches all descendants, incl. inside <extensions>.
                 val hr = (childText(el, "gpxtpx:hr") ?: childText(el, "hr"))?.toDoubleOrNull()

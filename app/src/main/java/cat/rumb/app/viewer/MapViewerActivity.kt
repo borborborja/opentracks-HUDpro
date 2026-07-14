@@ -385,6 +385,9 @@ class MapViewerActivity : ComponentActivity() {
                                 onSave = { name, folder, typeId -> saveNativeRecording(snap, name, folder, typeId) },
                                 onDiscard = {
                                     DebugLog.i("Record", "descartada")
+                                    lifecycleScope.launch {
+                                        cat.rumb.app.data.recording.RecordingService.clearFinishedRecordings(this@MapViewerActivity)
+                                    }
                                     NativeRecording.clear()
                                     saveDialogFlow.value = null
                                     refreshRecordingHud()
@@ -437,8 +440,13 @@ class MapViewerActivity : ComponentActivity() {
                 loadFollowRoute(prefs, ctrl, frame = reader?.isRecording != true && !NativeRecording.isActive)
                 when {
                     reader != null -> observe(reader!!, ctrl)
-                    // Reconnect to an ongoing (or just-finished, unsaved) native recording.
-                    NativeRecording.state.value != null -> observeNative(ctrl)
+                    // Reconnect to an ongoing (or just-finished, unsaved) native recording — recovering
+                    // a finished-but-unsaved one from Room if the process was killed before the save.
+                    else -> lifecycleScope.launch {
+                        val pending = NativeRecording.state.value != null ||
+                            cat.rumb.app.data.recording.RecordingService.recoverUnsavedFinished(this@MapViewerActivity)
+                        if (pending) observeNative(ctrl)
+                    }
                 }
                 // Show the user's location; request the permission if we don't have it yet.
                 if (hasLocationPermission()) {
@@ -731,6 +739,8 @@ class MapViewerActivity : ComponentActivity() {
                 DebugLog.i("Record", "desada «$name» · ${pts.size} punts · Endurain encuat")
                 android.widget.Toast.makeText(this@MapViewerActivity, getString(R.string.viewer_toast_activity_saved), android.widget.Toast.LENGTH_SHORT).show()
             }
+            // Purge the durable crash-safety rows only now that the track is saved (or too short).
+            cat.rumb.app.data.recording.RecordingService.clearFinishedRecordings(this@MapViewerActivity)
             NativeRecording.clear()
             saveDialogFlow.value = null
             refreshRecordingHud()
@@ -925,6 +935,7 @@ class MapViewerActivity : ComponentActivity() {
                         saveDialogFlow.value = s
                     } else {
                         android.widget.Toast.makeText(this@MapViewerActivity, getString(R.string.viewer_toast_activity_no_points), android.widget.Toast.LENGTH_SHORT).show()
+                        cat.rumb.app.data.recording.RecordingService.clearFinishedRecordings(this@MapViewerActivity)
                         cat.rumb.app.data.recording.NativeRecording.clear()
                         refreshRecordingHud()
                     }

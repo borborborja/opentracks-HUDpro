@@ -108,6 +108,27 @@ class OfflineMapStore private constructor(private val context: Context) {
             sectors = sectors,
         )
         save(list().filterNot { it.path == path } + map)
+        writeUnionMetadata(map)
+    }
+
+    /**
+     * Rewrites the archive's mbtiles `metadata` to span the union of all its sectors. MapLibre reads
+     * bounds/min-max zoom from that table to decide which tiles to request; since every sector of a
+     * map type accumulates into one archive and each download only wrote its own window, previously
+     * downloaded areas would fall outside the advertised bounds and render blank. This restores them.
+     */
+    private fun writeUnionMetadata(map: OfflineMap) {
+        val sectors = map.sectors
+        val bounds = unionBounds(sectors) ?: return
+        val bbox = BoundingBox(bounds[0], bounds[1], bounds[2], bounds[3])
+        val minZoom = sectors.minOf { it.minZoom }
+        val maxZoom = sectors.maxOf { it.maxZoom }
+        runCatching {
+            val file = File(map.path)
+            if (file.exists()) {
+                MbtilesWriter(file).use { it.writeMetadata(map.name, bbox, minZoom, maxZoom, map.attribution) }
+            }
+        }
     }
 
     /** Removes [sector] from [map]: prunes its exclusive tiles and updates metadata (or deletes all). */
@@ -125,6 +146,7 @@ class OfflineMapStore private constructor(private val context: Context) {
         }
         val updated = map.copy(bounds = unionBounds(remaining), sectors = remaining)
         save(list().filterNot { it.path == map.path } + updated)
+        writeUnionMetadata(updated)
     }
 
     fun unionBounds(sectors: List<OfflineSector>): List<Double>? {

@@ -2,7 +2,6 @@ package cat.rumb.app.data.gpx
 
 import org.w3c.dom.Element
 import java.io.InputStream
-import java.time.Instant
 import javax.xml.parsers.DocumentBuilderFactory
 
 /**
@@ -29,7 +28,7 @@ object Tcx {
             val lat = position.text("LatitudeDegrees")?.toDoubleOrNull() ?: continue
             val lon = position.text("LongitudeDegrees")?.toDoubleOrNull() ?: continue
             val ele = tp.text("AltitudeMeters")?.toDoubleOrNull()
-            val time = tp.text("Time")?.let { runCatching { Instant.parse(it) }.getOrNull() }
+            val time = tp.text("Time")?.let { parseTrackTime(it) }
             val hr = tp.getElementsByTagName("HeartRateBpm")
                 .let { if (it.length > 0) (it.item(0) as? Element)?.text("Value")?.toDoubleOrNull() else null }
             points.add(GpxPoint(lat, lon, ele, time, heartRate = hr))

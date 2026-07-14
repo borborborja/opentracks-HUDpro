@@ -185,21 +185,25 @@ class RecordingService : Service() {
             publish()
             DebugLog.i("Record", "gravació nativa aturada · ${it.snapshot(Instant.now()).points().size} punts")
         }
-        flushPoints()
-        recordingId?.let { id ->
-            scope.launch {
-                val dao = RumbApplication.from(this@RecordingService).database.recordingDao()
-                // The recording is finished; the crash-safety copy is no longer needed (the viewer
-                // holds the final snapshot for the save dialog).
-                dao.deletePoints(id)
-                dao.deleteRecording(id)
-            }
-        }
+        val id = recordingId
+        val finalBatch = drainPending()
         recorder = null
         recordingId = null
         releaseWakeLock()
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+        // Persist the final points and mark the recording FINISHED (do NOT delete): the durable copy
+        // must survive until the user actually saves. A process death between Stop and Save would
+        // otherwise lose the whole track — the viewer only held it in memory. The rows are purged in
+        // the viewer after insertRoute commits; an unsaved finished recording is recovered on launch.
+        // Tear the service down only after the write, so onDestroy's scope.cancel() can't drop it.
+        scope.launch {
+            val dao = RumbApplication.from(this@RecordingService).database.recordingDao()
+            runCatching {
+                if (finalBatch.isNotEmpty()) dao.insertPoints(finalBatch)
+                if (id != null) dao.setState(id, "FINISHED")
+            }.onFailure { DebugLog.e("Record", "no s'ha pogut finalitzar la gravació a disc", it) }
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+        }
     }
 
     private fun startPeriodicFlush() {
@@ -211,13 +215,16 @@ class RecordingService : Service() {
         }
     }
 
+    /** Atomically removes and returns the buffered points. */
+    private fun drainPending(): List<RecordingPointEntity> = synchronized(pendingPoints) {
+        val copy = pendingPoints.toList()
+        pendingPoints.clear()
+        copy
+    }
+
     private fun flushPoints() {
-        val batch = synchronized(pendingPoints) {
-            if (pendingPoints.isEmpty()) return
-            val copy = pendingPoints.toList()
-            pendingPoints.clear()
-            copy
-        }
+        val batch = drainPending()
+        if (batch.isEmpty()) return
         scope.launch {
             runCatching {
                 RumbApplication.from(this@RecordingService).database.recordingDao().insertPoints(batch)
@@ -233,7 +240,17 @@ class RecordingService : Service() {
         gps.stop()
         pressure.stop()
         ble?.stop(); ble = null
-        flushPoints()
+        // Flush the last buffered points synchronously: an async launch here would be cancelled by
+        // scope.cancel() below, silently losing up to the last flush interval on a clean teardown
+        // (stopService / task removed) that didn't go through finish().
+        val batch = drainPending()
+        if (batch.isNotEmpty()) {
+            runCatching {
+                kotlinx.coroutines.runBlocking {
+                    RumbApplication.from(this@RecordingService).database.recordingDao().insertPoints(batch)
+                }
+            }.onFailure { DebugLog.e("Record", "flush final fallit", it) }
+        }
         releaseWakeLock()
         scope.cancel()
         super.onDestroy()
@@ -349,6 +366,45 @@ class RecordingService : Service() {
         fun pause(context: Context) = send(context, ACTION_PAUSE)
         fun resume(context: Context) = send(context, ACTION_RESUME)
         fun stop(context: Context) = send(context, ACTION_STOP)
+
+        /**
+         * If a recording finished but the process died before the user saved it, its rows survive in
+         * Room (state='FINISHED'). Rebuild the finished snapshot into [NativeRecording] so the viewer
+         * can still offer the save dialog. Returns true if one was recovered. No-op when something is
+         * already in memory, a live recording exists (that restores via START_STICKY), or nothing is
+         * pending. A finished recording with too few points to save is purged.
+         */
+        suspend fun recoverUnsavedFinished(context: Context): Boolean {
+            if (NativeRecording.state.value != null) return false
+            val dao = RumbApplication.from(context).database.recordingDao()
+            if (dao.activeRecording() != null) return false
+            val finished = dao.finishedRecording() ?: return false
+            val pts = dao.points(finished.id)
+            if (pts.size < 2) {
+                dao.deleteFinishedPoints()
+                dao.deleteFinishedRecordings()
+                return false
+            }
+            val prefs = ViewerPreferences.get(context)
+            val config = RecorderConfig(
+                maxAccuracyM = prefs.recMaxAccuracyM,
+                minDistanceM = prefs.recMinDistanceM.toDouble(),
+            )
+            val now = Instant.now()
+            val r = TrackRecorder(config)
+            r.restore(pts.toSegments(), Instant.ofEpochMilli(finished.startedAt), now)
+            r.stop(now)
+            NativeRecording.publish(r.snapshot(now))
+            DebugLog.w("Record", "gravació finalitzada no desada recuperada · ${pts.size} punts")
+            return true
+        }
+
+        /** Purges finished recordings from Room once the viewer has saved or discarded them. */
+        suspend fun clearFinishedRecordings(context: Context) {
+            val dao = RumbApplication.from(context).database.recordingDao()
+            dao.deleteFinishedPoints()
+            dao.deleteFinishedRecordings()
+        }
 
         /** No-op when no recording is running; otherwise re-reads the auto-pause configuration. */
         fun refreshAutoPause(context: Context) {

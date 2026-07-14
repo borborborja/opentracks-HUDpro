@@ -71,6 +71,49 @@ class ImportFormatsTest {
     }
 
     @Test
+    fun kmlCoordinatesWithSpacesAfterCommasStillParse() {
+        // Non-standard "lon, lat, ele" (space after comma) must not shred into separate tokens.
+        val spaced = """<?xml version="1.0" encoding="UTF-8"?>
+            <kml xmlns="http://www.opengis.net/kml/2.2"><Document>
+              <Placemark><LineString><coordinates>
+                2.0, 41.0, 100  2.001, 41.001, 110
+              </coordinates></LineString></Placemark>
+            </Document></kml>"""
+        val route = Kml.read(spaced.byteInputStream())
+        assertThat(route.points).hasSize(2)
+        assertThat(route.points[0].latitude).isEqualTo(41.0)
+        assertThat(route.points[1].longitude).isEqualTo(2.001)
+    }
+
+    @Test
+    fun naiveTimestampsWithoutOffsetAreParsedNotDropped() {
+        // A spec-valid xsd:dateTime with no zone (some exporters emit this) must still yield a time.
+        val gpx = """<?xml version="1.0"?>
+            <gpx version="1.1"><trk><trkseg>
+              <trkpt lat="41.0" lon="2.0"><time>2024-06-01T08:00:00</time></trkpt>
+              <trkpt lat="41.001" lon="2.001"><time>2024-06-01T08:00:05+02:00</time></trkpt>
+            </trkseg></trk></gpx>"""
+        val route = Gpx.read(gpx.byteInputStream())
+        assertThat(route.points).hasSize(2)
+        assertThat(route.points[0].time).isNotNull()
+        assertThat(route.points[1].time).isNotNull()
+    }
+
+    @Test
+    fun tcxNaiveTimestampParsed() {
+        val tcx = """<?xml version="1.0"?>
+            <TrainingCenterDatabase><Activities><Activity><Lap><Track>
+              <Trackpoint>
+                <Time>2026-07-13T10:00:00</Time>
+                <Position><LatitudeDegrees>41.0</LatitudeDegrees><LongitudeDegrees>2.0</LongitudeDegrees></Position>
+              </Trackpoint>
+            </Track></Lap></Activity></Activities></TrainingCenterDatabase>"""
+        val route = Tcx.read(tcx.byteInputStream())
+        assertThat(route.points).hasSize(1)
+        assertThat(route.points[0].time).isNotNull()
+    }
+
+    @Test
     fun formatDetectionByExtension() {
         assertThat(formatFor("sortida.gpx")).isEqualTo(TrackFormat.GPX)
         assertThat(formatFor("Ruta.KML")).isEqualTo(TrackFormat.KML)

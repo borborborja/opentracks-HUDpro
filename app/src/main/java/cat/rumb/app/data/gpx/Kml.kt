@@ -28,6 +28,9 @@ object Kml {
             if (!parent.contains("LineString") && !parent.contains("LinearRing")) continue
             coordNodes.item(i).textContent
                 ?.trim()
+                // Collapse spaces around the commas so a non-standard "lon, lat, ele" tuple isn't
+                // shredded into separate tokens by the whitespace split (which would drop every point).
+                ?.replace(Regex("\\s*,\\s*"), ",")
                 ?.split(Regex("\\s+"))
                 ?.forEach { triplet ->
                     val parts = triplet.split(",")

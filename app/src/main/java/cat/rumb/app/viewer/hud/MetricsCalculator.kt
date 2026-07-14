@@ -109,6 +109,7 @@ object MetricsCalculator {
         val dLat = lat2 - lat1
         val dLon = Math.toRadians(b.longitude - a.longitude)
         val h = sin(dLat / 2) * sin(dLat / 2) + cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2)
-        return 2 * EARTH_RADIUS_M * atan2(sqrt(h), sqrt(1 - h))
+        // max(0.0, …) guards against a NaN when FP error pushes h just above 1 (near-antipodal points).
+        return 2 * EARTH_RADIUS_M * atan2(sqrt(h), sqrt(maxOf(0.0, 1 - h)))
     }
 }

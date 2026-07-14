@@ -17,16 +17,22 @@ class NominatimClient(
     private val client: OkHttpClient = OkHttpClient(),
 ) {
 
-    /** Reverse-geocode outcome: [Ok] (name may be null = geocoded but no place), or [Failed] (retry). */
+    /**
+     * Reverse-geocode outcome: [Ok] (name may be null = geocoded but no place); [Failed] = transient
+     * (retry worthwhile); [PermanentFail] = a 4xx the request will never pass (don't retry — the
+     * caller should mark the row as checked so it isn't re-queried forever).
+     */
     sealed interface Reverse {
         data class Ok(val name: String?) : Reverse
         data object Failed : Reverse
+        data object PermanentFail : Reverse
     }
 
     /**
      * Reverse-geocodes the coordinates. Distinguishes a successful lookup with no place name
-     * ([Reverse.Ok] with null) from a network/HTTP failure ([Reverse.Failed]) — the caller must not
-     * retry the former forever. Never throws.
+     * ([Reverse.Ok] with null) from a transient failure ([Reverse.Failed]) and a permanent one
+     * ([Reverse.PermanentFail]) — the caller must not retry either non-transient outcome forever.
+     * Never throws.
      */
     suspend fun reverse(lat: Double, lon: Double): Reverse = withContext(Dispatchers.IO) {
         runCatching {
@@ -35,7 +41,17 @@ class NominatimClient(
                 "?format=jsonv2&lat=$lat&lon=$lon&zoom=10&accept-language=$lang"
             val request = Request.Builder().url(url).header("User-Agent", userAgent).build()
             client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@runCatching Reverse.Failed
+                if (!response.isSuccessful) {
+                    // 4xx (except 408 Request Timeout / 429 Too Many Requests, which are worth
+                    // retrying) won't ever succeed for this request — don't loop forever re-hitting
+                    // Nominatim; a bad User-Agent/policy 403 is the realistic case.
+                    val code = response.code
+                    return@runCatching if (code in 400..499 && code != 408 && code != 429) {
+                        Reverse.PermanentFail
+                    } else {
+                        Reverse.Failed
+                    }
+                }
                 Reverse.Ok(parseMunicipality(response.body?.string() ?: return@runCatching Reverse.Failed))
             }
         }.getOrDefault(Reverse.Failed)

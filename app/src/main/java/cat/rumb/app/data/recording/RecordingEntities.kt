@@ -81,6 +81,10 @@ interface RecordingDao {
     @Query("SELECT * FROM recordings WHERE state = 'RECORDING' ORDER BY started_at DESC LIMIT 1")
     suspend fun activeRecording(): RecordingEntity?
 
+    /** A finished-but-unsaved recording that survived a process death before the user saved it. */
+    @Query("SELECT * FROM recordings WHERE state = 'FINISHED' ORDER BY started_at DESC LIMIT 1")
+    suspend fun finishedRecording(): RecordingEntity?
+
     @Query("SELECT * FROM recording_points WHERE recording_id = :recordingId ORDER BY seq ASC")
     suspend fun points(recordingId: Long): List<RecordingPointEntity>
 
@@ -92,6 +96,13 @@ interface RecordingDao {
 
     @Query("DELETE FROM recordings WHERE id = :id")
     suspend fun deleteRecording(id: Long)
+
+    /** Purges every finished recording (rows + points) once the user has saved or discarded it. */
+    @Query("DELETE FROM recording_points WHERE recording_id IN (SELECT id FROM recordings WHERE state = 'FINISHED')")
+    suspend fun deleteFinishedPoints()
+
+    @Query("DELETE FROM recordings WHERE state = 'FINISHED'")
+    suspend fun deleteFinishedRecordings()
 }
 
 /** Rebuilds pause-aware segments from persisted points (grouped by their segment index). */
