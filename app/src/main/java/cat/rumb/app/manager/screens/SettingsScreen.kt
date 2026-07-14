@@ -522,10 +522,6 @@ private fun AppSection(onOpenDebugLog: () -> Unit) {
                 onClick = { scope.launch { diag = buildDiagnostics(context) } },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(R.string.settings_debug_full)) }
-            OutlinedButton(
-                onClick = { diag = cat.rumb.app.data.opentracks.OpenTracksRecording.diagnostics(context) },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(R.string.settings_debug_test_recording)) }
             diag?.let { report ->
                 OutlinedButton(
                     onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(report)) },

@@ -45,13 +45,9 @@ import cat.rumb.app.ui.theme.RumbTheme
 import cat.rumb.app.viewer.data.DataView
 import cat.rumb.app.viewer.hud.HudOverlay
 import cat.rumb.app.RumbApplication
-import cat.rumb.app.data.endurain.EndurainUploadWorker
-import cat.rumb.app.data.gpx.Gpx
 import cat.rumb.app.data.gpx.GpxPoint
 import cat.rumb.app.data.map.MapSource
 import cat.rumb.app.data.debug.DebugLog
-import cat.rumb.app.data.opentracks.DashboardReader
-import cat.rumb.app.data.opentracks.isDashboardAction
 import cat.rumb.app.data.opentracks.model.Segment
 import cat.rumb.app.data.opentracks.model.TrackStatistics
 import cat.rumb.app.data.prefs.ViewerPreferences
@@ -67,27 +63,19 @@ import cat.rumb.app.viewer.hud.LiveMetrics
 import cat.rumb.app.viewer.hud.MetricsCalculator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import org.maplibre.android.maps.MapView
 
 /**
- * The map viewer launched by OpenTracks via its Dashboard API (action `Intent.OpenTracks-Dashboard`),
- * and also usable standalone. Renders the live track over an OSM/ICGC base map with the HUD overlay.
+ * The live map viewer: renders the native recording (and/or the followed route) over an OSM/ICGC
+ * base map with the HUD overlay. Driven entirely by the in-process recording engine.
  */
 class MapViewerActivity : ComponentActivity() {
 
     private lateinit var mapView: MapView
     private var controller: MapLibreController? = null
-    private var reader: DashboardReader? = null
     private var observeJob: Job? = null
-
-    // Optimistic recording state: flipped the instant the user taps start/stop so the HUD reacts
-    // immediately, until OpenTracks pushes an authoritative dashboard intent (which clears it).
-    private var recordingOverride: Boolean? = null
 
     private val hudDataFlow = MutableStateFlow(HudData())
     private val controlsFlow = MutableStateFlow(HudControls.disabled)
@@ -162,9 +150,7 @@ class MapViewerActivity : ComponentActivity() {
     private var announceLang = cat.rumb.app.viewer.audio.AnnounceLang.CA
     private var announceFields = cat.rumb.app.viewer.audio.AnnounceFields()
 
-    private var wasRecording = false
     private var recordingWasActive = false
-    private var uploadedThisSession = false
 
     // Pre-warm the GPS while the viewer is open so tapping record acquires a precise fix almost
     // instantly (the chip is already hot). Stopped on pause and when the recording service takes over.
@@ -192,14 +178,7 @@ class MapViewerActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        DebugLog.i("Viewer", "onCreate · dashboard=${intent.isDashboardAction()} · action=${intent.action}")
-
-        if (intent.isDashboardAction()) {
-            reader = runCatching { DashboardReader(intent, contentResolver) }
-                .onFailure { Log.e(TAG, "Failed to init DashboardReader", it); DebugLog.e("Viewer", "DashboardReader onCreate fallit", it) }
-                .getOrNull()
-            DebugLog.i("Viewer", "reader onCreate · isRecording=${reader?.isRecording}")
-        }
+        DebugLog.i("Viewer", "onCreate · action=${intent.action}")
         applyWindowFlags()
 
         val prefs = ViewerPreferences.get(this)
@@ -469,7 +448,6 @@ class MapViewerActivity : ComponentActivity() {
             },
         )
 
-        wasRecording = reader?.isRecording == true
         mapView.getMapAsync { map ->
             val ctrl = MapLibreController(map)
             controller = ctrl
@@ -484,16 +462,13 @@ class MapViewerActivity : ComponentActivity() {
             startTrackingMarkerTicker(ctrl)
             val onReady: () -> Unit = {
                 // Frame the active route when not recording (no live track to follow yet) so it's visible.
-                loadFollowRoute(prefs, ctrl, frame = reader?.isRecording != true && !NativeRecording.isActive)
-                when {
-                    reader != null -> observe(reader!!, ctrl)
-                    // Reconnect to an ongoing (or just-finished, unsaved) native recording — recovering
-                    // a finished-but-unsaved one from Room if the process was killed before the save.
-                    else -> lifecycleScope.launch {
-                        val pending = NativeRecording.state.value != null ||
-                            cat.rumb.app.data.recording.RecordingService.recoverUnsavedFinished(this@MapViewerActivity)
-                        if (pending) observeNative(ctrl)
-                    }
+                loadFollowRoute(prefs, ctrl, frame = !NativeRecording.isActive)
+                // Reconnect to an ongoing (or just-finished, unsaved) native recording — recovering
+                // a finished-but-unsaved one from Room if the process was killed before the save.
+                lifecycleScope.launch {
+                    val pending = NativeRecording.state.value != null ||
+                        cat.rumb.app.data.recording.RecordingService.recoverUnsavedFinished(this@MapViewerActivity)
+                    if (pending) observeNative(ctrl)
                 }
                 // Show the user's location; request the permission if we don't have it yet.
                 if (hasLocationPermission()) {
@@ -510,8 +485,6 @@ class MapViewerActivity : ComponentActivity() {
             }
             applyBaseMap(ctrl, frame = true, onReady)
         }
-
-        reader?.start()
     }
 
     private fun setupControls(ctrl: MapLibreController) {
@@ -640,18 +613,12 @@ class MapViewerActivity : ComponentActivity() {
             onNorth = { ctrl.northUp() },
             onZoomIn = { ctrl.zoomIn() },
             onZoomOut = { ctrl.zoomOut() },
-            // The viewer's record button ALWAYS drives the native engine. OpenTracks is only the data
-            // source when Rumb was opened from its dashboard (and then its own UI controls it).
+            // The viewer's record button drives the native recording engine.
             onStartRecording = { startNativeRecording(ctrl) },
             onStopRecording = {
                 if (NativeRecording.isActive) {
                     DebugLog.i("Record", "native stop demanat")
                     RecordingService.stop(this)
-                } else if (reader?.isRecording == true || recordingOverride == true) {
-                    // Companion session started by OpenTracks: stop it there.
-                    val ok = cat.rumb.app.data.opentracks.OpenTracksRecording.stop(this)
-                    DebugLog.i("Record", "companion stop() → $ok")
-                    if (ok) { recordingOverride = false; refreshRecordingHud() }
                 }
             },
             onPauseRecording = { if (NativeRecording.isActive) RecordingService.pause(this) },
@@ -866,39 +833,6 @@ class MapViewerActivity : ComponentActivity() {
         hudDataFlow.value = current.copy(metrics = current.metrics.copy(isRecording = isRecordingNow()))
     }
 
-    /**
-     * OpenTracks re-pushes the dashboard intent (via STATS_TARGET_*) when recording state changes —
-     * e.g. right after we start recording, now with isRecording=true. Since this activity is
-     * singleTask, that arrives here. Rebuild the reader so the HUD reflects the live recording.
-     */
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        DebugLog.i(
-            "Viewer",
-            "onNewIntent · action=${intent.action} · dashboard=${intent.isDashboardAction()} · extras=${intent.extras?.keySet()?.joinToString()}",
-        )
-        if (!intent.isDashboardAction()) return
-        if (NativeRecording.isActive) {
-            // The native engine is recording: don't let an OpenTracks dashboard steal the pipeline.
-            DebugLog.w("Viewer", "dashboard ignorat: gravació nativa en curs")
-            android.widget.Toast.makeText(this, getString(R.string.viewer_toast_native_recording_active), android.widget.Toast.LENGTH_SHORT).show()
-            return
-        }
-        observeJob?.cancel()
-        reader?.stop()
-        reader = runCatching { DashboardReader(intent, contentResolver) }
-            .onFailure { Log.e(TAG, "Failed to init DashboardReader from new intent", it); DebugLog.e("Viewer", "DashboardReader onNewIntent fallit", it) }
-            .getOrNull()
-        DebugLog.i("Viewer", "reader onNewIntent · isRecording=${reader?.isRecording}")
-        // The authoritative push supersedes any optimistic guess. Leave `wasRecording` untouched so
-        // observe()'s handleRecordingStopped still detects the recording→stopped transition (Endurain).
-        recordingOverride = null
-        val ctrl = controller ?: return // map still loading; onCreate's onReady will observe+start
-        reader?.let { observe(it, ctrl); it.start() }
-        refreshRecordingHud()
-    }
-
     private fun setupAnnouncements(prefs: ViewerPreferences) {
         offRouteSpoken = prefs.offRouteSpoken
         if (!prefs.announceEnabled) return
@@ -1035,22 +969,8 @@ class MapViewerActivity : ComponentActivity() {
         }
     }
 
-    /** True recording state: native engine wins; else the user's optimistic tap; else OpenTracks. */
-    private fun isRecordingNow(): Boolean =
-        if (cat.rumb.app.data.recording.NativeRecording.isActive) true
-        else recordingOverride ?: (reader?.isRecording == true)
-
-    /** OpenTracks companion source: consumes the dashboard reader (when opened from OpenTracks). */
-    private fun observe(reader: DashboardReader, ctrl: MapLibreController) {
-        observeJob = lifecycleScope.launch {
-            combine(reader.segments, reader.waypoints, reader.statistics) { segs, wps, stats ->
-                Triple(segs, wps, stats)
-            }.collect { (segs, wps, stats) ->
-                processUpdate(segs, wps, stats, isRecordingNow(), ctrl)
-                handleRecordingStopped(reader, segs)
-            }
-        }
-    }
+    /** True recording state: driven by the native engine. */
+    private fun isRecordingNow(): Boolean = cat.rumb.app.data.recording.NativeRecording.isActive
 
     /** Native engine source: consumes the in-process recording service. */
     private var lowAccuracyToastShown = false
@@ -1300,37 +1220,12 @@ class MapViewerActivity : ComponentActivity() {
         return alts.filterIndexed { i, _ -> i % step == 0 }
     }
 
-    /** When OpenTracks stops recording, auto-enqueue an Endurain upload of the reconstructed GPX. */
-    private fun handleRecordingStopped(reader: DashboardReader, segments: List<Segment>) {
-        val stoppedNow = wasRecording && !reader.isRecording
-        wasRecording = reader.isRecording
-        if (!stoppedNow || uploadedThisSession) return
-        if (!cat.rumb.app.data.prefs.EndurainPreferences.get(this).isConfigured) return
-        val gpx = buildGpx(segments) ?: return
-        val stamp = DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault()).format(java.time.Instant.now())
-        EndurainUploadWorker.enqueue(this, gpx, "rumb-$stamp.gpx")
-        uploadedThisSession = true
-    }
-
-    private fun buildGpx(segments: List<Segment>): String? {
-        val points = segments.flatten().filter { it.latLong != null && !it.isPause }.map {
-            GpxPoint(it.latLong!!.latitude, it.latLong.longitude, elevation = null, time = it.time)
-        }
-        if (points.isEmpty()) return null
-        return Gpx.write("Rumb", points)
-    }
-
     private fun applyWindowFlags() {
-        val r = reader
         val prefs = ViewerPreferences.get(this)
-        // Keep-screen-on / fullscreen honor OUR prefs and OpenTracks' intent extras (either wins).
-        if (prefs.keepScreenOn || r?.keepScreenOn == true) {
+        if (prefs.keepScreenOn) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
-        if (r?.showOnLockScreen == true && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true)
-        }
-        if (prefs.fullscreen || r?.showFullscreen == true) {
+        if (prefs.fullscreen) {
             applyFullscreen(true)
         }
     }
@@ -1351,9 +1246,9 @@ class MapViewerActivity : ComponentActivity() {
 
     /** Warms the GPS chip while the viewer is foregrounded and not yet recording. */
     private fun startWarmGps() {
-        // Skip when already warming, when the native engine owns GPS, when OpenTracks is recording
-        // (it holds its own GPS request), or without permission — avoids two concurrent consumers.
-        if (warmGps != null || NativeRecording.isActive || reader?.isRecording == true || !hasLocationPermission()) return
+        // Skip when already warming, when the native engine owns GPS, or without permission —
+        // avoids two concurrent GPS consumers.
+        if (warmGps != null || NativeRecording.isActive || !hasLocationPermission()) return
         val gps = cat.rumb.app.data.recording.GpsSource(this)
         val ok = gps.start(intervalMs = 1000L) { loc ->
             lastWarmAccuracyM = if (loc.hasAccuracy()) loc.accuracy else null
@@ -1371,7 +1266,6 @@ class MapViewerActivity : ComponentActivity() {
     override fun onSaveInstanceState(outState: Bundle) { super.onSaveInstanceState(outState); mapView.onSaveInstanceState(outState) }
 
     override fun onDestroy() {
-        reader?.stop()
         announcer?.shutdown()
         mapView.onDestroy()
         super.onDestroy()

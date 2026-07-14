@@ -95,7 +95,6 @@
     <string name="settings_debug_section">Depuració</string>
     <string name="settings_debug_log_button">Registre de debug (log complet)</string>
     <string name="settings_debug_full">Diagnòstic complet</string>
-    <string name="settings_debug_test_recording">Provar iniciar gravació</string>
     <string name="settings_debug_copy">Copiar diagnòstic</string>
     <string name="settings_about">Quant a</string>
     <string name="settings_about_desc">Rumb — gravador d\'activitats GPS amb HUD en viu, mapes ICGC i sincronització amb Endurain.</string>

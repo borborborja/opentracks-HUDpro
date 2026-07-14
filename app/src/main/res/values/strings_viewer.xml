@@ -37,7 +37,6 @@
 
     <!-- Toasts -->
     <string name="viewer_toast_location_permission_record">Location permission is needed to record</string>
-    <string name="viewer_toast_native_recording_active">Own recording in progress; OpenTracks dashboard ignored</string>
     <string name="viewer_toast_activity_no_points">Activity without points, discarded</string>
     <string name="viewer_toast_activity_saved">Activity saved</string>
     <string name="viewer_toast_follow_route_empty">Route to follow is empty (id=%1$d)</string>

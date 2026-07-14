@@ -11,8 +11,6 @@
     <string name="dl_notif_title">Downloading offline map</string>
     <string name="prefetch_notif_title">Downloading route map</string>
     <string name="dl_notif_progress">%1$d / %2$d tiles</string>
-    <string name="ot_not_found">OpenTracks with the public API was not found. Install it and enable the API.</string>
-    <string name="ot_launch_failed">Could not open OpenTracks. Enable its \u0022Public API\u0022 setting.</string>
     <string name="share_export_title">Export \u0022%1$s\u0022</string>
     <string name="rec_low_accuracy_start">Started with low GPS accuracy</string>
     <string name="share_format_title">Share format</string>

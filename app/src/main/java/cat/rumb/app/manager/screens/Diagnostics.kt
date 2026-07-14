@@ -5,14 +5,13 @@ import cat.rumb.app.BuildConfig
 import cat.rumb.app.RumbApplication
 import cat.rumb.app.data.map.OfflineMap
 import cat.rumb.app.data.map.OfflineMapStore
-import cat.rumb.app.data.opentracks.OpenTracksRecording
 import cat.rumb.app.data.prefs.ViewerPreferences
 import java.util.Locale
 
 /**
  * Full diagnostic report for the debug button: app version, base map, the active follow route (loaded
- * point count + bounds), offline maps/sectors, viewer options, and OpenTracks recording detection.
- * Suspend because it reads the route GPX from the DB.
+ * point count + bounds), offline maps/sectors and viewer options. Suspend because it reads the route
+ * GPX from the DB.
  */
 suspend fun buildDiagnostics(context: Context): String {
     val prefs = ViewerPreferences.get(context)
@@ -57,10 +56,6 @@ suspend fun buildDiagnostics(context: Context): String {
     sb.appendLine("pantalla encesa: ${prefs.keepScreenOn} · completa: ${prefs.fullscreen}")
     sb.appendLine("unitats: ${prefs.distanceUnit} / ${prefs.elevationUnit} / ${prefs.speedUnit}")
     sb.appendLine("color ruta: ${prefs.followColor} · gruix: ${prefs.followWidth}")
-
-    sb.appendLine()
-    sb.appendLine("== Gravació OpenTracks ==")
-    sb.append(OpenTracksRecording.detectionReport(context))
 
     return sb.toString().trim()
 }

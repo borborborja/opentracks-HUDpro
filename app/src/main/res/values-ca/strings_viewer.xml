@@ -37,7 +37,6 @@
 
     <!-- Toasts -->
     <string name="viewer_toast_location_permission_record">Cal el permís d\'ubicació per gravar</string>
-    <string name="viewer_toast_native_recording_active">Gravació pròpia en curs; tauler d\'OpenTracks ignorat</string>
     <string name="viewer_toast_activity_no_points">Activitat sense punts, descartada</string>
     <string name="viewer_toast_activity_saved">Activitat desada</string>
     <string name="viewer_toast_follow_route_empty">Ruta a seguir buida (id=%1$d)</string>

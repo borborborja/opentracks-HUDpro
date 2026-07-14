@@ -95,7 +95,6 @@
     <string name="settings_debug_section">Debugging</string>
     <string name="settings_debug_log_button">Debug log (full log)</string>
     <string name="settings_debug_full">Full diagnostics</string>
-    <string name="settings_debug_test_recording">Test starting a recording</string>
     <string name="settings_debug_copy">Copy diagnostics</string>
     <string name="settings_about">About</string>
     <string name="settings_about_desc">Rumb — GPS activity recorder with live HUD, ICGC maps and Endurain sync.</string>
