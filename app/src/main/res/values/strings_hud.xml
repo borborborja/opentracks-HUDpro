@@ -25,5 +25,10 @@
     <string name="hudel_record">Recording</string>
     <string name="hudel_clock">Clock</string>
     <string name="metric_ghost_delta">Ghost</string>
+    <string name="metric_ghost_seconds">Ghost (time)</string>
     <string name="metric_calories">Calories</string>
+    <string name="metric_lap_count">Lap</string>
+    <string name="metric_lap_time">Lap time</string>
+    <string name="metric_lap_distance">Lap dist.</string>
+    <string name="metric_last_lap">Last lap</string>
 </resources>

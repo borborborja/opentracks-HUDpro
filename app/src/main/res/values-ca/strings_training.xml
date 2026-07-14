@@ -14,6 +14,8 @@
     <string name="training_stat_avg_power">Potència mitjana</string>
     <string name="training_action_duplicate_route">Duplica a rutes per seguir</string>
     <string name="training_action_export">Exporta (GPX)</string>
+    <string name="training_laps_title">Voltes</string>
+    <string name="training_lap_n">Volta %1$d</string>
     <string name="training_action_rename">Canvia el nom</string>
     <string name="training_action_type">Tipus d\'activitat</string>
     <string name="training_action_move">Mou a una carpeta</string>

@@ -47,6 +47,13 @@ data class RecorderState(
     val isFinished: Boolean = false,
     /** True when the first point was accepted only after relaxing the precision gate (poor GPS). */
     val startedLowAccuracy: Boolean = false,
+    /** Laps: active state, count, current-lap deltas, last completed lap, and the boundary marks. */
+    val lapsActive: Boolean = false,
+    val lapCount: Int = 0,
+    val currentLapDistanceM: Double = 0.0,
+    val currentLapTimeMs: Long = 0L,
+    val lastLapMs: Long? = null,
+    val lapMarks: List<LapMark> = emptyList(),
 ) {
     val isRecording: Boolean get() = !isFinished
     fun points(): List<Trackpoint> = segments.flatten()
@@ -98,6 +105,14 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
     private var warmupGoodFixes = 0
     private var warmupFirstFixTime: Instant? = null
     private var startedLowAccuracy = false
+
+    // Laps (manual, orthogonal to pause-segments). The approach before the first START is not a lap.
+    private var lapsActive = false
+    private var lapCount = 0
+    private var lapStartDistanceM = 0.0
+    private var lapStartTotalMs = 0L
+    private var lastLapMs: Long? = null
+    private val lapMarks = mutableListOf<LapMark>()
 
     fun start(time: Instant) {
         check(startedAt == null) { "already started" }
@@ -289,6 +304,56 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         return point
     }
 
+    private fun totalMs(now: Instant): Long = (accumulatedActive + activeDuration(now)).inWholeMilliseconds
+
+    /**
+     * Lap button: the first press starts lap 1 (the preceding stretch is approach, not counted);
+     * every later press closes the current lap and opens the next. Boundary = the next point's seq.
+     */
+    fun lap(now: Instant) {
+        if (finished) return
+        if (!lapsActive) { startLaps(now); return }
+        lastLapMs = totalMs(now) - lapStartTotalMs
+        lapMarks.add(LapMark(seq, distanceM, totalMs(now), LapMarkType.SPLIT))
+        lapCount++
+        lapStartDistanceM = distanceM
+        lapStartTotalMs = totalMs(now)
+        DebugLog.i("Motor", "vuelta $lapCount · última ${lastLapMs}ms")
+    }
+
+    /** Explicitly begins the lap block (also invoked by the first [lap] press). */
+    fun startLaps(now: Instant) {
+        if (finished || lapsActive) return
+        lapsActive = true
+        lapCount = 1
+        lastLapMs = null
+        lapStartDistanceM = distanceM
+        lapStartTotalMs = totalMs(now)
+        lapMarks.add(LapMark(seq, distanceM, totalMs(now), LapMarkType.START))
+        DebugLog.i("Motor", "vueltas iniciadas · vuelta 1")
+    }
+
+    /** Ends the lap block: closes the current lap; what follows is the return (not a lap). */
+    fun endLaps(now: Instant) {
+        if (finished || !lapsActive) return
+        lastLapMs = totalMs(now) - lapStartTotalMs
+        lapMarks.add(LapMark(seq, distanceM, totalMs(now), LapMarkType.END))
+        lapsActive = false
+        DebugLog.i("Motor", "fin de vueltas · $lapCount vueltas")
+    }
+
+    /** Reloads lap state after a crash (marks persisted alongside the points). */
+    fun restoreLaps(marks: List<LapMark>) {
+        if (marks.isEmpty()) return
+        lapMarks.clear(); lapMarks.addAll(marks)
+        val opens = marks.count { it.type == LapMarkType.START || it.type == LapMarkType.SPLIT }
+        lapCount = opens
+        val last = marks.last()
+        lapsActive = last.type != LapMarkType.END
+        lapStartDistanceM = last.distanceM
+        lapStartTotalMs = last.totalMs
+    }
+
     fun pause(time: Instant) {
         if (paused || finished) return
         accumulatedActive += activeDuration(time)
@@ -347,6 +412,12 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         return RecorderState(
             segments = segments, statistics = stats, isPaused = paused, isFinished = finished,
             startedLowAccuracy = startedLowAccuracy,
+            lapsActive = lapsActive,
+            lapCount = lapCount,
+            currentLapDistanceM = if (lapsActive) distanceM - lapStartDistanceM else 0.0,
+            currentLapTimeMs = if (lapsActive) total.inWholeMilliseconds - lapStartTotalMs else 0L,
+            lastLapMs = lastLapMs,
+            lapMarks = lapMarks.toList(),
         )
     }
 

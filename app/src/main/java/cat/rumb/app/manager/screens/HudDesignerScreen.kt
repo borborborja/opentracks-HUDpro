@@ -157,7 +157,10 @@ fun HudDesignerScreen(onBack: () -> Unit) {
 }
 
 /** Competition-only HUD elements: addable always, but only rendered mid-competition. */
-private val HUD_COMPETITION_IDS = setOf(HudCatalog.idOf(cat.rumb.app.viewer.hud.HudMetric.GHOST_DELTA))
+private val HUD_COMPETITION_IDS = setOf(
+    HudCatalog.idOf(cat.rumb.app.viewer.hud.HudMetric.GHOST_DELTA),
+    HudCatalog.idOf(cat.rumb.app.viewer.hud.HudMetric.GHOST_SECONDS),
+)
 
 /** Tabbed add-widgets sheet: General (elements by category) / Competició / Ajustes (presets + size). */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)

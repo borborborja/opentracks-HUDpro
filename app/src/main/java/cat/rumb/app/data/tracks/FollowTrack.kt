@@ -61,6 +61,8 @@ data class FollowTrackEntity(
     val archived: Boolean = false,
     /** On competition references: the whole competition is archived (membership is kept). */
     @ColumnInfo(name = "competition_archived") val competitionArchived: Boolean = false,
+    /** Lap ranges (JSON of [cat.rumb.app.data.tracks.LapRange]); null/blank = no laps. */
+    val laps: String? = null,
 )
 
 /** Projection for the municipality backfill queue. */
@@ -75,7 +77,7 @@ interface FollowTrackDao {
     @Query(
         "SELECT id, name, collection, source, distance_meters, point_count, created_at, remote_id, kind, " +
             "activity_type, municipality, ascent_m, start_lat, start_lon, meta_done, " +
-            "is_competition, competition_ref_id, duration_ms, archived, competition_archived, '' AS gpx " +
+            "is_competition, competition_ref_id, duration_ms, archived, competition_archived, laps, '' AS gpx " +
             "FROM follow_tracks ORDER BY created_at DESC",
     )
     fun observeSummaries(): Flow<List<FollowTrackEntity>>
@@ -137,6 +139,9 @@ interface FollowTrackDao {
     @Query("UPDATE follow_tracks SET competition_ref_id = NULL WHERE id = :id")
     suspend fun clearCompetitionRef(id: Long)
 
+    @Query("UPDATE follow_tracks SET laps = :laps WHERE id = :id")
+    suspend fun setLaps(id: Long, laps: String?)
+
     /** Dissolves a competition: unflags the reference and unlinks every attempt. Tracks stay. */
     @Query("UPDATE follow_tracks SET competition_ref_id = NULL WHERE competition_ref_id = :refId")
     suspend fun unlinkAttempts(refId: Long)
@@ -148,7 +153,7 @@ interface FollowTrackDao {
         cat.rumb.app.data.recording.RecordingEntity::class,
         cat.rumb.app.data.recording.RecordingPointEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -157,6 +162,14 @@ abstract class RumbDatabase : RoomDatabase() {
     abstract fun recordingDao(): cat.rumb.app.data.recording.RecordingDao
 
     companion object {
+        /** v7: manual laps — boundary marks on recordings, lap ranges on saved tracks. */
+        val MIGRATION_6_7 = object : androidx.room.migration.Migration(6, 7) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE follow_tracks ADD COLUMN laps TEXT")
+                db.execSQL("ALTER TABLE recordings ADD COLUMN laps TEXT")
+            }
+        }
+
         /** v6: per-track archive + archived competitions. */
         val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {

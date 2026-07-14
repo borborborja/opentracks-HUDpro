@@ -14,6 +14,8 @@
     <string name="training_stat_avg_power">Avg power</string>
     <string name="training_action_duplicate_route">Duplicate to routes to follow</string>
     <string name="training_action_export">Export (GPX)</string>
+    <string name="training_laps_title">Laps</string>
+    <string name="training_lap_n">Lap %1$d</string>
     <string name="training_action_rename">Rename</string>
     <string name="training_action_type">Activity type</string>
     <string name="training_action_move">Move to folder</string>

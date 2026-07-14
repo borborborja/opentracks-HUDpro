@@ -25,5 +25,10 @@
     <string name="hudel_record">Gravació</string>
     <string name="hudel_clock">Rellotge</string>
     <string name="metric_ghost_delta">Fantasma</string>
+    <string name="metric_ghost_seconds">Fantasma (temps)</string>
     <string name="metric_calories">Calories</string>
+    <string name="metric_lap_count">Volta</string>
+    <string name="metric_lap_time">Temps volta</string>
+    <string name="metric_lap_distance">Dist. volta</string>
+    <string name="metric_last_lap">Última volta</string>
 </resources>

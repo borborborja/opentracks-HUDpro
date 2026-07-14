@@ -22,6 +22,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import java.time.Instant
 import java.util.Locale
 
@@ -54,6 +56,8 @@ class RecordingService : Service() {
             ACTION_PAUSE -> doPause(manual = true)
             ACTION_RESUME -> doResume(manual = true)
             ACTION_STOP -> finish()
+            ACTION_LAP -> doLap()
+            ACTION_END_LAPS -> doEndLaps()
             ACTION_REFRESH_AUTOPAUSE -> refreshAutoPauseFromPrefs()
             // null action = sticky restart after process death: resume the persisted recording.
             null -> restoreAfterDeath()
@@ -99,6 +103,9 @@ class RecordingService : Service() {
             val stored = dao.points(active.id)
             val r = TrackRecorder(configFrom(prefs))
             r.restore(stored.toSegments(), Instant.ofEpochMilli(active.startedAt), Instant.now())
+            active.laps?.let { raw ->
+                runCatching { LAP_JSON.decodeFromString<List<LapMark>>(raw) }.getOrNull()?.let { r.restoreLaps(it) }
+            }
             recorder = r
             recordingId = active.id
             segmentIndex = (stored.maxOfOrNull { it.segment } ?: 0) + 1
@@ -165,6 +172,32 @@ class RecordingService : Service() {
         publish()
         updateNotification(force = true)
         if (manual) DebugLog.i("Record", "pausa manual")
+    }
+
+    private fun doLap() {
+        val r = recorder ?: return
+        r.lap(Instant.now())
+        persistLaps()
+        publish()
+        updateNotification(force = true)
+    }
+
+    private fun doEndLaps() {
+        val r = recorder ?: return
+        r.endLaps(Instant.now())
+        persistLaps()
+        publish()
+        updateNotification(force = true)
+    }
+
+    /** Persists the current lap boundary marks so they survive a process death mid-recording. */
+    private fun persistLaps() {
+        val marks = recorder?.snapshot(Instant.now())?.lapMarks ?: return
+        val id = recordingId ?: return
+        val json = runCatching { LAP_JSON.encodeToString(marks) }.getOrNull()
+        scope.launch {
+            runCatching { RumbApplication.from(this@RecordingService).database.recordingDao().setLaps(id, json) }
+        }
     }
 
     private fun doResume(manual: Boolean) {
@@ -358,14 +391,19 @@ class RecordingService : Service() {
         private const val ACTION_PAUSE = "cat.rumb.app.recording.PAUSE"
         private const val ACTION_RESUME = "cat.rumb.app.recording.RESUME"
         private const val ACTION_STOP = "cat.rumb.app.recording.STOP"
+        private const val ACTION_LAP = "cat.rumb.app.recording.LAP"
+        private const val ACTION_END_LAPS = "cat.rumb.app.recording.END_LAPS"
         private const val ACTION_REFRESH_AUTOPAUSE = "cat.rumb.app.recording.REFRESH_AUTOPAUSE"
         private const val CHANNEL = "recording"
         private const val NOTIF_ID = 4243
+        private val LAP_JSON = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
 
         fun start(context: Context) = send(context, ACTION_START)
         fun pause(context: Context) = send(context, ACTION_PAUSE)
         fun resume(context: Context) = send(context, ACTION_RESUME)
         fun stop(context: Context) = send(context, ACTION_STOP)
+        fun lap(context: Context) = send(context, ACTION_LAP)
+        fun endLaps(context: Context) = send(context, ACTION_END_LAPS)
 
         /**
          * If a recording finished but the process died before the user saved it, its rows survive in

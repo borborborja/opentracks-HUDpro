@@ -16,6 +16,9 @@ data class HudControls(
     val onStopRecording: () -> Unit = {},
     val onPauseRecording: () -> Unit = {},
     val onResumeRecording: () -> Unit = {},
+    // Laps (manual): mark a lap (first press starts the lap block) / end the lap block.
+    val onLap: () -> Unit = {},
+    val onEndLaps: () -> Unit = {},
 ) {
     companion object {
         val disabled = HudControls()

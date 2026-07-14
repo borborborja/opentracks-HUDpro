@@ -187,6 +187,8 @@ class TrackRepository(
             cat.rumb.app.data.map.RouteCoverageCalculator.boundingBox(loadRoute(id))
         }
 
+    suspend fun setLaps(id: Long, laps: String?) = withContext(Dispatchers.IO) { dao.setLaps(id, laps) }
+
     suspend fun delete(id: Long) = withContext(Dispatchers.IO) {
         // If this track is a competition reference, unlink its attempts first so they don't keep a
         // dangling competition_ref_id pointing at a now-deleted row (would resurface as stale

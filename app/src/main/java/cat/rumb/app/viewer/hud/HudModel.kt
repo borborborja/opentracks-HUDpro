@@ -25,7 +25,12 @@ enum class HudMetric(val labelRes: Int) {
     REMAINING(cat.rumb.app.R.string.metric_remaining),
     OFF_ROUTE(cat.rumb.app.R.string.metric_off_route),
     GHOST_DELTA(cat.rumb.app.R.string.metric_ghost_delta),
+    GHOST_SECONDS(cat.rumb.app.R.string.metric_ghost_seconds),
     CALORIES(cat.rumb.app.R.string.metric_calories),
+    LAP_COUNT(cat.rumb.app.R.string.metric_lap_count),
+    LAP_TIME(cat.rumb.app.R.string.metric_lap_time),
+    LAP_DISTANCE(cat.rumb.app.R.string.metric_lap_distance),
+    LAST_LAP(cat.rumb.app.R.string.metric_last_lap),
     ;
 
     /** Formatted value string for [m] under [u] (defaults to metric). */
@@ -48,7 +53,12 @@ enum class HudMetric(val labelRes: Int) {
         REMAINING -> fmt2(m.remainingDistanceKm?.let { u.distance.fromKm(it) })
         OFF_ROUTE -> fmt0(m.offRouteMeters?.let { u.elevation.fromMeters(it) })
         GHOST_DELTA -> m.ghostDeltaMeters?.let { if (it >= 0) "+${it.toInt()}" else "${it.toInt()}" } ?: "—"
+        GHOST_SECONDS -> m.ghostSecondsEst?.let { val s = it.roundToInt(); if (s >= 0) "+$s" else "$s" } ?: "—"
         CALORIES -> m.caloriesKcal?.toString() ?: "—"
+        LAP_COUNT -> m.lapCount.takeIf { it > 0 }?.toString() ?: "—"
+        LAP_TIME -> fmtDurationN(m.currentLapTime)
+        LAP_DISTANCE -> fmt2(m.currentLapDistanceKm?.let { u.distance.fromKm(it) })
+        LAST_LAP -> fmtDurationN(m.lastLapTime)
     }
 
     /** Unit label under [u] (defaults to metric). Empty for unit-less metrics (durations). */
@@ -65,7 +75,11 @@ enum class HudMetric(val labelRes: Int) {
         CADENCE -> "rpm"
         POWER -> "W"
         GHOST_DELTA -> "m"
+        GHOST_SECONDS -> "s"
         CALORIES -> "kcal"
+        LAP_COUNT -> ""
+        LAP_TIME, LAST_LAP -> ""
+        LAP_DISTANCE -> u.distance.label
     }
 
     companion object {
@@ -89,6 +103,7 @@ enum class HudMetric(val labelRes: Int) {
             val sec = s % 60
             return if (h > 0) "%d:%02d:%02d".format(h, m, sec) else "%d:%02d".format(m, sec)
         }
+        private fun fmtDurationN(d: Duration?): String = d?.let { fmtDuration(it) } ?: "—"
     }
 }
 

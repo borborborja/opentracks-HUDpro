@@ -25,5 +25,10 @@
     <string name="hudel_record">Grabación</string>
     <string name="hudel_clock">Reloj</string>
     <string name="metric_ghost_delta">Fantasma</string>
+    <string name="metric_ghost_seconds">Fantasma (tiempo)</string>
     <string name="metric_calories">Calorías</string>
+    <string name="metric_lap_count">Vuelta</string>
+    <string name="metric_lap_time">Tiempo vuelta</string>
+    <string name="metric_lap_distance">Dist. vuelta</string>
+    <string name="metric_last_lap">Última vuelta</string>
 </resources>

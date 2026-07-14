@@ -19,6 +19,8 @@ data class RecordingEntity(
     @ColumnInfo(name = "started_at") val startedAt: Long,
     /** RECORDING | FINISHED. */
     val state: String = "RECORDING",
+    /** Lap boundary marks (JSON of [LapMark]); null = no laps. Persisted for crash recovery. */
+    val laps: String? = null,
 )
 
 @Entity(tableName = "recording_points")
@@ -90,6 +92,9 @@ interface RecordingDao {
 
     @Query("UPDATE recordings SET state = :state WHERE id = :id")
     suspend fun setState(id: Long, state: String)
+
+    @Query("UPDATE recordings SET laps = :laps WHERE id = :id")
+    suspend fun setLaps(id: Long, laps: String?)
 
     @Query("DELETE FROM recording_points WHERE recording_id = :id")
     suspend fun deletePoints(id: Long)

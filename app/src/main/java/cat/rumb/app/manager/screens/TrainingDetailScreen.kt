@@ -83,6 +83,8 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit) {
     var entity by remember { mutableStateOf<FollowTrackEntity?>(null) }
     var stats by remember { mutableStateOf<TrackStats?>(null) }
     var samples by remember { mutableStateOf<List<TrackSample>>(emptyList()) }
+    var points by remember { mutableStateOf<List<cat.rumb.app.data.gpx.GpxPoint>>(emptyList()) }
+    var laps by remember { mutableStateOf<List<cat.rumb.app.data.tracks.LapRange>>(emptyList()) }
     var controller by remember { mutableStateOf<RouteEditorController?>(null) }
     var reloadTick by remember { mutableStateOf(0) }
 
@@ -97,13 +99,16 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit) {
     var highlight by remember { mutableStateOf<Float?>(null) }
 
     LaunchedEffect(trackId, reloadTick) {
-        entity = app.trackRepository.get(trackId)
-        val points = app.trackRepository.loadGpxRoute(trackId)
+        val e = app.trackRepository.get(trackId)
+        entity = e
+        val pts = app.trackRepository.loadGpxRoute(trackId)
         val (s, smp) = withContext(Dispatchers.Default) {
-            TrackStatsCalculator.compute(points) to TrackStatsCalculator.samples(points)
+            TrackStatsCalculator.compute(pts) to TrackStatsCalculator.samples(pts)
         }
         stats = s
         samples = smp
+        points = pts
+        laps = cat.rumb.app.data.tracks.Laps.decode(e?.laps)
     }
     // Draw the track once both the map and the data are ready; repaint when the paint mode changes.
     var framed by remember(trackId) { mutableStateOf(false) }
@@ -290,6 +295,21 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit) {
                 if (h != null) {
                     nearestSample(h)?.let { sample -> ScrubInfoCard(sample, samples.firstOrNull()?.time) }
                 }
+
+                val lapList = laps.filter { it.kind == cat.rumb.app.data.tracks.LapKind.LAP }
+                if (lapList.isNotEmpty() && points.size >= 2) {
+                    LapsSection(
+                        laps = lapList,
+                        points = points,
+                        onExportLap = { lap ->
+                            val slice = points.subList(lap.startIdx.coerceIn(0, points.size), lap.endIdx.coerceIn(0, points.size))
+                            if (slice.size >= 2) {
+                                val lapName = "${entity?.name ?: "track"} · ${context.getString(R.string.training_lap_n, lap.index)}"
+                                GpxShare.share(context, lapName, cat.rumb.app.data.gpx.Gpx.write(lapName, slice))
+                            }
+                        },
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
             }
         }
@@ -411,6 +431,61 @@ private fun difficultyColor(d: Difficulty): Color = when (d) {
     Difficulty.MODERATE -> Color(0xFFF4A261)
     Difficulty.HARD -> Color(0xFFE76F51)
     Difficulty.VERY_HARD -> Color(0xFFE63946)
+}
+
+/** Per-lap subtracks: mini-stats of each lap (a slice of the parent track) + export its GPX. */
+@Composable
+private fun LapsSection(
+    laps: List<cat.rumb.app.data.tracks.LapRange>,
+    points: List<cat.rumb.app.data.gpx.GpxPoint>,
+    onExportLap: (cat.rumb.app.data.tracks.LapRange) -> Unit,
+) {
+    val perLap = remember(points, laps) {
+        laps.map { it to TrackStatsCalculator.compute(points.subList(it.startIdx.coerceIn(0, points.size), it.endIdx.coerceIn(0, points.size))) }
+    }
+    Text(
+        stringResource(R.string.training_laps_title),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(top = 4.dp),
+    )
+    perLap.forEach { (lap, s) ->
+        Card(Modifier.fillMaxWidth()) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.training_lap_n, lap.index),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    )
+                    Text(
+                        lapStatsLine(s),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                IconButton(onClick = { onExportLap(lap) }) {
+                    Icon(Icons.Filled.IosShare, contentDescription = stringResource(R.string.training_action_export))
+                }
+            }
+        }
+    }
+}
+
+private fun lapStatsLine(s: TrackStats): String {
+    val km = s.distanceM / 1000.0
+    val dur = s.movingTime ?: s.totalTime
+    val secs = dur?.seconds ?: 0
+    val time = if (secs >= 3600) "%d:%02d:%02d".format(secs / 3600, (secs % 3600) / 60, secs % 60)
+    else "%d:%02d".format(secs / 60, secs % 60)
+    val speed = s.avgSpeedKmh
+    return buildString {
+        append("%.2f km".format(km))
+        append(" · ").append(time)
+        if (speed != null) append(" · ").append("%.1f km/h".format(speed))
+    }
 }
 
 @Composable

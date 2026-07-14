@@ -40,7 +40,7 @@ enum class DataToggle(val id: String, val labelRes: Int, val liveEffect: Boolean
 }
 
 /** Metrics that are only meaningful mid-competition; addable always but rendered only when competing. */
-val COMPETITION_FIELDS: Set<String> = setOf(HudMetric.GHOST_DELTA.name)
+val COMPETITION_FIELDS: Set<String> = setOf(HudMetric.GHOST_DELTA.name, HudMetric.GHOST_SECONDS.name)
 
 /** Which add-menu tab a Dades field id belongs to. */
 fun dataTabOf(id: String): DataTab = when {

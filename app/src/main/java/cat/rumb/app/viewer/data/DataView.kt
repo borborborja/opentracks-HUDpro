@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.FlagCircle
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
@@ -83,6 +85,8 @@ fun DataView(
     onStopRecording: () -> Unit = {},
     onPauseRecording: () -> Unit = {},
     onResumeRecording: () -> Unit = {},
+    onLap: () -> Unit = {},
+    onEndLaps: () -> Unit = {},
     onToggleSetting: (DataToggle, Boolean) -> Unit = { _, _ -> },
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -176,10 +180,13 @@ fun DataView(
         RecordBar(
             isRecording = data.metrics.isRecording,
             isPaused = data.isPaused,
+            lapsActive = data.metrics.lapsActive,
             onStart = onStartRecording,
             onStop = onStopRecording,
             onPause = onPauseRecording,
             onResume = onResumeRecording,
+            onLap = onLap,
+            onEndLaps = onEndLaps,
             modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
         )
     }
@@ -305,15 +312,18 @@ fun SettingsToggleTile(label: String, hint: String?, checked: Boolean, onChange:
     }
 }
 
-/** Fixed bottom record control: start when idle; pause/resume + stop while recording. */
+/** Fixed bottom record control: start when idle; pause/resume + stop + lap while recording. */
 @Composable
 private fun RecordBar(
     isRecording: Boolean,
     isPaused: Boolean,
+    lapsActive: Boolean,
     onStart: () -> Unit,
     onStop: () -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
+    onLap: () -> Unit,
+    onEndLaps: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -329,6 +339,17 @@ private fun RecordBar(
                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.size(28.dp),
                 )
+            }
+            // Lap controls only while actively recording (not paused): mark a lap / end the block.
+            if (!isPaused) {
+                RecordFab(MaterialTheme.colorScheme.primary, onLap) {
+                    Icon(Icons.Filled.Flag, contentDescription = androidx.compose.ui.res.stringResource(R.string.data_record_lap), tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(26.dp))
+                }
+                if (lapsActive) {
+                    RecordFab(MaterialTheme.colorScheme.tertiaryContainer, onEndLaps) {
+                        Icon(Icons.Filled.FlagCircle, contentDescription = androidx.compose.ui.res.stringResource(R.string.data_record_lap_end), tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(26.dp))
+                    }
+                }
             }
             RecordFab(RecordRed, onStop) {
                 Icon(Icons.Filled.Stop, contentDescription = androidx.compose.ui.res.stringResource(R.string.rec_action_stop), tint = Color.White, modifier = Modifier.size(28.dp))

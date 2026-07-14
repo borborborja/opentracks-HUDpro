@@ -3,6 +3,7 @@ package cat.rumb.app.viewer
 import android.os.Build
 import android.content.Intent
 import android.os.Bundle
+import kotlin.time.Duration.Companion.milliseconds
 import android.util.Log
 import android.view.WindowManager
 import android.widget.FrameLayout
@@ -251,6 +252,8 @@ class MapViewerActivity : ComponentActivity() {
                         onStopRecording = controls.onStopRecording,
                         onPauseRecording = controls.onPauseRecording,
                         onResumeRecording = controls.onResumeRecording,
+                        onLap = controls.onLap,
+                        onEndLaps = controls.onEndLaps,
                         onToggleSetting = { t, b -> onDataToggle(t, b) },
                     )
                 }
@@ -619,6 +622,8 @@ class MapViewerActivity : ComponentActivity() {
             },
             onPauseRecording = { if (NativeRecording.isActive) RecordingService.pause(this) },
             onResumeRecording = { if (NativeRecording.isActive) RecordingService.resume(this) },
+            onLap = { if (NativeRecording.isActive) RecordingService.lap(this) },
+            onEndLaps = { if (NativeRecording.isActive) RecordingService.endLaps(this) },
         )
     }
 
@@ -739,21 +744,26 @@ class MapViewerActivity : ComponentActivity() {
     /** Persists a finished native recording: library entry + GPX + Endurain upload. */
     private fun saveNativeRecording(state: RecorderState, name: String, folder: String, activityType: String?) {
         lifecycleScope.launch {
-            val pts = state.points()
-                .filter { it.latLong != null && !it.isPause }
-                .map {
-                    GpxPoint(
-                        it.latLong!!.latitude, it.latLong.longitude, it.altitude, it.time,
-                        heartRate = it.heartRate, cadence = it.cadence, power = it.power,
-                    )
-                }
+            val kept = state.points().filter { it.latLong != null && !it.isPause }
+            val pts = kept.map {
+                GpxPoint(
+                    it.latLong!!.latitude, it.latLong.longitude, it.altitude, it.time,
+                    heartRate = it.heartRate, cadence = it.cadence, power = it.power,
+                )
+            }
             if (pts.size >= 2) {
-                RumbApplication.from(this@MapViewerActivity).trackRepository.insertRoute(
+                val newId = RumbApplication.from(this@MapViewerActivity).trackRepository.insertRoute(
                     name, pts, cat.rumb.app.data.tracks.TrackSource.RECORDED, remoteId = null,
                     kind = cat.rumb.app.data.tracks.TrackKind.TRAINING,
                     collection = folder, activityType = activityType,
                     competitionRefId = competitionRefId.takeIf { competing },
                 )
+                // Persist lap ranges (boundary marks → point indices in the saved list).
+                val ranges = cat.rumb.app.data.tracks.Laps.fromMarks(state.lapMarks, kept.map { it.id })
+                if (ranges.isNotEmpty()) {
+                    RumbApplication.from(this@MapViewerActivity).trackRepository
+                        .setLaps(newId, cat.rumb.app.data.tracks.Laps.encode(ranges))
+                }
                 if (folder != "General") {
                     val p = cat.rumb.app.data.prefs.ViewerPreferences.get(this@MapViewerActivity)
                     p.foldersTraining = p.foldersTraining + folder
@@ -954,7 +964,7 @@ class MapViewerActivity : ComponentActivity() {
                     lowAccuracyToastShown = true
                     android.widget.Toast.makeText(this@MapViewerActivity, getString(R.string.rec_low_accuracy_start), android.widget.Toast.LENGTH_LONG).show()
                 }
-                processUpdate(s.segments, emptyList(), s.statistics, s.isRecording, ctrl, isPaused = s.isPaused)
+                processUpdate(s.segments, emptyList(), s.statistics, s.isRecording, ctrl, isPaused = s.isPaused, lapSnapshot = s)
                 if (s.isFinished && saveDialogFlow.value == null) {
                     DebugLog.i("Record", "finalitzada · ${s.points().size} punts → diàleg de desar")
                     if (s.points().any { it.latLong != null }) {
@@ -978,6 +988,7 @@ class MapViewerActivity : ComponentActivity() {
         recording: Boolean,
         ctrl: MapLibreController,
         isPaused: Boolean = false,
+        lapSnapshot: cat.rumb.app.data.recording.RecorderState? = null,
     ) {
         lastSegments = segs
         lastWaypoints = wps
@@ -1068,6 +1079,17 @@ class MapViewerActivity : ComponentActivity() {
                 null, weightKg, java.time.Duration.ofMillis(metrics.movingTime.inWholeMilliseconds),
             ).takeIf { recording },
         )
+
+        // Laps (native engine only): current-lap deltas + last lap for the lap tiles.
+        lapSnapshot?.let { ls ->
+            metrics = metrics.copy(
+                lapsActive = ls.lapsActive,
+                lapCount = ls.lapCount,
+                currentLapDistanceKm = if (ls.lapsActive) ls.currentLapDistanceM / 1000.0 else null,
+                currentLapTime = if (ls.lapsActive) ls.currentLapTimeMs.milliseconds else null,
+                lastLapTime = ls.lastLapMs?.milliseconds,
+            )
+        }
 
         if (recording) handleAnnouncements(metrics)
 

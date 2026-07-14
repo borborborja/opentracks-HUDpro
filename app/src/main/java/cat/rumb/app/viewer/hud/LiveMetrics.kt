@@ -39,6 +39,12 @@ data class LiveMetrics(
     val ghostSecondsEst: Double? = null,
     // MET-based calorie estimate (null when not recording).
     val caloriesKcal: Int? = null,
+    // Laps (manual). Current-lap values are null until the lap block is started.
+    val lapsActive: Boolean = false,
+    val lapCount: Int = 0,
+    val currentLapDistanceKm: Double? = null,
+    val currentLapTime: Duration? = null,
+    val lastLapTime: Duration? = null,
 )
 
 /** Optional source of instantaneous altitude for a coordinate (e.g. a DEM tile sampler). */
