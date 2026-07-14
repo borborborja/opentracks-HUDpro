@@ -221,6 +221,15 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getFloat(KEY_TRACKING_SIZE, 1.0f)
         set(value) = prefs.edit().putFloat(KEY_TRACKING_SIZE, value).apply()
 
+    // --- Online map cache (MapLibre ambient cache) + route prefetch ---
+    var mapCacheSizeMb: Int
+        get() = prefs.getInt(KEY_MAP_CACHE_MB, 200)
+        set(value) = prefs.edit().putInt(KEY_MAP_CACHE_MB, value).apply()
+
+    var prefetchOnFollow: Boolean
+        get() = prefs.getBoolean(KEY_PREFETCH_ON_FOLLOW, true)
+        set(value) = prefs.edit().putBoolean(KEY_PREFETCH_ON_FOLLOW, value).apply()
+
     // --- Off-route alert ---
     var offRouteThresholdM: Int
         get() = prefs.getInt(KEY_OFFROUTE_THRESHOLD, 40)
@@ -333,6 +342,8 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_TRACKING_STYLE = "tracking_point_style"
         private const val KEY_TRACKING_COLOR = "tracking_point_color"
         private const val KEY_TRACKING_SIZE = "tracking_point_size"
+        private const val KEY_MAP_CACHE_MB = "map_cache_size_mb"
+        private const val KEY_PREFETCH_ON_FOLLOW = "prefetch_on_follow"
         private const val KEY_OFFROUTE_THRESHOLD = "offroute_threshold"
         private const val KEY_OFFROUTE_SOUND = "offroute_sound"
         private const val KEY_OFFROUTE_VIBRATE = "offroute_vibrate"

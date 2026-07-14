@@ -9,6 +9,7 @@
     <string name="rec_action_stop">Detener</string>
     <string name="dl_notif_channel">Descarga de mapas</string>
     <string name="dl_notif_title">Descargando mapa offline</string>
+    <string name="prefetch_notif_title">Descargando mapa de la ruta</string>
     <string name="dl_notif_progress">%1$d / %2$d teselas</string>
     <string name="ot_not_found">No se ha encontrado OpenTracks con la API pública. Instálalo y actívala.</string>
     <string name="ot_launch_failed">No se ha podido abrir OpenTracks. Activa su «API pública» en sus ajustes.</string>

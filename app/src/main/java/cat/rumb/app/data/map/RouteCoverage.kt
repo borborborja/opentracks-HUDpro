@@ -31,6 +31,30 @@ object RouteCoverageCalculator {
         return BoundingBox(west = w - marginDeg, south = s - marginDeg, east = e + marginDeg, north = n + marginDeg)
     }
 
+    /**
+     * Splits a route into per-segment bounding boxes (~[chunkKm] each) so prefetching a long linear
+     * track downloads a corridor of small boxes instead of one huge diagonal rectangle. Consecutive
+     * chunks share their boundary point for continuity. Pure/unit-testable.
+     */
+    fun corridorBoxes(points: List<GeoPoint>, chunkKm: Double = 8.0, marginDeg: Double = MARGIN_DEG): List<BoundingBox> {
+        if (points.size < 2) return listOfNotNull(boundingBox(points, marginDeg))
+        val chunkM = chunkKm * 1000.0
+        val out = mutableListOf<BoundingBox>()
+        var chunk = mutableListOf(points[0])
+        var acc = 0.0
+        for (i in 1 until points.size) {
+            acc += cat.rumb.app.viewer.hud.MetricsCalculator.distanceMeters(points[i - 1], points[i])
+            chunk.add(points[i])
+            if (acc >= chunkM) {
+                boundingBox(chunk, marginDeg)?.let { out.add(it) }
+                chunk = mutableListOf(points[i]) // overlap by the boundary point
+                acc = 0.0
+            }
+        }
+        if (chunk.size >= 2) boundingBox(chunk, marginDeg)?.let { out.add(it) }
+        return out
+    }
+
     fun coverage(points: List<GeoPoint>, maps: List<OfflineMap>): RouteCoverage {
         if (points.isEmpty()) return RouteCoverage(CoverageStatus.NONE, 0f, emptyList())
         val boxed = maps.mapNotNull { m -> m.bounds?.takeIf { it.size == 4 }?.let { m.name to it } }

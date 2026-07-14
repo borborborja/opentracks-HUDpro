@@ -54,6 +54,11 @@ class RumbApplication : Application() {
                 }
                 .build(),
         )
+        // Apply the user's online-map (ambient) tile-cache budget so browsing caches within it.
+        cat.rumb.app.data.map.MapCache.applyAmbientSize(
+            this,
+            cat.rumb.app.data.prefs.ViewerPreferences.get(this).mapCacheSizeMb,
+        )
         // Backfill ascent/start/municipality for tracks saved before DB v4 (and pending geocodes).
         cat.rumb.app.data.tracks.TrackMetadataBackfillWorker.enqueue(this)
     }

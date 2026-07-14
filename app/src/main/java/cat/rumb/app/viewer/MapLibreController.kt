@@ -541,6 +541,9 @@ class MapLibreController(private val map: MapLibreMap) {
             lc.isLocationComponentEnabled = true
             lc.cameraMode = org.maplibre.android.location.modes.CameraMode.NONE
             lc.renderMode = org.maplibre.android.location.modes.RenderMode.COMPASS
+            // Predictive prefetch: proactively fetch surrounding parent tiles into the ambient cache
+            // so panning/moving (without a followed track) shows the next area from cache.
+            runCatching { map.setPrefetchZoomDelta(4) }
         }
     }
 

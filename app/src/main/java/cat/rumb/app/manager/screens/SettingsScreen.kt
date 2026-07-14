@@ -75,6 +75,7 @@ private val TABS = listOf(
     R.string.settings_tab_sync,
     R.string.settings_tab_appearance,
     R.string.settings_tab_route,
+    R.string.settings_tab_map,
     R.string.settings_tab_audio,
     R.string.settings_tab_activity_types,
     R.string.settings_tab_app,
@@ -103,8 +104,9 @@ fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}, onOpenSe
                     2 -> SyncSection()
                     3 -> TrackAppearanceSection(prefs)
                     4 -> FollowRouteSection(prefs)
-                    5 -> AudioAnnouncementsSection(prefs)
-                    6 -> ActivityTypesSection(prefs)
+                    5 -> MapSection(prefs)
+                    6 -> AudioAnnouncementsSection(prefs)
+                    7 -> ActivityTypesSection(prefs)
                     else -> AppSection(onOpenDebugLog)
                 }
             }
@@ -484,6 +486,41 @@ private fun TrackAppearanceSection(prefs: ViewerPreferences) {
 }
 
 // --- Follow route + off-route alert (moved from the HUD designer) ---
+
+@Composable
+private fun MapSection(prefs: ViewerPreferences) {
+    val context = LocalContext.current
+    var cacheMb by remember { mutableFloatStateOf(prefs.mapCacheSizeMb.toFloat()) }
+    var prefetch by remember { mutableStateOf(prefs.prefetchOnFollow) }
+
+    Text(stringResource(R.string.settings_map_cache), style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.settings_map_cache_size, cacheMb.toInt()), style = MaterialTheme.typography.bodySmall)
+    Slider(
+        value = cacheMb,
+        onValueChange = { cacheMb = it },
+        onValueChangeFinished = {
+            prefs.mapCacheSizeMb = cacheMb.toInt()
+            cat.rumb.app.data.map.MapCache.applyAmbientSize(context, cacheMb.toInt())
+        },
+        valueRange = 100f..2000f,
+        steps = 18,
+    )
+    OutlinedButton(
+        onClick = {
+            cat.rumb.app.data.map.MapCache.clearAmbient(context)
+            android.widget.Toast.makeText(context, context.getString(R.string.settings_map_cache_cleared), android.widget.Toast.LENGTH_SHORT).show()
+        },
+        modifier = Modifier.fillMaxWidth(),
+    ) { Text(stringResource(R.string.settings_map_clear_cache)) }
+
+    Text(stringResource(R.string.settings_map_prefetch), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    ToggleRow(stringResource(R.string.settings_map_prefetch_follow), prefetch) { prefetch = it; prefs.prefetchOnFollow = it }
+    Text(
+        stringResource(R.string.settings_map_prefetch_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
 
 @Composable
 private fun FollowRouteSection(prefs: ViewerPreferences) {

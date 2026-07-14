@@ -136,6 +136,11 @@ class RegionDownloadWorker(context: Context, params: WorkerParameters) : Corouti
                         KEY_W to bbox.west, KEY_S to bbox.south, KEY_E to bbox.east, KEY_N to bbox.north,
                     ),
                 )
+                .setConstraints(
+                    androidx.work.Constraints.Builder()
+                        .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                        .build(),
+                )
                 .addTag(WORK_NAME)
                 .build()
             WorkManager.getInstance(context).enqueueUniqueWork(

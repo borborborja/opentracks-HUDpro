@@ -953,10 +953,35 @@ class MapViewerActivity : ComponentActivity() {
                 // camera isn't yanked off the athlete's position.
                 if (frame) ctrl.frameFollowRoute()
                 DebugLog.i("Follow", "dibuixada · ${geo.size} punts · ${ctrl.followDebug()}")
+                maybePrefetchRoute(prefs, ctrl, id)
             } else {
                 DebugLog.w("Follow", "ruta buida (id=$id): loadGpxRoute ha tornat 0 punts")
             }
         }
+    }
+
+    private var prefetchedRouteKey: String? = null
+
+    /**
+     * Auto-downloads the followed route's map tiles (a corridor) into the current online source's
+     * offline archive so the whole track works without coverage. Only for an online raster base map,
+     * when connected, once per (route, source), and if the user enabled route prefetch.
+     */
+    private fun maybePrefetchRoute(prefs: ViewerPreferences, ctrl: MapLibreController, trackId: Long) {
+        if (!prefs.prefetchOnFollow) return
+        val baseMapId = prefs.baseMapId
+        if (baseMapId?.startsWith(cat.rumb.app.data.map.OfflineMap.OFFLINE_PREFIX) == true) return // already offline
+        val src = MapSource.byId(baseMapId)
+        if (src.kind != MapSource.Kind.RASTER) return
+        val key = "$trackId:${src.id}"
+        if (prefetchedRouteKey == key) return
+        if (!cat.rumb.app.data.map.Connectivity.isOnline(this)) return
+        prefetchedRouteKey = key
+        val z = ctrl.currentZoom.toInt()
+        val minZ = maxOf(10, z - 1)
+        val maxZ = maxOf(minZ, minOf(src.maxZoom, z + 1))
+        DebugLog.i("Prefetch", "encuant ruta $trackId · ${src.id} · zoom $minZ-$maxZ")
+        cat.rumb.app.data.map.RoutePrefetchWorker.enqueue(this, trackId, src.id, minZ, maxZ)
     }
 
     /**

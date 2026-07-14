@@ -10,6 +10,14 @@
     <string name="settings_tab_sync">Sync</string>
     <string name="settings_tab_appearance">Appearance</string>
     <string name="settings_tab_route">Route</string>
+    <string name="settings_tab_map">Maps</string>
+    <string name="settings_map_cache">Online map cache</string>
+    <string name="settings_map_cache_size">Cache size: %1$d MB</string>
+    <string name="settings_map_clear_cache">Clear cache</string>
+    <string name="settings_map_cache_cleared">Cache cleared</string>
+    <string name="settings_map_prefetch">Route prefetch</string>
+    <string name="settings_map_prefetch_follow">Download the map when following a route</string>
+    <string name="settings_map_prefetch_hint">Downloads the whole route\'s tiles when you start following it (any connection), so it works without coverage.</string>
     <string name="settings_tab_audio">Audio</string>
     <string name="settings_tab_activity_types">Types</string>
     <string name="settings_tab_app">App</string>

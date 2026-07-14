@@ -10,6 +10,14 @@
     <string name="settings_tab_sync">Sincronització</string>
     <string name="settings_tab_appearance">Aparença</string>
     <string name="settings_tab_route">Ruta</string>
+    <string name="settings_tab_map">Mapes</string>
+    <string name="settings_map_cache">Cache de mapes online</string>
+    <string name="settings_map_cache_size">Mida de la cache: %1$d MB</string>
+    <string name="settings_map_clear_cache">Buida la cache</string>
+    <string name="settings_map_cache_cleared">Cache buidada</string>
+    <string name="settings_map_prefetch">Precàrrega de ruta</string>
+    <string name="settings_map_prefetch_follow">Baixa el mapa en seguir una ruta</string>
+    <string name="settings_map_prefetch_hint">Baixa les tessel·les de tota la ruta en començar a seguir-la (qualsevol connexió), perquè funcioni sense cobertura.</string>
     <string name="settings_tab_audio">Àudio</string>
     <string name="settings_tab_activity_types">Tipus</string>
     <string name="settings_tab_app">App</string>
