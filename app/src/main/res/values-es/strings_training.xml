@@ -16,6 +16,8 @@
     <string name="training_action_export">Exportar (GPX)</string>
     <string name="training_sync_title">Sincronización</string>
     <string name="training_sync_now">Sincronizar ahora</string>
+    <string name="training_resync_title">¿Volver a subir?</string>
+    <string name="training_resync_message">Esta actividad ya se había subido. Volver a subirla puede crear un duplicado en el servidor.</string>
     <string name="training_laps_title">Vueltas</string>
     <string name="laps_edit">Editar vueltas</string>
     <string name="laps_edit_hint">Arrastra un tirador para mover el límite de una vuelta.</string>

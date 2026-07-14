@@ -16,6 +16,8 @@
     <string name="training_action_export">Export (GPX)</string>
     <string name="training_sync_title">Sync</string>
     <string name="training_sync_now">Sync now</string>
+    <string name="training_resync_title">Upload again?</string>
+    <string name="training_resync_message">This activity was already uploaded. Uploading again may create a duplicate on the server.</string>
     <string name="training_laps_title">Laps</string>
     <string name="laps_edit">Edit laps</string>
     <string name="laps_edit_hint">Drag a handle to move a lap boundary.</string>

@@ -278,7 +278,7 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
                 }
 
                 if (cat.rumb.app.data.sync.SyncTargets.anyConfigured(context)) {
-                    TrainingSyncRow(trackId, entity?.name ?: "", points, entity?.activityType)
+                    TrainingSyncRow(trackId, entity?.name ?: "", points, laps, entity?.activityType)
                 }
 
                 if (samples.size >= 2) {
@@ -427,6 +427,7 @@ private fun TrainingSyncRow(
     trackId: Long,
     name: String,
     points: List<cat.rumb.app.data.gpx.GpxPoint>,
+    laps: List<cat.rumb.app.data.tracks.LapRange>,
     activityType: String?,
 ) {
     val context = LocalContext.current
@@ -434,6 +435,16 @@ private fun TrainingSyncRow(
     val scope = rememberCoroutineScope()
     val rows by app.database.syncStatusDao().forTrack(trackId)
         .collectAsState(initial = emptyList())
+    var confirmResync by remember { mutableStateOf(false) }
+
+    fun doSync() {
+        scope.launch {
+            val built = cat.rumb.app.data.gpx.ActivityFile.build(
+                cat.rumb.app.data.sync.SyncTargets.safeName(name), points, laps, activityType,
+            )
+            cat.rumb.app.data.sync.SyncTargets.enqueueAll(context, trackId, built.fileName, built.content)
+        }
+    }
     val services = buildList {
         if (cat.rumb.app.data.prefs.EndurainPreferences.get(context).isConfigured) {
             add(cat.rumb.app.data.tracks.SyncService.ENDURAIN to "Endurain")
@@ -462,16 +473,24 @@ private fun TrainingSyncRow(
                 }
             }
             TextButton(onClick = {
-                scope.launch {
-                    val gpx = cat.rumb.app.data.gpx.Gpx.write(
-                        name, points, cat.rumb.app.data.tracks.ActivityTypes.gpxType(activityType),
-                    )
-                    cat.rumb.app.data.sync.SyncTargets.enqueueAll(
-                        context, trackId, cat.rumb.app.data.sync.SyncTargets.safeName(name) + ".gpx", gpx,
-                    )
-                }
+                val alreadyUploaded = rows.any { it.status == cat.rumb.app.data.tracks.SyncState.UPLOADED }
+                if (alreadyUploaded) confirmResync = true else doSync()
             }) { Text(stringResource(R.string.training_sync_now)) }
         }
+    }
+
+    if (confirmResync) {
+        AlertDialog(
+            onDismissRequest = { confirmResync = false },
+            title = { Text(stringResource(R.string.training_resync_title)) },
+            text = { Text(stringResource(R.string.training_resync_message)) },
+            confirmButton = {
+                TextButton(onClick = { confirmResync = false; doSync() }) { Text(stringResource(R.string.training_sync_now)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmResync = false }) { Text(stringResource(R.string.training_cancel)) }
+            },
+        )
     }
 }
 

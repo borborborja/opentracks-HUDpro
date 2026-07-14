@@ -44,6 +44,13 @@ object ActivityTypes {
         else -> null
     }
 
+    /** TCX Sport attribute is limited to Running / Biking / Other. */
+    fun tcxSport(id: String?): String = when (id) {
+        RUN, TRAIL_RUN -> "Running"
+        ROAD_BIKE, MTB -> "Biking"
+        else -> "Other"
+    }
+
     private val json = Json { ignoreUnknownKeys = true }
 
     fun decodeCustom(encoded: String?): List<CustomActivityType> =

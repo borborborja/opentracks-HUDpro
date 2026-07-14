@@ -16,6 +16,8 @@
     <string name="training_action_export">Exporta (GPX)</string>
     <string name="training_sync_title">Sincronització</string>
     <string name="training_sync_now">Sincronitza ara</string>
+    <string name="training_resync_title">Tornar a pujar?</string>
+    <string name="training_resync_message">Aquesta activitat ja s\'havia pujat. Tornar a pujar-la pot crear un duplicat al servidor.</string>
     <string name="training_laps_title">Voltes</string>
     <string name="laps_edit">Edita les voltes</string>
     <string name="laps_edit_hint">Arrossega un tirador per moure el límit d\'una volta.</string>

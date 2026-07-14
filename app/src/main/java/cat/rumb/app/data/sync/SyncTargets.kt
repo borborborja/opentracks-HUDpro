@@ -46,20 +46,24 @@ object SyncTargets {
         val failed = app.database.syncStatusDao().failed()
         for (row in failed) {
             val entity = app.trackRepository.get(row.trackId) ?: continue
-            val gpx = entity.gpx.takeIf { it.isNotBlank() } ?: continue
-            val fileName = safeName(entity.name) + ".gpx"
+            val gpxText = entity.gpx.takeIf { it.isNotBlank() } ?: continue
+            val points = runCatching { cat.rumb.app.data.gpx.Gpx.read(gpxText.byteInputStream()).points }
+                .getOrDefault(emptyList())
+            if (points.isEmpty()) continue
+            val laps = cat.rumb.app.data.tracks.Laps.decode(entity.laps)
+            val built = cat.rumb.app.data.gpx.ActivityFile.build(safeName(entity.name), points, laps, entity.activityType)
             when (row.service) {
                 SyncService.ENDURAIN -> {
                     SyncStatusStore.mark(context, row.trackId, SyncService.ENDURAIN, SyncState.PENDING)
-                    EndurainUploadWorker.enqueue(context, gpx, fileName, row.trackId)
+                    EndurainUploadWorker.enqueue(context, built.content, built.fileName, row.trackId)
                 }
                 SyncService.WEBDAV -> {
                     SyncStatusStore.mark(context, row.trackId, SyncService.WEBDAV, SyncState.PENDING)
-                    WebDavUploadWorker.enqueue(context, gpx, fileName, row.trackId)
+                    WebDavUploadWorker.enqueue(context, built.content, built.fileName, row.trackId)
                 }
                 SyncService.FOLDER -> {
                     SyncStatusStore.mark(context, row.trackId, SyncService.FOLDER, SyncState.PENDING)
-                    FolderSaveWorker.enqueue(context, gpx, fileName, row.trackId)
+                    FolderSaveWorker.enqueue(context, built.content, built.fileName, row.trackId)
                 }
             }
         }

@@ -842,10 +842,12 @@ class MapViewerActivity : ComponentActivity() {
                     p.foldersTraining = p.foldersTraining + folder
                 }
                 cat.rumb.app.data.tracks.TrackMetadataBackfillWorker.enqueue(this@MapViewerActivity)
-                val gpx = Gpx.write(name, pts, cat.rumb.app.data.tracks.ActivityTypes.gpxType(activityType))
-                val fileName = cat.rumb.app.data.sync.SyncTargets.safeName(name) + ".gpx"
-                cat.rumb.app.data.sync.SyncTargets.enqueueAll(this@MapViewerActivity, newId, fileName, gpx)
-                DebugLog.i("Record", "desada «$name» · ${pts.size} punts · sync encuat")
+                // TCX (real laps) when the activity has laps, else GPX.
+                val built = cat.rumb.app.data.gpx.ActivityFile.build(
+                    cat.rumb.app.data.sync.SyncTargets.safeName(name), pts, ranges, activityType,
+                )
+                cat.rumb.app.data.sync.SyncTargets.enqueueAll(this@MapViewerActivity, newId, built.fileName, built.content)
+                DebugLog.i("Record", "desada «$name» · ${pts.size} punts · ${built.fileName} · sync encuat")
                 android.widget.Toast.makeText(this@MapViewerActivity, getString(R.string.viewer_toast_activity_saved), android.widget.Toast.LENGTH_SHORT).show()
             }
             // Purge the durable crash-safety rows only now that the track is saved (or too short).
