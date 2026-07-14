@@ -15,6 +15,8 @@
     <string name="training_action_duplicate_route">Duplicar en rutas para seguir</string>
     <string name="training_action_export">Exportar (GPX)</string>
     <string name="training_laps_title">Vueltas</string>
+    <string name="laps_edit">Editar vueltas</string>
+    <string name="laps_edit_hint">Arrastra un tirador para mover el límite de una vuelta.</string>
     <string name="training_lap_n">Vuelta %1$d</string>
     <string name="training_action_compare">Comparar</string>
     <string name="compare_title">Comparar</string>

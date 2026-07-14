@@ -18,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.HorizontalDivider
@@ -97,6 +98,7 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
     var showMove by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
     var highlight by remember { mutableStateOf<Float?>(null) }
+    var editingLaps by remember { mutableStateOf(false) }
 
     LaunchedEffect(trackId, reloadTick) {
         val e = app.trackRepository.get(trackId)
@@ -302,17 +304,47 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
 
                 val lapList = laps.filter { it.kind == cat.rumb.app.data.tracks.LapKind.LAP }
                 if (lapList.isNotEmpty() && points.size >= 2) {
-                    LapsSection(
-                        laps = lapList,
-                        points = points,
-                        onExportLap = { lap ->
-                            val slice = points.subList(lap.startIdx.coerceIn(0, points.size), lap.endIdx.coerceIn(0, points.size))
-                            if (slice.size >= 2) {
-                                val lapName = "${entity?.name ?: "track"} · ${context.getString(R.string.training_lap_n, lap.index)}"
-                                GpxShare.share(context, lapName, cat.rumb.app.data.gpx.Gpx.write(lapName, slice))
-                            }
-                        },
-                    )
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            stringResource(R.string.training_laps_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = { editingLaps = !editingLaps }) {
+                            Icon(
+                                if (editingLaps) Icons.Filled.Close else Icons.Filled.Edit,
+                                contentDescription = stringResource(R.string.laps_edit),
+                            )
+                        }
+                    }
+                    if (editingLaps) {
+                        LapBoundaryEditor(
+                            samples = samples,
+                            points = points,
+                            ranges = laps,
+                            onCancel = { editingLaps = false },
+                            onSave = { newRanges ->
+                                scope.launch {
+                                    app.trackRepository.setLaps(trackId, cat.rumb.app.data.tracks.Laps.encode(newRanges))
+                                    editingLaps = false
+                                    reloadTick++
+                                }
+                            },
+                        )
+                    } else {
+                        LapsSection(
+                            laps = lapList,
+                            points = points,
+                            showTitle = false,
+                            onExportLap = { lap ->
+                                val slice = points.subList(lap.startIdx.coerceIn(0, points.size), lap.endIdx.coerceIn(0, points.size))
+                                if (slice.size >= 2) {
+                                    val lapName = "${entity?.name ?: "track"} · ${context.getString(R.string.training_lap_n, lap.index)}"
+                                    GpxShare.share(context, lapName, cat.rumb.app.data.gpx.Gpx.write(lapName, slice))
+                                }
+                            },
+                        )
+                    }
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -443,15 +475,18 @@ private fun LapsSection(
     laps: List<cat.rumb.app.data.tracks.LapRange>,
     points: List<cat.rumb.app.data.gpx.GpxPoint>,
     onExportLap: (cat.rumb.app.data.tracks.LapRange) -> Unit,
+    showTitle: Boolean = true,
 ) {
     val perLap = remember(points, laps) {
         laps.map { it to TrackStatsCalculator.compute(points.subList(it.startIdx.coerceIn(0, points.size), it.endIdx.coerceIn(0, points.size))) }
     }
-    Text(
-        stringResource(R.string.training_laps_title),
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(top = 4.dp),
-    )
+    if (showTitle) {
+        Text(
+            stringResource(R.string.training_laps_title),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
     perLap.forEach { (lap, s) ->
         Card(Modifier.fillMaxWidth()) {
             Row(

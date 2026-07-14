@@ -15,6 +15,8 @@
     <string name="training_action_duplicate_route">Duplica a rutes per seguir</string>
     <string name="training_action_export">Exporta (GPX)</string>
     <string name="training_laps_title">Voltes</string>
+    <string name="laps_edit">Edita les voltes</string>
+    <string name="laps_edit_hint">Arrossega un tirador per moure el límit d\'una volta.</string>
     <string name="training_lap_n">Volta %1$d</string>
     <string name="training_action_compare">Compara</string>
     <string name="compare_title">Compara</string>
