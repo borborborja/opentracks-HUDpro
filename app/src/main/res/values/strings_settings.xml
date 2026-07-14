@@ -171,4 +171,11 @@
     <string name="settings_max_hr_help">Used for the competition heart-rate zone analysis.</string>
     <string name="settings_weight">Weight: %1$d kg</string>
     <string name="settings_weight_help">Used for the calorie estimate.</string>
+    <string name="settings_age">Age: %1$d years</string>
+    <string name="settings_age_unset">Age: not set</string>
+    <string name="settings_sex">Sex</string>
+    <string name="settings_sex_unset">Not set</string>
+    <string name="settings_sex_male">Male</string>
+    <string name="settings_sex_female">Female</string>
+    <string name="settings_calories_hr_help">With age and sex, calories are estimated from your heart rate (more accurate). Otherwise a MET estimate from activity type and weight is used.</string>
 </resources>

@@ -3,8 +3,9 @@ package cat.rumb.app.data.tracks
 import java.time.Duration
 
 /**
- * MET-based calorie estimate: kcal = MET × weight(kg) × active hours. Coarse by design — good
- * enough for trends without needing age/sex; per-type MET values from the Compendium of PA.
+ * Calorie estimate. When average heart rate + age + sex are known it uses the Keytel (2005)
+ * HR-based formula (more accurate for a given effort); otherwise it falls back to the MET model
+ * (kcal = MET × weight(kg) × active hours), which needs only the activity type + weight.
  */
 object Calories {
 
@@ -24,9 +25,31 @@ object Calories {
 
     fun metFor(activityType: String?): Double = MET[activityType] ?: DEFAULT_MET
 
-    /** Estimated kcal for [movingTime] of [activityType] at [weightKg]. 0 when time is unknown. */
-    fun kcal(activityType: String?, weightKg: Int, movingTime: Duration?): Int {
-        val hours = (movingTime?.toMillis() ?: 0L) / 3_600_000.0
+    /**
+     * Estimated kcal for [movingTime]. Uses the Keytel HR formula when [avgHr] > 0 and both
+     * [ageYears] > 0 and [sex] ("M"/"F") are known; otherwise the MET model. 0 when time is unknown.
+     */
+    fun kcal(
+        activityType: String?,
+        weightKg: Int,
+        movingTime: Duration?,
+        avgHr: Double? = null,
+        ageYears: Int = 0,
+        sex: String? = null,
+    ): Int {
+        val minutes = (movingTime?.toMillis() ?: 0L) / 60_000.0
+        if (minutes <= 0.0) return 0
+        if (avgHr != null && avgHr > 0.0 && ageYears > 0 && (sex == "M" || sex == "F")) {
+            // Keytel et al. 2005: kcal/min from HR, weight, age, sex (÷4.184 kJ→kcal).
+            val perMin = if (sex == "M") {
+                (-55.0969 + 0.6309 * avgHr + 0.1988 * weightKg + 0.2017 * ageYears) / 4.184
+            } else {
+                (-20.4022 + 0.4472 * avgHr - 0.1263 * weightKg + 0.074 * ageYears) / 4.184
+            }
+            val kc = perMin * minutes
+            if (kc > 0.0) return kc.toInt()
+        }
+        val hours = minutes / 60.0
         return (metFor(activityType) * weightKg * hours).toInt()
     }
 }

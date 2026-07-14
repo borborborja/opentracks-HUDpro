@@ -20,7 +20,16 @@ object Tcx {
      * slice's stats; an empty [laps] yields a single lap over all points. Requires the first point to
      * carry a time (TCX Id/StartTime are xsd:dateTime) — callers should fall back to GPX otherwise.
      */
-    fun write(name: String, points: List<GpxPoint>, laps: List<LapRange>, sport: String): String {
+    fun write(
+        name: String,
+        points: List<GpxPoint>,
+        laps: List<LapRange>,
+        activityType: String?,
+        weightKg: Int = 0,
+        ageYears: Int = 0,
+        sex: String? = null,
+    ): String {
+        val sport = cat.rumb.app.data.tracks.ActivityTypes.tcxSport(activityType)
         val startTime = points.firstOrNull()?.time?.toString() ?: "1970-01-01T00:00:00Z"
         // Cumulative distance (m) per point, for each Trackpoint's DistanceMeters.
         val cum = DoubleArray(points.size)
@@ -48,7 +57,14 @@ object Tcx {
             sw.append("        <TotalTimeSeconds>").append(secs).append("</TotalTimeSeconds>\n")
             sw.append(fmt("        <DistanceMeters>%.1f</DistanceMeters>%n", st.distanceM))
             st.maxSpeedKmh?.let { sw.append(fmt("        <MaximumSpeed>%.2f</MaximumSpeed>%n", it / 3.6)) }
-            sw.append("        <Calories>0</Calories>\n")
+            val kcal = if (weightKg > 0) {
+                cat.rumb.app.data.tracks.Calories.kcal(
+                    activityType, weightKg, st.movingTime ?: st.totalTime, st.avgHr, ageYears, sex,
+                )
+            } else {
+                0
+            }
+            sw.append("        <Calories>").append(kcal).append("</Calories>\n")
             st.avgHr?.let { sw.append("        <AverageHeartRateBpm><Value>").append(it.toInt()).append("</Value></AverageHeartRateBpm>\n") }
             st.maxHr?.let { sw.append("        <MaximumHeartRateBpm><Value>").append(it.toInt()).append("</Value></MaximumHeartRateBpm>\n") }
             sw.append("        <Intensity>Active</Intensity>\n")

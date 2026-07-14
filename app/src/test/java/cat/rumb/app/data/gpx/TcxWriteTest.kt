@@ -19,16 +19,19 @@ class TcxWriteTest {
             LapRange(1, 0, 3, LapKind.LAP),
             LapRange(2, 3, 6, LapKind.LAP),
         )
-        val tcx = Tcx.write("Sortida", points, laps, "Running")
+        val tcx = Tcx.write("Sortida", points, laps, cat.rumb.app.data.tracks.ActivityTypes.RUN, weightKg = 70, ageYears = 30, sex = "M")
         assertThat(countOf(tcx, "<Lap ")).isEqualTo(2)
         assertThat(tcx).contains("<TotalTimeSeconds>").contains("<DistanceMeters>")
         assertThat(tcx).contains("Sport=\"Running\"")
+        // Calories come from weight+HR (HR=140 present in the points), so must be > 0.
+        assertThat(tcx).doesNotContain("<Calories>0</Calories>")
     }
 
     @Test
     fun noLapsEmitsSingleLap() {
-        val tcx = Tcx.write("Sortida", pts(4), emptyList(), "Other")
+        val tcx = Tcx.write("Sortida", pts(4), emptyList(), null)
         assertThat(countOf(tcx, "<Lap ")).isEqualTo(1)
+        assertThat(tcx).contains("Sport=\"Other\"")
     }
 
     @Test

@@ -171,4 +171,11 @@
     <string name="settings_max_hr_help">S\'usa per a l\'anàlisi de zones de FC de competició.</string>
     <string name="settings_weight">Pes: %1$d kg</string>
     <string name="settings_weight_help">S\'usa per a l\'estimació de calories.</string>
+    <string name="settings_age">Edat: %1$d anys</string>
+    <string name="settings_age_unset">Edat: sense definir</string>
+    <string name="settings_sex">Sexe</string>
+    <string name="settings_sex_unset">Sense definir</string>
+    <string name="settings_sex_male">Home</string>
+    <string name="settings_sex_female">Dona</string>
+    <string name="settings_calories_hr_help">Amb edat i sexe, les calories s\'estimen a partir de la freqüència cardíaca (més precís). Si no, s\'usa una estimació MET pel tipus d\'activitat i el pes.</string>
 </resources>

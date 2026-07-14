@@ -273,7 +273,10 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
                 entity?.let { e -> TrainingHeader(e, custom) }
 
                 stats?.let { s ->
-                    val kcal = Calories.kcal(entity?.activityType, prefs.userWeightKg, s.movingTime ?: s.totalTime)
+                    val kcal = Calories.kcal(
+                        entity?.activityType, prefs.userWeightKg, s.movingTime ?: s.totalTime,
+                        s.avgHr, prefs.userAge, prefs.userSex,
+                    )
                     StatsCard(s, kcal)
                 }
 
@@ -439,8 +442,10 @@ private fun TrainingSyncRow(
 
     fun doSync() {
         scope.launch {
+            val up = ViewerPreferences.get(context)
             val built = cat.rumb.app.data.gpx.ActivityFile.build(
                 cat.rumb.app.data.sync.SyncTargets.safeName(name), points, laps, activityType,
+                up.userWeightKg, up.userAge, up.userSex,
             )
             cat.rumb.app.data.sync.SyncTargets.enqueueAll(context, trackId, built.fileName, built.content)
         }

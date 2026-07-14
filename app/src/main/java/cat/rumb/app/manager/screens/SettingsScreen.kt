@@ -334,6 +334,8 @@ private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit
     var barometer by remember { mutableStateOf(prefs.recBarometer) }
     var maxHr by remember { mutableIntStateOf(prefs.userMaxHr) }
     var weight by remember { mutableIntStateOf(prefs.userWeightKg) }
+    var age by remember { mutableIntStateOf(prefs.userAge) }
+    var sex by remember { mutableStateOf(prefs.userSex) }
 
     Text(stringResource(R.string.settings_rec_gps_interval), style = MaterialTheme.typography.labelLarge)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -399,6 +401,28 @@ private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit
     )
     Text(
         stringResource(R.string.settings_weight_help),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
+    )
+    Text(
+        if (age > 0) stringResource(R.string.settings_age, age) else stringResource(R.string.settings_age_unset),
+        style = MaterialTheme.typography.labelLarge,
+        modifier = Modifier.padding(top = 8.dp),
+    )
+    Slider(
+        value = age.toFloat(),
+        onValueChange = { age = it.toInt(); prefs.userAge = age },
+        valueRange = 0f..99f,
+        steps = 98,
+    )
+    Text(stringResource(R.string.settings_sex), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf("" to R.string.settings_sex_unset, "M" to R.string.settings_sex_male, "F" to R.string.settings_sex_female).forEach { (code, label) ->
+            FilterChip(selected = sex == code, onClick = { sex = code; prefs.userSex = code }, label = { Text(stringResource(label)) })
+        }
+    }
+    Text(
+        stringResource(R.string.settings_calories_hr_help),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )

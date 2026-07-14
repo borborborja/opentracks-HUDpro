@@ -171,4 +171,11 @@
     <string name="settings_max_hr_help">Se usa para el análisis de zonas de FC de competición.</string>
     <string name="settings_weight">Peso: %1$d kg</string>
     <string name="settings_weight_help">Se usa para la estimación de calorías.</string>
+    <string name="settings_age">Edad: %1$d años</string>
+    <string name="settings_age_unset">Edad: sin definir</string>
+    <string name="settings_sex">Sexo</string>
+    <string name="settings_sex_unset">Sin definir</string>
+    <string name="settings_sex_male">Hombre</string>
+    <string name="settings_sex_female">Mujer</string>
+    <string name="settings_calories_hr_help">Con edad y sexo, las calorías se estiman a partir de la frecuencia cardíaca (más preciso). Si no, se usa una estimación MET por tipo de actividad y peso.</string>
 </resources>

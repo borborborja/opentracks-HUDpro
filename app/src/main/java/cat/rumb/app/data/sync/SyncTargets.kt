@@ -51,7 +51,10 @@ object SyncTargets {
                 .getOrDefault(emptyList())
             if (points.isEmpty()) continue
             val laps = cat.rumb.app.data.tracks.Laps.decode(entity.laps)
-            val built = cat.rumb.app.data.gpx.ActivityFile.build(safeName(entity.name), points, laps, entity.activityType)
+            val up = cat.rumb.app.data.prefs.ViewerPreferences.get(context)
+            val built = cat.rumb.app.data.gpx.ActivityFile.build(
+                safeName(entity.name), points, laps, entity.activityType, up.userWeightKg, up.userAge, up.userSex,
+            )
             when (row.service) {
                 SyncService.ENDURAIN -> {
                     SyncStatusStore.mark(context, row.trackId, SyncService.ENDURAIN, SyncState.PENDING)

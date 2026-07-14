@@ -181,6 +181,16 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getInt(KEY_USER_MAX_HR, 190)
         set(value) = prefs.edit().putInt(KEY_USER_MAX_HR, value).apply()
 
+    /** User's age (years); 0 = unknown. With sex, enables the HR-based calorie estimate. */
+    var userAge: Int
+        get() = prefs.getInt(KEY_USER_AGE, 0)
+        set(value) = prefs.edit().putInt(KEY_USER_AGE, value).apply()
+
+    /** "M", "F" or "" (unknown). With age, enables the HR-based calorie estimate. */
+    var userSex: String
+        get() = prefs.getString(KEY_USER_SEX, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_USER_SEX, value).apply()
+
     /** MAC addresses of paired BLE fitness sensors (heart rate / cadence / power). */
     var bleSensorAddrs: Set<String>
         get() = prefs.getStringSet(KEY_BLE_SENSORS, emptySet()) ?: emptySet()
@@ -333,6 +343,8 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_COMPETITION_HALO = "competition_halo"
         private const val KEY_COMPETITION_SECONDS = "competition_seconds"
         private const val KEY_USER_MAX_HR = "user_max_hr"
+        private const val KEY_USER_AGE = "user_age"
+        private const val KEY_USER_SEX = "user_sex"
         private const val KEY_TURN_VOICE = "turn_voice"
         private const val KEY_DESKTOP_PORT = "desktop_server_port"
         private const val KEY_USER_WEIGHT = "user_weight_kg"
