@@ -163,6 +163,12 @@ class MapViewerActivity : ComponentActivity() {
     private var wasRecording = false
     private var uploadedThisSession = false
 
+    // Pre-warm the GPS while the viewer is open so tapping record acquires a precise fix almost
+    // instantly (the chip is already hot). Stopped on pause and when the recording service takes over.
+    private var warmGps: cat.rumb.app.data.recording.GpsSource? = null
+    @Volatile private var lastWarmAccuracyM: Float? = null
+    @Volatile private var lastWarmLocation: cat.rumb.app.data.opentracks.model.GeoPoint? = null
+
     // Competition (ghost race) mode: race a previously recorded reference or one of its attempts.
     private var competing = false
     private var competitionRefId = -1L
@@ -600,28 +606,38 @@ class MapViewerActivity : ComponentActivity() {
         if (countdownOn) startWithCountdown(ctrl) else doStartNativeRecording(ctrl)
     }
 
+    /** Best current GPS accuracy (m): prefers the hot warm-GPS fix, falls back to the map component. */
+    private fun bestAccuracyM(ctrl: MapLibreController): Float? {
+        val warm = lastWarmAccuracyM
+        val comp = ctrl.currentAccuracyM(this)
+        return listOfNotNull(warm, comp).minOrNull()
+    }
+
     /**
-     * 3-2-1-GO! countdown, gated on GPS precision: no digit shows until the fix is at least as
-     * precise as the engine's warm-up gate (12 m), so the first fix after GO! isn't rejected.
-     * Tapping the overlay cancels (countdownFlow → null, checked at every step).
+     * 3-2-1-GO! countdown, gated on GPS precision. Waits for ≤12 m, then relaxes to ≤25 m after
+     * [GPS_RELAX_MS]; at [GPS_WAIT_TIMEOUT_MS] it starts anyway with whatever fix there is (never
+     * leaves you unable to record) — warning about low accuracy. Tapping the overlay cancels.
      */
     private fun startWithCountdown(ctrl: MapLibreController) {
         lifecycleScope.launch {
             countdownFlow.value = -1
             DebugLog.i("Record", "compte enrere: esperant GPS")
-            val deadline = android.os.SystemClock.elapsedRealtime() + GPS_WAIT_TIMEOUT_MS
+            val started = android.os.SystemClock.elapsedRealtime()
+            var lowAccuracy = false
             while (true) {
                 if (countdownFlow.value == null) return@launch // cancelled
-                val acc = ctrl.currentAccuracyM(this@MapViewerActivity)
-                if (acc != null && acc <= COUNTDOWN_ACCURACY_M) {
-                    DebugLog.i("Record", "compte enrere: GPS ok (${acc}m)")
+                val acc = bestAccuracyM(ctrl)
+                val waited = android.os.SystemClock.elapsedRealtime() - started
+                val gate = if (waited >= GPS_RELAX_MS) MAX_ACCURACY_M else COUNTDOWN_ACCURACY_M
+                if (acc != null && acc <= gate) {
+                    lowAccuracy = acc > COUNTDOWN_ACCURACY_M
+                    DebugLog.i("Record", "compte enrere: GPS ok (${acc}m, gate ${gate}m)")
                     break
                 }
-                if (android.os.SystemClock.elapsedRealtime() > deadline) {
-                    countdownFlow.value = null
-                    android.widget.Toast.makeText(this@MapViewerActivity, getString(R.string.countdown_gps_timeout), android.widget.Toast.LENGTH_LONG).show()
-                    DebugLog.w("Record", "compte enrere abandonat: sense fix precís (últim: ${acc}m)")
-                    return@launch
+                if (waited > GPS_WAIT_TIMEOUT_MS) {
+                    lowAccuracy = true
+                    DebugLog.w("Record", "compte enrere: timeout, s'inicia igualment (últim: ${acc}m)")
+                    break
                 }
                 kotlinx.coroutines.delay(500)
             }
@@ -634,6 +650,9 @@ class MapViewerActivity : ComponentActivity() {
             if (countdownFlow.value == null) return@launch
             countdownFlow.value = 0
             AlertFeedback.beeps(2)
+            if (lowAccuracy) {
+                android.widget.Toast.makeText(this@MapViewerActivity, getString(R.string.rec_low_accuracy_start), android.widget.Toast.LENGTH_LONG).show()
+            }
             doStartNativeRecording(ctrl)
             kotlinx.coroutines.delay(700)
             countdownFlow.value = null
@@ -642,6 +661,7 @@ class MapViewerActivity : ComponentActivity() {
 
     private fun doStartNativeRecording(ctrl: MapLibreController) {
         if (NativeRecording.isActive) return
+        stopWarmGps() // the recording service takes over GPS; avoid two concurrent requests
         requestNotificationPermission()
         DebugLog.i("Record", "native start")
         RecordingService.start(this)
@@ -879,11 +899,19 @@ class MapViewerActivity : ComponentActivity() {
     }
 
     /** Native engine source: consumes the in-process recording service. */
+    private var lowAccuracyToastShown = false
+
     private fun observeNative(ctrl: MapLibreController) {
         observeJob?.cancel()
+        lowAccuracyToastShown = false
         observeJob = lifecycleScope.launch {
             cat.rumb.app.data.recording.NativeRecording.state.collect { s ->
                 if (s == null) return@collect
+                // Warned once if the engine had to relax its precision gate to start (poor GPS).
+                if (s.startedLowAccuracy && !lowAccuracyToastShown) {
+                    lowAccuracyToastShown = true
+                    android.widget.Toast.makeText(this@MapViewerActivity, getString(R.string.rec_low_accuracy_start), android.widget.Toast.LENGTH_LONG).show()
+                }
                 processUpdate(s.segments, emptyList(), s.statistics, s.isRecording, ctrl, isPaused = s.isPaused)
                 if (s.isFinished && saveDialogFlow.value == null) {
                     DebugLog.i("Record", "finalitzada · ${s.points().size} punts → diàleg de desar")
@@ -1087,8 +1115,25 @@ class MapViewerActivity : ComponentActivity() {
         // Pick up layout changes made in the editors (pencil button) while we were paused.
         hudLayoutFlow.value = HudLayoutStore.load(ViewerPreferences.get(this))
         dataReloadFlow.value++
+        startWarmGps()
     }
-    override fun onPause() { mapView.onPause(); super.onPause() }
+    override fun onPause() { stopWarmGps(); mapView.onPause(); super.onPause() }
+
+    /** Warms the GPS chip while the viewer is foregrounded and not yet recording. */
+    private fun startWarmGps() {
+        if (warmGps != null || NativeRecording.isActive || !hasLocationPermission()) return
+        val gps = cat.rumb.app.data.recording.GpsSource(this)
+        val ok = gps.start(intervalMs = 1000L) { loc ->
+            lastWarmAccuracyM = if (loc.hasAccuracy()) loc.accuracy else null
+            lastWarmLocation = cat.rumb.app.data.opentracks.model.GeoPoint(loc.latitude, loc.longitude)
+        }
+        if (ok) { warmGps = gps; DebugLog.i("Record", "pre-escalfament GPS actiu") } else gps.stop()
+    }
+
+    private fun stopWarmGps() {
+        warmGps?.stop()
+        warmGps = null
+    }
     override fun onStop() { mapView.onStop(); super.onStop() }
     override fun onLowMemory() { super.onLowMemory(); mapView.onLowMemory() }
     override fun onSaveInstanceState(outState: Bundle) { super.onSaveInstanceState(outState); mapView.onSaveInstanceState(outState) }
@@ -1108,6 +1153,9 @@ class MapViewerActivity : ComponentActivity() {
 
         /** Countdown GPS gate: same threshold as the engine warm-up (RecorderConfig.startAccuracyM). */
         private const val COUNTDOWN_ACCURACY_M = 12f
+        /** After this the countdown gate relaxes to [MAX_ACCURACY_M] (matches the engine safety net). */
+        private const val GPS_RELAX_MS = 20_000L
+        private const val MAX_ACCURACY_M = 25f
         private const val GPS_WAIT_TIMEOUT_MS = 30_000L
 
         /** Within this distance of the reference start, the competition pre-start pill turns green. */

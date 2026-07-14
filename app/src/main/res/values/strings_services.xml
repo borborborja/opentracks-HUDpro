@@ -13,4 +13,5 @@
     <string name="ot_not_found">OpenTracks with the public API was not found. Install it and enable the API.</string>
     <string name="ot_launch_failed">Could not open OpenTracks. Enable its \u0022Public API\u0022 setting.</string>
     <string name="share_export_title">Export \u0022%1$s\u0022</string>
+    <string name="rec_low_accuracy_start">Started with low GPS accuracy</string>
 </resources>

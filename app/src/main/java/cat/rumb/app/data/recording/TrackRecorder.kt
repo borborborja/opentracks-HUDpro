@@ -28,8 +28,10 @@ data class RecorderConfig(
     val altitudeSmoothing: Double = 0.3,
     /** GPS warm-up: the track's first point requires fixes at least this precise (m). */
     val startAccuracyM: Float = 12f,
-    /** GPS warm-up: consecutive precise fixes required before the first point is accepted. */
+    /** GPS warm-up: good fixes required before the first point is accepted (not strictly consecutive). */
     val startGoodFixes: Int = 2,
+    /** Safety net: after this long waiting for the warm-up, relax the gate up to [maxAccuracyM]. */
+    val relaxAfterMs: Long = 20_000,
     /**
      * Stationary-jitter gate: a leg shorter than accuracy × this factor is movement within the
      * fix's own uncertainty circle and is discarded (prevents phantom distance while stopped).
@@ -43,6 +45,8 @@ data class RecorderState(
     val statistics: TrackStatistics = TrackStatistics(),
     val isPaused: Boolean = false,
     val isFinished: Boolean = false,
+    /** True when the first point was accepted only after relaxing the precision gate (poor GPS). */
+    val startedLowAccuracy: Boolean = false,
 ) {
     val isRecording: Boolean get() = !isFinished
     fun points(): List<Trackpoint> = segments.flatten()
@@ -92,6 +96,8 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
     // GPS warm-up: no point is accepted until the fix quality stabilizes (see RecorderConfig).
     private var warmedUp = false
     private var warmupGoodFixes = 0
+    private var warmupFirstFixTime: Instant? = null
+    private var startedLowAccuracy = false
 
     fun start(time: Instant) {
         check(startedAt == null) { "already started" }
@@ -188,18 +194,22 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         }
 
         // Warm-up gate: the very first point of the track needs a stable, precise fix, otherwise
-        // the cold-start scatter gets recorded as a zigzag with phantom distance.
+        // the cold-start scatter gets recorded as a zigzag with phantom distance. The gate relaxes
+        // from startAccuracyM up to maxAccuracyM after relaxAfterMs so bad-sky conditions still
+        // start eventually (flagged as low accuracy) instead of never recording. The good-fix
+        // counter is monotonic — a worse fix doesn't reset progress, it just doesn't count.
         if (!warmedUp) {
-            if (accuracyM <= config.startAccuracyM) {
+            val firstFix = warmupFirstFixTime ?: time.also { warmupFirstFixTime = it }
+            val waitedMs = java.time.Duration.between(firstFix, time).toMillis()
+            val gate = if (waitedMs >= config.relaxAfterMs) config.maxAccuracyM else config.startAccuracyM
+            if (accuracyM <= gate) {
                 warmupGoodFixes++
-                DebugLog.d("Motor", "warm-up: fix bo $warmupGoodFixes/${config.startGoodFixes} (${fmt(accuracyM)}m)")
-            } else {
-                if (warmupGoodFixes > 0) DebugLog.d("Motor", "warm-up reiniciat (${fmt(accuracyM)}m > ${config.startAccuracyM}m)")
-                warmupGoodFixes = 0
+                DebugLog.d("Motor", "warm-up: fix bo $warmupGoodFixes/${config.startGoodFixes} (${fmt(accuracyM)}m, gate ${fmt(gate)}m)")
             }
             if (warmupGoodFixes < config.startGoodFixes) return null
             warmedUp = true
-            DebugLog.i("Motor", "warm-up complet · GPS fixat (${fmt(accuracyM)}m)")
+            startedLowAccuracy = accuracyM > config.startAccuracyM
+            DebugLog.i("Motor", "warm-up complet · GPS fixat (${fmt(accuracyM)}m)" + if (startedLowAccuracy) " · precisió baixa" else "")
         }
 
         val here = GeoPoint(latitude, longitude)
@@ -334,7 +344,10 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
             addAll(closedSegments)
             if (currentSegment.isNotEmpty()) add(currentSegment.toList())
         }
-        return RecorderState(segments = segments, statistics = stats, isPaused = paused, isFinished = finished)
+        return RecorderState(
+            segments = segments, statistics = stats, isPaused = paused, isFinished = finished,
+            startedLowAccuracy = startedLowAccuracy,
+        )
     }
 
     /**

@@ -45,17 +45,39 @@ class TrackRecorderTest {
     }
 
     @Test
-    fun warmupRequiresConsecutivePreciseFixes() {
+    fun warmupCountsGoodFixesMonotonically() {
         val r = TrackRecorder()
         r.start(t0)
-        // Precise fix, then a mediocre one (within maxAccuracy but above startAccuracy) resets the streak.
-        assertThat(r.onLocation(41.0, 2.0, null, null, null, 8f, at(0))).isNull()
-        assertThat(r.onLocation(41.0, 2.0, null, null, null, 20f, at(1))).isNull() // resets warm-up
-        assertThat(r.onLocation(41.0, 2.0, null, null, null, 8f, at(2))).isNull() // good #1 again
-        assertThat(r.onLocation(41.0, 2.0, null, null, null, 8f, at(3))).isNotNull() // good #2 → accepted
-        // Cold-start scatter before the lock is not in the track.
-        assertThat(r.snapshot(at(3)).points()).hasSize(1)
-        assertThat(r.snapshot(at(3)).statistics.totalDistanceMeter).isEqualTo(0.0)
+        // A worse fix between two good ones no longer resets progress — it just doesn't count.
+        assertThat(r.onLocation(41.0, 2.0, null, null, null, 8f, at(0))).isNull() // good #1
+        assertThat(r.onLocation(41.0, 2.0, null, null, null, 20f, at(1))).isNull() // ignored, not reset
+        assertThat(r.onLocation(41.0, 2.0, null, null, null, 8f, at(2))).isNotNull() // good #2 → locked
+        assertThat(r.snapshot(at(2)).points()).hasSize(1)
+        assertThat(r.snapshot(at(2)).statistics.totalDistanceMeter).isEqualTo(0.0)
+        assertThat(r.snapshot(at(2)).startedLowAccuracy).isFalse()
+    }
+
+    @Test
+    fun safetyNetRelaxesGateAfter20sAndFlagsLowAccuracy() {
+        val r = TrackRecorder()
+        r.start(t0)
+        // Only ~18 m fixes: rejected while the gate is 12 m (before 20 s).
+        assertThat(r.onLocation(41.0, 2.0, null, null, null, 18f, at(0))).isNull()
+        assertThat(r.onLocation(41.0, 2.0, null, null, null, 18f, at(5))).isNull()
+        assertThat(r.onLocation(41.0, 2.0, null, null, null, 18f, at(19))).isNull()
+        // Past 20 s the gate relaxes to maxAccuracy (25 m): two 18 m fixes now warm up.
+        assertThat(r.onLocation(41.0, 2.0, null, null, null, 18f, at(21))).isNull() // good #1 (relaxed)
+        assertThat(r.onLocation(41.0, 2.0, null, null, null, 18f, at(22))).isNotNull() // good #2 → locked
+        assertThat(r.snapshot(at(22)).startedLowAccuracy).isTrue()
+    }
+
+    @Test
+    fun fixesWorseThanMaxAccuracyNeverEnterEvenRelaxed() {
+        val r = TrackRecorder()
+        r.start(t0)
+        // 40 m fixes exceed maxAccuracy (25 m) — rejected outright, even long after the relax window.
+        for (s in 0..40 step 2) assertThat(r.onLocation(41.0, 2.0, null, null, null, 40f, at(s.toLong()))).isNull()
+        assertThat(r.snapshot(at(40)).points()).isEmpty()
     }
 
     @Test
