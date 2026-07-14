@@ -7,6 +7,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.double
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -49,14 +52,16 @@ class BRouterHttpProvider(
                 ?: throw RoutingException("Resposta BRouter sense features")
             if (features.isEmpty()) throw RoutingException("Cap ruta trobada")
             val feature = features[0].jsonObject
-            val coords = feature["geometry"]!!.jsonObject["coordinates"]!!.jsonArray
-            val points = coords.map { element ->
-                val c = element.jsonArray
-                val lon = c[0].jsonPrimitive.double
-                val lat = c[1].jsonPrimitive.double
-                val ele = if (c.size > 2) c[2].jsonPrimitive.double else null
+            val coords = (feature["geometry"] as? kotlinx.serialization.json.JsonObject)?.get("coordinates")?.jsonArray
+                ?: throw RoutingException("Resposta BRouter sense geometria")
+            val points = coords.mapNotNull { element ->
+                val c = element as? kotlinx.serialization.json.JsonArray ?: return@mapNotNull null
+                val lon = c.getOrNull(0)?.jsonPrimitive?.doubleOrNull ?: return@mapNotNull null
+                val lat = c.getOrNull(1)?.jsonPrimitive?.doubleOrNull ?: return@mapNotNull null
+                val ele = c.getOrNull(2)?.jsonPrimitive?.doubleOrNull
                 GpxPoint(lat, lon, elevation = ele)
             }
+            if (points.size < 2) throw RoutingException("Ruta BRouter buida o malformada")
             val props = feature["properties"]?.jsonObject
             val distance = props?.get("track-length")?.jsonPrimitive?.content?.toDoubleOrNull()
                 ?: computeDistance(points)

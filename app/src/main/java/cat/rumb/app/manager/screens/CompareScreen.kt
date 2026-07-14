@@ -97,24 +97,34 @@ fun CompareScreen(trackId: Long, onBack: () -> Unit) {
         }
     }
 
+    // Cache track points by id so switching modes / picking doesn't re-read GPX from disk each time.
+    val pointsCache = remember { HashMap<Long, List<GpxPoint>>() }
+
     // Build the comparable units for the current mode.
     LaunchedEffect(mode, basePoints, siblings, pickedId) {
         val m = mode ?: return@LaunchedEffect
+        suspend fun load(id: Long): List<GpxPoint> =
+            pointsCache[id] ?: app.trackRepository.loadGpxRoute(id).also { pointsCache[id] = it }
+        // Clamp the end to [start, size] so a slice never gets from > to.
+        fun slice(startIdx: Int, endIdx: Int): List<GpxPoint> {
+            val from = startIdx.coerceIn(0, basePoints.size)
+            return basePoints.subList(from, endIdx.coerceIn(from, basePoints.size))
+        }
         val list: List<CompareUnit> = withContext(Dispatchers.Default) {
             when (m) {
                 CompareMode.LAPS -> laps.filter { it.kind == LapKind.LAP }.map { lap ->
-                    val slice = basePoints.subList(lap.startIdx.coerceIn(0, basePoints.size), lap.endIdx.coerceIn(0, basePoints.size))
-                    unit("lap${lap.index}", context.getString(R.string.training_lap_n, lap.index), slice, sliceDurationMs(slice))
+                    val s = slice(lap.startIdx, lap.endIdx)
+                    unit("lap${lap.index}", context.getString(R.string.training_lap_n, lap.index), s, sliceDurationMs(s))
                 }
                 CompareMode.ATTEMPTS -> siblings.map { s ->
-                    val p = app.trackRepository.loadGpxRoute(s.id)
+                    val p = load(s.id)
                     unit("att${s.id}", formatDayMonthYearShort(s.createdAt), p, s.durationMs?.takeIf { it > 0L } ?: sliceDurationMs(p))
                 }
                 CompareMode.OTHER -> {
                     val base = unit("base", entity?.name ?: "", basePoints, entity?.durationMs?.takeIf { it > 0L } ?: sliceDurationMs(basePoints))
                     val picked = pickedId?.let { pid ->
                         val pe = candidates.firstOrNull { it.id == pid }
-                        val pp = app.trackRepository.loadGpxRoute(pid)
+                        val pp = load(pid)
                         unit("pick$pid", pe?.name ?: "", pp, pe?.durationMs?.takeIf { it > 0L } ?: sliceDurationMs(pp))
                     }
                     listOfNotNull(base, picked)

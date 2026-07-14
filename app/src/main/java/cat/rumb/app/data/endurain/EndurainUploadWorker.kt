@@ -28,11 +28,20 @@ class EndurainUploadWorker(context: Context, params: WorkerParameters) : Corouti
                 file.delete()
                 Result.success(workDataOf(KEY_RESULT to "ok:${result.activityIds.joinToString(",")}"))
             }
-            is UploadResult.NotConfigured -> Result.failure()
+            is UploadResult.NotConfigured -> {
+                file.delete() // permanent: don't leave the queued GPX orphaned in the cache.
+                Result.failure()
+            }
             is UploadResult.Failure -> {
-                // Retry on transient/network errors (no code); give up on 4xx client errors.
-                if (result.code == null || result.code in 500..599) Result.retry()
-                else Result.failure(workDataOf(KEY_RESULT to "http:${result.code}"))
+                // Retry transient/5xx errors, but cap attempts so a persistently-failing server
+                // (or a permanent misconfig surfacing as code==null) can't retry forever.
+                val transient = result.code == null || result.code in 500..599
+                if (transient && runAttemptCount < MAX_RETRY_ATTEMPTS) {
+                    Result.retry()
+                } else {
+                    file.delete()
+                    Result.failure(workDataOf(KEY_RESULT to "http:${result.code}"))
+                }
             }
         }
     }
@@ -41,6 +50,7 @@ class EndurainUploadWorker(context: Context, params: WorkerParameters) : Corouti
         const val KEY_PATH = "gpx_path"
         const val KEY_NAME = "gpx_name"
         const val KEY_RESULT = "result"
+        private const val MAX_RETRY_ATTEMPTS = 8
 
         /** Writes [gpx] to cache and enqueues an upload. Returns the queued file for reference. */
         fun enqueue(context: Context, gpx: String, fileName: String): File {

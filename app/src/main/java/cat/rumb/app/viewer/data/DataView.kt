@@ -31,7 +31,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -94,8 +95,10 @@ fun DataView(
     val layout = remember(reloadKey) { DataLayoutStore.load(prefs) }
     val followOnly = setOf(HudMetric.REMAINING.name, HudMetric.OFF_ROUTE.name)
 
-    // Optimistic local state for the toggle tiles so a tap flips instantly (prefs writes lag a frame).
-    val toggleState = remember { mutableStateMapOf<String, Boolean>() }
+    // Toggle tiles read straight from prefs (in-memory, updates synchronously). Bumped on tap to
+    // recompose instantly, and the ~1 s HudData recomposition reflects changes made elsewhere too —
+    // so the switch never latches a stale value (unlike a one-shot optimistic cache).
+    var togglesVersion by remember { mutableStateOf(0) }
 
     // Live wall clock (updates every second).
     val clock by produceState(initialValue = "", layout.clockH24) {
@@ -161,14 +164,14 @@ fun DataView(
                         is Tile.Metric -> DataTileContent(tile.label, tile.value, tile.unit, tile.color, series = tile.series)
                         is Tile.Chart -> ChartTile(tile.label, tile.series, tile.progress, tile.accent)
                         is Tile.Toggle -> {
-                            val checked = toggleState[tile.toggle.id] ?: prefs.toggleValue(tile.toggle)
+                            togglesVersion // read so a tap (which bumps it) recomposes this switch
                             SettingsToggleTile(
                                 label = tile.label,
                                 hint = tile.hint,
-                                checked = checked,
+                                checked = prefs.toggleValue(tile.toggle),
                                 onChange = { v ->
-                                    toggleState[tile.toggle.id] = v
                                     onToggleSetting(tile.toggle, v)
+                                    togglesVersion++
                                 },
                             )
                         }

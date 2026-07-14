@@ -92,8 +92,14 @@ fun LapBoundaryEditor(
                                 val frac = (change.position.x / size.width).coerceIn(0f, 1f)
                                 val targetDist = frac * total
                                 var idx = pointDist.indices.minByOrNull { kotlin.math.abs(pointDist[it] - targetDist) } ?: cuts[d]
-                                idx = idx.coerceIn(cuts[d - 1] + 1, cuts[d + 1] - 1)
-                                cuts = cuts.toMutableList().also { it[d] = idx }
+                                val lo = cuts[d - 1] + 1
+                                val hi = cuts[d + 1] - 1
+                                // Guard against non-contiguous cuts from corrupt data (lo > hi would
+                                // make coerceIn throw); a healthy lap set always has lo <= hi.
+                                if (lo <= hi) {
+                                    idx = idx.coerceIn(lo, hi)
+                                    cuts = cuts.toMutableList().also { it[d] = idx }
+                                }
                             }
                         },
                     )

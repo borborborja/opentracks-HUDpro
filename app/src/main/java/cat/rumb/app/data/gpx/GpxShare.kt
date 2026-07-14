@@ -3,6 +3,8 @@ package cat.rumb.app.data.gpx
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /** Track file formats the app can import. */
@@ -19,11 +21,13 @@ fun formatFor(fileName: String?): TrackFormat = when (fileName?.substringAfterLa
 
 /** Shares a GPX document via the system chooser (save to Files/Drive, send to apps…). */
 object GpxShare {
-    fun share(context: Context, name: String, gpx: String) {
+    suspend fun share(context: Context, name: String, gpx: String) {
         val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "track" }
-        val dir = File(context.cacheDir, "share").apply { mkdirs() }
-        val file = File(dir, "$safe.gpx")
-        file.writeText(gpx)
+        // Build + write the GPX off the main thread (a large track's serialization + file write can jank).
+        val file = withContext(Dispatchers.IO) {
+            val dir = File(context.cacheDir, "share").apply { mkdirs() }
+            File(dir, "$safe.gpx").also { it.writeText(gpx) }
+        }
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         val send = Intent(Intent.ACTION_SEND).apply {
             type = "application/gpx+xml"

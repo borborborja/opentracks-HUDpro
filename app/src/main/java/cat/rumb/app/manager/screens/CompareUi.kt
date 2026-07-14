@@ -134,7 +134,7 @@ internal fun formatDayMonthYearShort(epochMs: Long): String =
     DateTimeFormatter.ofPattern("dd/MM/yy").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(epochMs))
 
 internal fun formatHms(ms: Long): String {
-    val totalSeconds = ms / 1000
+    val totalSeconds = (ms / 1000).coerceAtLeast(0)
     val h = totalSeconds / 3600
     val m = (totalSeconds % 3600) / 60
     val s = totalSeconds % 60

@@ -340,7 +340,7 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
                                 val slice = points.subList(lap.startIdx.coerceIn(0, points.size), lap.endIdx.coerceIn(0, points.size))
                                 if (slice.size >= 2) {
                                     val lapName = "${entity?.name ?: "track"} · ${context.getString(R.string.training_lap_n, lap.index)}"
-                                    GpxShare.share(context, lapName, cat.rumb.app.data.gpx.Gpx.write(lapName, slice))
+                                    scope.launch { GpxShare.share(context, lapName, cat.rumb.app.data.gpx.Gpx.write(lapName, slice)) }
                                 }
                             },
                         )

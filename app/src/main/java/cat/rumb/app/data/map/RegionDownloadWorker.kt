@@ -68,6 +68,9 @@ class RegionDownloadWorker(context: Context, params: WorkerParameters) : Corouti
                 ),
             )
             Result.success(workDataOf(KEY_PATH to outFile.absolutePath))
+        } catch (c: kotlinx.coroutines.CancellationException) {
+            // Cooperative cancellation (REPLACE re-enqueue or user cancel): let it propagate cleanly.
+            throw c
         } catch (e: Exception) {
             cat.rumb.app.data.debug.DebugLog.e("Download", "error", e)
             Result.failure(workDataOf(KEY_ERROR to (e.message ?: "Error")))

@@ -107,7 +107,7 @@ class OfflineMapStore private constructor(private val context: Context) {
             sourceId = sourceId,
             sectors = sectors,
         )
-        save(list().filterNot { it.path == path } + map)
+        mutate { it.filterNot { m -> m.path == path } + map }
         writeUnionMetadata(map)
     }
 
@@ -145,7 +145,7 @@ class OfflineMapStore private constructor(private val context: Context) {
             }
         }
         val updated = map.copy(bounds = unionBounds(remaining), sectors = remaining)
-        save(list().filterNot { it.path == map.path } + updated)
+        mutate { it.filterNot { m -> m.path == map.path } + updated }
         writeUnionMetadata(updated)
     }
 
@@ -167,7 +167,7 @@ class OfflineMapStore private constructor(private val context: Context) {
             dest.outputStream().use { input.copyTo(it) }
         }
         val map = OfflineMap(name = name.removeSuffix(".mbtiles"), path = dest.absolutePath)
-        save(list().filterNot { it.path == map.path } + map)
+        mutate { it.filterNot { m -> m.path == map.path } + map }
         return map
     }
 
@@ -176,19 +176,29 @@ class OfflineMapStore private constructor(private val context: Context) {
 
     /** Registers an already-written MBTiles (e.g. from an area download). */
     fun register(map: OfflineMap) {
-        save(list().filterNot { it.path == map.path } + map)
+        mutate { it.filterNot { m -> m.path == map.path } + map }
     }
 
     fun delete(map: OfflineMap) {
         runCatching { File(map.path).delete() }
-        save(list().filterNot { it.path == map.path })
+        mutate { it.filterNot { m -> m.path == map.path } }
     }
 
     private fun save(maps: List<OfflineMap>) {
         prefs.edit().putString(KEY, json.encodeToString(serializer, maps)).apply()
     }
 
+    /**
+     * Atomic read-modify-write of the map list. [get] returns a fresh instance per call, so the lock
+     * is process-wide (companion) to serialize the worker's addSector against a UI import/delete and
+     * prevent a lost update clobbering the list.
+     */
+    private fun mutate(transform: (List<OfflineMap>) -> List<OfflineMap>) {
+        synchronized(LOCK) { save(transform(list())) }
+    }
+
     companion object {
+        private val LOCK = Any()
         private const val KEY = "maps"
         private const val LEGACY_MIN_ZOOM = 9
         private const val LEGACY_MAX_ZOOM = 14

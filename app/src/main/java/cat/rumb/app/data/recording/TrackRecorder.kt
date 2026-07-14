@@ -352,6 +352,9 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         lapsActive = last.type != LapMarkType.END
         lapStartDistanceM = last.distanceM
         lapStartTotalMs = last.totalMs
+        // Recover the last completed lap's duration so the "last lap" tile isn't blank until the
+        // next split: it's the gap between the last two boundary marks.
+        if (marks.size >= 2) lastLapMs = last.totalMs - marks[marks.size - 2].totalMs
     }
 
     fun pause(time: Instant) {
@@ -414,8 +417,8 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
             startedLowAccuracy = startedLowAccuracy,
             lapsActive = lapsActive,
             lapCount = lapCount,
-            currentLapDistanceM = if (lapsActive) distanceM - lapStartDistanceM else 0.0,
-            currentLapTimeMs = if (lapsActive) total.inWholeMilliseconds - lapStartTotalMs else 0L,
+            currentLapDistanceM = if (lapsActive) (distanceM - lapStartDistanceM).coerceAtLeast(0.0) else 0.0,
+            currentLapTimeMs = if (lapsActive) (total.inWholeMilliseconds - lapStartTotalMs).coerceAtLeast(0L) else 0L,
             lastLapMs = lastLapMs,
             lapMarks = lapMarks.toList(),
         )

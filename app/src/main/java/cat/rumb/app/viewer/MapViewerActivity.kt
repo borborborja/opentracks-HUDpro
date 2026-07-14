@@ -3,6 +3,7 @@ package cat.rumb.app.viewer
 import android.os.Build
 import android.content.Intent
 import android.os.Bundle
+import androidx.lifecycle.repeatOnLifecycle
 import kotlin.time.Duration.Companion.milliseconds
 import android.util.Log
 import android.view.WindowManager
@@ -162,6 +163,7 @@ class MapViewerActivity : ComponentActivity() {
     private var announceFields = cat.rumb.app.viewer.audio.AnnounceFields()
 
     private var wasRecording = false
+    private var recordingWasActive = false
     private var uploadedThisSession = false
 
     // Pre-warm the GPS while the viewer is open so tapping record acquires a precise fix almost
@@ -183,7 +185,6 @@ class MapViewerActivity : ComponentActivity() {
     // re-based to each lap's start. No persistence — the saved track stays a normal lapped track.
     private var lapCompeting = false
     private var lapGhost: cat.rumb.app.data.competition.GhostEngine? = null
-    private var lapStartInstant: java.time.Instant? = null
     private var bestLapMs: Long? = null
     private var lastSeenLapCount = 0
     private var lapCompetePrompted = false
@@ -735,7 +736,6 @@ class MapViewerActivity : ComponentActivity() {
         // Lap racing is per-recording and ephemeral.
         lapCompeting = false
         lapGhost = null
-        lapStartInstant = null
         bestLapMs = null
         lastSeenLapCount = 0
         lapCompetePrompted = false
@@ -755,7 +755,8 @@ class MapViewerActivity : ComponentActivity() {
      */
     private fun startPointTicker(ctrl: MapLibreController) {
         lifecycleScope.launch {
-            while (true) {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+              while (true) {
                 val ghost = ghostEngine
                 startPointFlow.value = if (competing && ghost != null && !NativeRecording.isActive) {
                     val loc = ctrl.lastKnownGeoPoint(this@MapViewerActivity)
@@ -771,6 +772,7 @@ class MapViewerActivity : ComponentActivity() {
                     null
                 }
                 kotlinx.coroutines.delay(2000)
+              }
             }
         }
     }
@@ -778,18 +780,27 @@ class MapViewerActivity : ComponentActivity() {
     /** Feeds the custom tracking-point marker from the location engine (works recording or idle). */
     private fun startTrackingMarkerTicker(ctrl: MapLibreController) {
         lifecycleScope.launch {
-            while (true) {
-                val loc = ctrl.lastLocation()
-                if (loc != null) {
-                    // Prefer GPS course while moving; else the computed bearing; else keep the last.
-                    val bearing = if (loc.hasBearing() && loc.speed > 0.5f) loc.bearing.toDouble()
-                    else hudDataFlow.value.metrics.bearingDeg
-                    ctrl.setTrackingMarker(
-                        cat.rumb.app.data.opentracks.model.GeoPoint(loc.latitude, loc.longitude),
-                        bearing,
-                    )
+            // Only poll while the viewer is visible (no background work when stopped).
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                while (true) {
+                    val loc = ctrl.lastLocation()
+                    if (loc != null) {
+                        // Prefer GPS course while moving; else the computed bearing; else keep the last.
+                        val bearing = if (loc.hasBearing() && loc.speed > 0.5f) loc.bearing.toDouble()
+                        else hudDataFlow.value.metrics.bearingDeg
+                        ctrl.setTrackingMarker(
+                            cat.rumb.app.data.opentracks.model.GeoPoint(loc.latitude, loc.longitude),
+                            bearing,
+                        )
+                    } else {
+                        // Cold start: the map's engine has no fix yet — fall back to the last known
+                        // system/warm position so the marker appears immediately.
+                        ctrl.lastKnownGeoPoint(this@MapViewerActivity)?.let {
+                            ctrl.setTrackingMarker(it, hudDataFlow.value.metrics.bearingDeg)
+                        }
+                    }
+                    kotlinx.coroutines.delay(1000)
                 }
-                kotlinx.coroutines.delay(1000)
             }
         }
     }
@@ -1043,6 +1054,17 @@ class MapViewerActivity : ComponentActivity() {
         isPaused: Boolean = false,
         lapSnapshot: cat.rumb.app.data.recording.RecorderState? = null,
     ) {
+        // A recording just started: reset per-recording announcement/turn/off-route state. The native
+        // path already resets in doStartNativeRecording; this also covers the OpenTracks-companion
+        // path (record A, stop, record B in the same viewer session) where B would otherwise inherit
+        // A's latched distance milestones and end-of-route turns.
+        if (recording && !recordingWasActive) {
+            announceScheduler?.reset()
+            announcedTurns.clear()
+            offRouteAlerter.reset()
+        }
+        recordingWasActive = recording
+
         lastSegments = segs
         lastWaypoints = wps
         ctrl.updateTrack(segs, frame = true)
@@ -1105,15 +1127,20 @@ class MapViewerActivity : ComponentActivity() {
                     DebugLog.d("Follow", "gir ${if (turn.left) "esquerra" else "dreta"} · tier$tier · ${turn.distanceM.toInt()}m")
                 }
             }
-            // Forget turns already behind us so the set doesn't grow along the route.
-            announcedTurns.removeAll { it.first < state.nearestIndex }
+            // Forget turns clearly behind us (with a margin) so the set stays small. The margin
+            // stops a turn being re-announced when GPS jitter oscillates nearestIndex around its
+            // vertex — without it, dipping back below the vertex re-adds the pair and re-fires.
+            announcedTurns.removeAll { it.first < state.nearestIndex - 3 }
         }
 
         // Lap racing: when a new lap starts, keep a ghost of the best previous lap and offer to race.
         lapSnapshot?.let { ls ->
-            if (ls.lapsActive && ls.lapCount > lastSeenLapCount) {
+            if (!ls.lapsActive) {
+                // Lap block ended (End-Laps): reset so a restarted block (lapCount → 1) is detected
+                // again — the counter isn't monotonic across End→Restart.
+                lastSeenLapCount = 0
+            } else if (ls.lapCount > lastSeenLapCount) {
                 lastSeenLapCount = ls.lapCount
-                lapStartInstant = java.time.Instant.now().minusMillis(ls.currentLapTimeMs)
                 // Slice the just-completed lap (between the last two open marks) and, if it's the
                 // fastest so far, make it the ghost to chase.
                 val opens = ls.lapMarks.filter {
@@ -1140,23 +1167,33 @@ class MapViewerActivity : ComponentActivity() {
             }
         }
 
-        // Ghost race (cross-day competition OR live lap race): place the ghost and compute the delta.
-        val racing = competing || lapCompeting
+        // Ghost race (cross-day competition OR live lap race). Lap racing only runs while a lap block
+        // is active; outside it (approach/return) the lap ghost is hidden.
+        val lapRacing = lapCompeting && lapSnapshot?.lapsActive == true
+        val racing = competing || lapRacing
         if (racing) {
-            val ghost = if (lapCompeting) lapGhost else ghostEngine
+            val ghost = if (lapRacing) lapGhost else ghostEngine
             if (ghost != null) {
-                val baseInstant = if (lapCompeting) lapStartInstant else stats?.startTime?.takeIf { recording }
-                val elapsed = baseInstant?.let { java.time.Duration.between(it, java.time.Instant.now()).toMillis() } ?: 0L
+                // Lap racing uses the ACTIVE current-lap time as the clock (freezes on pause, matching
+                // the lap tiles); cross-day competition keeps its wall-clock-from-start baseline.
+                val elapsed = if (lapRacing) {
+                    lapSnapshot?.currentLapTimeMs ?: 0L
+                } else {
+                    stats?.startTime?.takeIf { recording }?.let { java.time.Duration.between(it, java.time.Instant.now()).toMillis() } ?: 0L
+                }
                 ctrl.setGhost(ghost.positionAt(elapsed))
-                val progress = if (lapCompeting) lapSnapshot?.currentLapDistanceM else state?.progressMeters
-                val offRoute = !lapCompeting && (state?.offRouteMeters ?: 0.0) > offRouteThreshold
-                if (baseInstant != null && progress != null && !offRoute) {
+                val progress = if (lapRacing) lapSnapshot?.currentLapDistanceM else state?.progressMeters
+                val offRoute = !lapRacing && (state?.offRouteMeters ?: 0.0) > offRouteThreshold
+                if (progress != null && !offRoute) {
                     val delta = progress - ghost.distanceAt(elapsed)
                     // Rough seconds equivalent at the current speed (skip when nearly stopped).
                     val secs = metrics.speedKmh?.takeIf { it > 1.0 }?.let { delta / (it / 3.6) }
                     metrics = metrics.copy(ghostDeltaMeters = delta, ghostSecondsEst = secs)
                 }
             }
+        } else if (lapCompeting) {
+            // In lap-compete mode but between lap blocks: remove the lap ghost from the map.
+            ctrl.setGhost(null)
         }
 
         // Live calorie estimate (MET-based; generic activity until the user saves with a type).
@@ -1198,7 +1235,7 @@ class MapViewerActivity : ComponentActivity() {
             following = following,
             offRouteThresholdM = offRouteThreshold,
             isPaused = isPaused,
-            competing = competing || lapCompeting,
+            competing = competing || lapRacing,
             ghostHalo = ghostHaloOn,
             ghostShowSeconds = ghostSecondsOn,
         )
@@ -1275,7 +1312,9 @@ class MapViewerActivity : ComponentActivity() {
 
     /** Warms the GPS chip while the viewer is foregrounded and not yet recording. */
     private fun startWarmGps() {
-        if (warmGps != null || NativeRecording.isActive || !hasLocationPermission()) return
+        // Skip when already warming, when the native engine owns GPS, when OpenTracks is recording
+        // (it holds its own GPS request), or without permission — avoids two concurrent consumers.
+        if (warmGps != null || NativeRecording.isActive || reader?.isRecording == true || !hasLocationPermission()) return
         val gps = cat.rumb.app.data.recording.GpsSource(this)
         val ok = gps.start(intervalMs = 1000L) { loc ->
             lastWarmAccuracyM = if (loc.hasAccuracy()) loc.accuracy else null

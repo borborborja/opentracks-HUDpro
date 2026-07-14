@@ -22,6 +22,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.time.Instant
@@ -45,6 +46,7 @@ class RecordingService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var recordingId: Long? = null
+    private var restoring = false
     private var segmentIndex = 0
     private val pendingPoints = ArrayList<RecordingPointEntity>()
 
@@ -76,45 +78,54 @@ class RecordingService : Service() {
         publish()
         startForegroundWithType()
         acquireWakeLock()
-        startSensors(prefs)
         scope.launch {
             val dao = RumbApplication.from(this@RecordingService).database.recordingDao()
             // Only one recording at a time: clear stale leftovers (e.g. a crash the user ignored).
             dao.activeRecording()?.let { stale -> dao.deletePoints(stale.id); dao.deleteRecording(stale.id) }
             recordingId = dao.insertRecording(RecordingEntity(startedAt = System.currentTimeMillis()))
+            // Start sensors only after recordingId exists, so early GPS fixes are persisted for crash
+            // recovery (not just held in memory). Sensor registration runs on the main thread.
+            withContext(Dispatchers.Main) { startSensors(prefs) }
             startPeriodicFlush()
         }
         DebugLog.i("Record", "gravació nativa iniciada · autoPausa=${prefs.recAutoPause}")
     }
 
     private fun restoreAfterDeath() {
-        if (recorder != null) return
+        // `recorder` is only assigned inside the launch below, so guard synchronously against a second
+        // sticky redelivery restoring twice (double GPS/BLE/wakelock, duplicate points).
+        if (recorder != null || restoring) return
+        restoring = true
         startForegroundWithType() // must enter foreground promptly after onStartCommand
         scope.launch {
-            val prefs = ViewerPreferences.get(this@RecordingService)
-            val dao = RumbApplication.from(this@RecordingService).database.recordingDao()
-            val active = dao.activeRecording()
-            if (active == null) {
-                DebugLog.i("Record", "sticky restart sense gravació activa · aturant")
-                stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
-                return@launch
+            try {
+                val prefs = ViewerPreferences.get(this@RecordingService)
+                val dao = RumbApplication.from(this@RecordingService).database.recordingDao()
+                val active = dao.activeRecording()
+                if (active == null) {
+                    DebugLog.i("Record", "sticky restart sense gravació activa · aturant")
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                    return@launch
+                }
+                val stored = dao.points(active.id)
+                val r = TrackRecorder(configFrom(prefs))
+                r.restore(stored.toSegments(), Instant.ofEpochMilli(active.startedAt), Instant.now())
+                active.laps?.let { raw ->
+                    runCatching { LAP_JSON.decodeFromString<List<LapMark>>(raw) }.getOrNull()?.let { r.restoreLaps(it) }
+                }
+                recorder = r
+                recordingId = active.id
+                segmentIndex = (stored.maxOfOrNull { it.segment } ?: 0) + 1
+                autoPause = if (prefs.recAutoPause) AutoPause(idleAfterSec = prefs.recAutoPauseSec.toLong()) else null
+                publish()
+                acquireWakeLock()
+                startSensors(prefs)
+                startPeriodicFlush()
+                DebugLog.w("Record", "gravació restaurada després de mort del procés · ${stored.size} punts")
+            } finally {
+                restoring = false
             }
-            val stored = dao.points(active.id)
-            val r = TrackRecorder(configFrom(prefs))
-            r.restore(stored.toSegments(), Instant.ofEpochMilli(active.startedAt), Instant.now())
-            active.laps?.let { raw ->
-                runCatching { LAP_JSON.decodeFromString<List<LapMark>>(raw) }.getOrNull()?.let { r.restoreLaps(it) }
-            }
-            recorder = r
-            recordingId = active.id
-            segmentIndex = (stored.maxOfOrNull { it.segment } ?: 0) + 1
-            autoPause = if (prefs.recAutoPause) AutoPause(idleAfterSec = prefs.recAutoPauseSec.toLong()) else null
-            publish()
-            acquireWakeLock()
-            startSensors(prefs)
-            startPeriodicFlush()
-            DebugLog.w("Record", "gravació restaurada després de mort del procés · ${stored.size} punts")
         }
     }
 
@@ -431,6 +442,11 @@ class RecordingService : Service() {
             val now = Instant.now()
             val r = TrackRecorder(config)
             r.restore(pts.toSegments(), Instant.ofEpochMilli(finished.startedAt), now)
+            // Restore the lap boundaries too, or a recovered finished recording would save with no
+            // laps (Laps.fromMarks on an empty list → no ranges → the whole lap structure is lost).
+            finished.laps?.let { raw ->
+                runCatching { LAP_JSON.decodeFromString<List<LapMark>>(raw) }.getOrNull()?.let { r.restoreLaps(it) }
+            }
             r.stop(now)
             NativeRecording.publish(r.snapshot(now))
             DebugLog.w("Record", "gravació finalitzada no desada recuperada · ${pts.size} punts")

@@ -230,9 +230,12 @@ class MapLibreController(private val map: MapLibreMap) {
 
     /** Applies the tracking-point style; regenerates the arrow icon for the chosen colour/size. */
     fun setTrackingPointStyle(style: String, colorHex: String, size: Float) {
+        val clamped = size.coerceIn(0.4f, 2.5f)
+        // Nothing changed (e.g. a plain onResume) → skip the bitmap regen + layer writes.
+        if (style == trackingStyle && colorHex == trackingColorHex && clamped == trackingSize && map.style?.getLayer(TRACKING_DOT_LAYER) != null) return
         trackingStyle = style
         trackingColorHex = colorHex
-        trackingSize = size.coerceIn(0.4f, 2.5f)
+        trackingSize = clamped
         val s = map.style ?: return
         s.addImage(TRACKING_ARROW_ICON, arrowBitmap(colorHex))
         s.getLayer(TRACKING_DOT_LAYER)?.setProperties(

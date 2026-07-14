@@ -28,8 +28,13 @@ object Laps {
     fun encode(ranges: List<LapRange>): String = json.encodeToString(ranges)
 
     fun decode(raw: String?): List<LapRange> =
-        if (raw.isNullOrBlank()) emptyList()
-        else runCatching { json.decodeFromString<List<LapRange>>(raw) }.getOrDefault(emptyList())
+        if (raw.isNullOrBlank()) {
+            emptyList()
+        } else {
+            runCatching { json.decodeFromString<List<LapRange>>(raw) }.getOrDefault(emptyList())
+                // Drop malformed ranges so callers can slice points.subList(startIdx, endIdx) safely.
+                .filter { it.startIdx >= 0 && it.endIdx > it.startIdx }
+        }
 
     /**
      * Builds lap ranges from the live [marks] and the saved [pointSeqs] (each recorded point's seq,
