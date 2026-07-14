@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cat.rumb.app.data.map.BoundingBox
+import cat.rumb.app.manager.screens.CompareScreen
 import cat.rumb.app.manager.screens.CompetitionDetailScreen
 import cat.rumb.app.manager.screens.DataDesignerScreen
 import cat.rumb.app.manager.screens.DebugLogScreen
@@ -37,6 +38,7 @@ object Routes {
     const val ROUTE_DETAIL = "route_detail"
     const val TRAINING_DETAIL = "training_detail"
     const val COMPETITION_DETAIL = "competition_detail"
+    const val COMPARE = "compare"
     const val EDIT_ROUTE = "edit_route"
     const val DOWNLOAD_AREA = "download_area"
     const val RECORDS = "records"
@@ -159,7 +161,18 @@ fun ManagerApp(onOpenViewer: () -> Unit, startRoute: String? = null, onStartComp
             arguments = listOf(navArgument("trackId") { type = NavType.LongType }),
         ) { entry ->
             val id = entry.arguments?.getLong("trackId") ?: 0L
-            TrainingDetailScreen(trackId = id, onBack = { nav.popBackStack() })
+            TrainingDetailScreen(
+                trackId = id,
+                onBack = { nav.popBackStack() },
+                onCompare = { nav.navigate("${Routes.COMPARE}/$it") },
+            )
+        }
+        composable(
+            route = "${Routes.COMPARE}/{trackId}",
+            arguments = listOf(navArgument("trackId") { type = NavType.LongType }),
+        ) { entry ->
+            val id = entry.arguments?.getLong("trackId") ?: 0L
+            CompareScreen(trackId = id, onBack = { nav.popBackStack() })
         }
         composable(
             route = "${Routes.COMPETITION_DETAIL}/{refId}",

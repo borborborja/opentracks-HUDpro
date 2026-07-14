@@ -10,6 +10,10 @@
     <string name="competition_row_average">Media</string>
     <string name="competition_best_badge">Mejor</string>
     <string name="competition_gap_chart_title">Diferencia vs mejor (dónde ganas o pierdes)</string>
+    <string name="comp_evolution_title">Evolución</string>
+    <string name="comp_metric_time">Tiempo</string>
+    <string name="comp_metric_speed">Vel. media</string>
+    <string name="comp_metric_hr">FC media</string>
     <string name="competition_gap_ahead">Más rápido que la mejor</string>
     <string name="competition_gap_behind">Más lento que la mejor</string>
     <string name="competition_hr_zones_title">Zonas de frecuencia cardíaca</string>

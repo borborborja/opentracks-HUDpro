@@ -16,6 +16,17 @@
     <string name="training_action_export">Export (GPX)</string>
     <string name="training_laps_title">Laps</string>
     <string name="training_lap_n">Lap %1$d</string>
+    <string name="training_action_compare">Compare</string>
+    <string name="compare_title">Compare</string>
+    <string name="compare_mode_laps">Laps</string>
+    <string name="compare_mode_attempts">Attempts</string>
+    <string name="compare_mode_other">Another track</string>
+    <string name="compare_pick_track">Choose a track…</string>
+    <string name="compare_show_all">Show all</string>
+    <string name="compare_same_type">Same activity only</string>
+    <string name="compare_no_data">Not enough data to compare.</string>
+    <string name="compare_col_unit">Segment</string>
+    <string name="compare_col_dist">Dist.</string>
     <string name="training_action_rename">Rename</string>
     <string name="training_action_type">Activity type</string>
     <string name="training_action_move">Move to folder</string>

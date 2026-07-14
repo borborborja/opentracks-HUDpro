@@ -16,6 +16,17 @@
     <string name="training_action_export">Exporta (GPX)</string>
     <string name="training_laps_title">Voltes</string>
     <string name="training_lap_n">Volta %1$d</string>
+    <string name="training_action_compare">Compara</string>
+    <string name="compare_title">Compara</string>
+    <string name="compare_mode_laps">Voltes</string>
+    <string name="compare_mode_attempts">Intents</string>
+    <string name="compare_mode_other">Un altre track</string>
+    <string name="compare_pick_track">Tria un track…</string>
+    <string name="compare_show_all">Mostra tots</string>
+    <string name="compare_same_type">Només la mateixa activitat</string>
+    <string name="compare_no_data">No hi ha prou dades per comparar.</string>
+    <string name="compare_col_unit">Tram</string>
+    <string name="compare_col_dist">Dist.</string>
     <string name="training_action_rename">Canvia el nom</string>
     <string name="training_action_type">Tipus d\'activitat</string>
     <string name="training_action_move">Mou a una carpeta</string>

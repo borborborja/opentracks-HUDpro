@@ -72,7 +72,7 @@ import kotlinx.coroutines.withContext
 
 /** Statistics-focused detail screen for a saved training: map with scrubber, stats grid, stacked charts. */
 @Composable
-fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit) {
+fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) -> Unit = {}) {
     val context = LocalContext.current
     val app = remember { RumbApplication.from(context) }
     val prefs = remember { ViewerPreferences.get(context) }
@@ -173,6 +173,10 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit) {
                             Toast.makeText(context, context.getString(R.string.training_duplicated_toast), Toast.LENGTH_SHORT).show()
                         }
                     },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.training_action_compare)) },
+                    onClick = { showMenu = false; onCompare(trackId) },
                 )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.training_action_type)) },

@@ -159,8 +159,3 @@ private fun recordValueText(record: Record): String = when (record.kind) {
     RecordKind.MAX_SPEED -> String.format("%.1f km/h", record.value ?: 0.0)
     RecordKind.LONGEST_TIME -> formatHms((record.value ?: 0.0).toLong())
 }
-
-private fun formatHms(ms: Long): String {
-    val totalSeconds = (ms / 1000).coerceAtLeast(0)
-    return String.format("%d:%02d:%02d", totalSeconds / 3600, (totalSeconds % 3600) / 60, totalSeconds % 60)
-}

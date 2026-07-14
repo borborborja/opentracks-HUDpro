@@ -65,10 +65,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private val GapGreen = Color(0x552ECC71)
-private val GapRed = Color(0x55E63946)
-private val GapGreenSolid = Color(0xFF2ECC71)
-private val GapRedSolid = Color(0xFFE63946)
 private val ZoneColors = listOf(
     Color(0xFF3A86FF), // Z1
     Color(0xFF2A9D8F), // Z2
@@ -182,6 +178,8 @@ fun CompetitionDetailScreen(refId: Long, onBack: () -> Unit, onStartCompetition:
 
             if (loaded && candidates.isNotEmpty()) {
                 AttemptsTable(candidates, best, statsById)
+
+                EvolutionCard(candidates, statsById)
 
                 val withTimes = candidates.filter { c ->
                     pointsById[c.id].orEmpty().count { it.time != null } >= 2
@@ -308,32 +306,6 @@ private fun AttemptsTable(candidates: List<FollowTrackEntity>, best: FollowTrack
     }
 }
 
-@Composable
-private fun RowScope.HeaderCell(text: String, weight: Float) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.weight(weight),
-    )
-}
-
-@Composable
-private fun RowScope.BodyCell(
-    text: String,
-    weight: Float,
-    color: Color = Color.Unspecified,
-    fontWeight: FontWeight? = null,
-) {
-    Text(
-        text,
-        style = MaterialTheme.typography.bodySmall,
-        color = color,
-        fontWeight = fontWeight,
-        modifier = Modifier.weight(weight),
-    )
-}
-
 // --- Gap chart ---
 
 @Composable
@@ -376,48 +348,72 @@ private fun GapChartCard(
     }
 }
 
-@Composable
-private fun GapChart(series: List<GapSample>, modifier: Modifier) {
-    val lineColor = MaterialTheme.colorScheme.onSurface
-    val zeroColor = MaterialTheme.colorScheme.outline
-    Canvas(modifier) {
-        if (series.size < 2) return@Canvas
-        val w = size.width
-        val h = size.height
-        val maxDist = series.last().distM.coerceAtLeast(1.0)
-        val maxAbs = series.maxOf { kotlin.math.abs(it.gapSeconds) }.coerceAtLeast(1.0)
-        val zeroY = h / 2f
-        fun x(d: Double): Float = (d / maxDist * w).toFloat()
-        fun y(gap: Double): Float = zeroY - (gap / maxAbs * (h / 2f)).toFloat()
+// --- Evolution (trend across attempts by date) ---
 
-        // Sign-colored vertical bars from the zero line to each sample.
-        val barW = (w / series.size).coerceAtLeast(1f)
-        series.forEach { s ->
-            if (s.gapSeconds == 0.0) return@forEach
-            val top = minOf(zeroY, y(s.gapSeconds))
-            val bottom = maxOf(zeroY, y(s.gapSeconds))
-            drawRect(
-                color = if (s.gapSeconds > 0) GapRed else GapGreen,
-                topLeft = Offset(x(s.distM) - barW / 2f, top),
-                size = Size(barW, bottom - top),
-            )
+private enum class EvoMetric { TIME, SPEED, HR }
+
+@Composable
+private fun EvolutionCard(candidates: List<FollowTrackEntity>, statsById: Map<Long, TrackStats>) {
+    var metric by remember { mutableStateOf(EvoMetric.TIME) }
+    val series = remember(candidates, statsById, metric) {
+        candidates.sortedBy { it.createdAt }.mapNotNull { c ->
+            val v = when (metric) {
+                EvoMetric.TIME -> c.durationMs?.takeIf { it > 0L }?.toDouble()
+                EvoMetric.SPEED -> statsById[c.id]?.avgSpeedKmh
+                EvoMetric.HR -> statsById[c.id]?.avgHr
+            }
+            v?.let { c to it }
         }
-        // Zero line.
-        drawLine(zeroColor, Offset(0f, zeroY), Offset(w, zeroY), strokeWidth = 1f)
-        // Gap polyline on top.
-        val path = Path()
-        series.forEachIndexed { i, s ->
-            if (i == 0) path.moveTo(x(s.distM), y(s.gapSeconds)) else path.lineTo(x(s.distM), y(s.gapSeconds))
+    }
+    if (series.size < 2) return
+    Card {
+        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.comp_evolution_title), style = MaterialTheme.typography.titleSmall)
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                EvoMetric.entries.forEach { m ->
+                    FilterChip(selected = metric == m, onClick = { metric = m }, label = { Text(stringResource(evoMetricLabel(m))) })
+                }
+            }
+            // Lower time is better; higher speed is better; HR is informational (treat as neutral/higher).
+            EvolutionChart(series.map { it.second.toFloat() }, lowerBetter = metric == EvoMetric.TIME, Modifier.fillMaxWidth().height(140.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(formatDayMonthYearShort(series.first().first.createdAt), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(formatDayMonthYearShort(series.last().first.createdAt), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
-        drawPath(path, lineColor, style = Stroke(width = 2f))
     }
 }
 
+private fun evoMetricLabel(m: EvoMetric): Int = when (m) {
+    EvoMetric.TIME -> R.string.comp_metric_time
+    EvoMetric.SPEED -> R.string.comp_metric_speed
+    EvoMetric.HR -> R.string.comp_metric_hr
+}
+
 @Composable
-private fun LegendDot(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Box(Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(color))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun EvolutionChart(values: List<Float>, lowerBetter: Boolean, modifier: Modifier) {
+    val best = MaterialTheme.colorScheme.primary
+    val muted = MaterialTheme.colorScheme.surfaceVariant
+    val bestIdx = if (lowerBetter) values.indices.minByOrNull { values[it] } else values.indices.maxByOrNull { values[it] }
+    Canvas(modifier) {
+        if (values.isEmpty()) return@Canvas
+        val min = values.min()
+        val max = values.max()
+        val range = (max - min).takeIf { it > 0.0001f } ?: 1f
+        val n = values.size
+        val gap = 6f
+        val barW = ((size.width - gap * (n - 1)) / n).coerceAtLeast(1f)
+        values.forEachIndexed { i, v ->
+            val norm = (v - min) / range
+            val hFrac = if (lowerBetter) 1f - norm else norm
+            val barH = (0.15f + 0.85f * hFrac) * size.height
+            val x = i * (barW + gap)
+            drawRect(
+                color = if (i == bestIdx) best else muted,
+                topLeft = Offset(x, size.height - barH),
+                size = Size(barW, barH),
+            )
+        }
     }
 }
 
@@ -485,22 +481,3 @@ private fun HrZonesCard(candidates: List<FollowTrackEntity>, zonesById: Map<Long
 
 private fun formatDayMonthYear(epochMs: Long): String =
     DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(epochMs))
-
-private fun formatDayMonthYearShort(epochMs: Long): String =
-    DateTimeFormatter.ofPattern("dd/MM/yy").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(epochMs))
-
-private fun formatHms(ms: Long): String {
-    val totalSeconds = ms / 1000
-    val h = totalSeconds / 3600
-    val m = (totalSeconds % 3600) / 60
-    val s = totalSeconds % 60
-    return String.format("%d:%02d:%02d", h, m, s)
-}
-
-private fun formatDiff(ms: Long): String {
-    val sign = if (ms < 0) "−" else "+"
-    val totalSeconds = kotlin.math.abs(ms) / 1000
-    val m = totalSeconds / 60
-    val s = totalSeconds % 60
-    return String.format("%s%d:%02d", sign, m, s)
-}

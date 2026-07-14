@@ -10,6 +10,10 @@
     <string name="competition_row_average">Average</string>
     <string name="competition_best_badge">Best</string>
     <string name="competition_gap_chart_title">Gap vs best (where you gain or lose)</string>
+    <string name="comp_evolution_title">Evolution</string>
+    <string name="comp_metric_time">Time</string>
+    <string name="comp_metric_speed">Avg speed</string>
+    <string name="comp_metric_hr">Avg HR</string>
     <string name="competition_gap_ahead">Faster than best</string>
     <string name="competition_gap_behind">Slower than best</string>
     <string name="competition_hr_zones_title">Heart-rate zones</string>

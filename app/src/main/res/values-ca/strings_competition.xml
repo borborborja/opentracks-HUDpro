@@ -10,6 +10,10 @@
     <string name="competition_row_average">Mitjana</string>
     <string name="competition_best_badge">Millor</string>
     <string name="competition_gap_chart_title">Diferència vs millor (on guanyes o perds)</string>
+    <string name="comp_evolution_title">Evolució</string>
+    <string name="comp_metric_time">Temps</string>
+    <string name="comp_metric_speed">Vel. mitjana</string>
+    <string name="comp_metric_hr">FC mitjana</string>
     <string name="competition_gap_ahead">Més ràpid que la millor</string>
     <string name="competition_gap_behind">Més lent que la millor</string>
     <string name="competition_hr_zones_title">Zones de freqüència cardíaca</string>
