@@ -21,6 +21,9 @@
     <string name="settings_tab_audio">Àudio</string>
     <string name="settings_tab_activity_types">Tipus</string>
     <string name="settings_tab_app">App</string>
+    <string name="settings_tab_profile">Perfil</string>
+    <string name="settings_tab_map_routes">Mapa i rutes</string>
+    <string name="settings_profile_personal">Dades personals</string>
 
     <!-- Activity types -->
     <string name="settings_types_predefined_header">Tipus predefinits</string>

@@ -21,6 +21,9 @@
     <string name="settings_tab_audio">Audio</string>
     <string name="settings_tab_activity_types">Types</string>
     <string name="settings_tab_app">App</string>
+    <string name="settings_tab_profile">Profile</string>
+    <string name="settings_tab_map_routes">Map &amp; routes</string>
+    <string name="settings_profile_personal">Personal data</string>
 
     <!-- Activity types -->
     <string name="settings_types_predefined_header">Predefined types</string>

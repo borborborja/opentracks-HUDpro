@@ -75,15 +75,12 @@ private sealed interface UpdateState {
 }
 
 private val TABS = listOf(
-    R.string.settings_tab_units,
-    R.string.settings_tab_recording,
-    R.string.settings_tab_sync,
-    R.string.settings_tab_appearance,
-    R.string.settings_tab_route,
-    R.string.settings_tab_map,
-    R.string.settings_tab_audio,
-    R.string.settings_tab_activity_types,
-    R.string.settings_tab_app,
+    R.string.settings_tab_recording,   // 0
+    R.string.settings_tab_profile,     // 1 — units + personal data
+    R.string.settings_tab_map_routes,  // 2 — map + track/route appearance + off-route
+    R.string.settings_tab_audio,       // 3
+    R.string.settings_tab_sync,        // 4
+    R.string.settings_tab_app,         // 5 — app + activity types
 )
 
 @Composable
@@ -104,19 +101,37 @@ fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}, onOpenSe
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 when (tab) {
-                    0 -> UnitsSection(prefs)
-                    1 -> RecordingSection(prefs, onOpenSensors)
-                    2 -> SyncSection()
-                    3 -> TrackAppearanceSection(prefs)
-                    4 -> FollowRouteSection(prefs)
-                    5 -> MapSection(prefs)
-                    6 -> AudioAnnouncementsSection(prefs)
-                    7 -> ActivityTypesSection(prefs)
-                    else -> AppSection(onOpenDebugLog)
+                    0 -> RecordingSection(prefs, onOpenSensors)
+                    1 -> ProfileSection(prefs)
+                    2 -> MapRoutesSection(prefs)
+                    3 -> AudioAnnouncementsSection(prefs)
+                    4 -> SyncSection()
+                    else -> AppAndTypesSection(prefs, onOpenDebugLog)
                 }
             }
         }
     }
+}
+
+/** «Mapa y rutas»: caché de mapa + apariencia de traza + ruta a seguir + fuera de ruta. */
+@Composable
+private fun MapRoutesSection(prefs: ViewerPreferences) {
+    Text(stringResource(R.string.settings_tab_map), style = MaterialTheme.typography.titleSmall)
+    MapSection(prefs)
+    androidx.compose.material3.HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    Text(stringResource(R.string.settings_appearance_track), style = MaterialTheme.typography.titleSmall)
+    TrackAppearanceSection(prefs)
+    androidx.compose.material3.HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    FollowRouteSection(prefs)
+}
+
+/** «App»: información/actualización/depuración + gestión de tipos de actividad. */
+@Composable
+private fun AppAndTypesSection(prefs: ViewerPreferences, onOpenDebugLog: () -> Unit) {
+    AppSection(onOpenDebugLog)
+    androidx.compose.material3.HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    Text(stringResource(R.string.settings_tab_activity_types), style = MaterialTheme.typography.titleSmall)
+    ActivityTypesSection(prefs)
 }
 
 // --- Units ---
@@ -332,10 +347,6 @@ private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit
     var accuracy by remember { mutableFloatStateOf(prefs.recMaxAccuracyM) }
     var autoPause by remember { mutableStateOf(prefs.recAutoPause) }
     var barometer by remember { mutableStateOf(prefs.recBarometer) }
-    var maxHr by remember { mutableIntStateOf(prefs.userMaxHr) }
-    var weight by remember { mutableIntStateOf(prefs.userWeightKg) }
-    var age by remember { mutableIntStateOf(prefs.userAge) }
-    var sex by remember { mutableStateOf(prefs.userSex) }
 
     Text(stringResource(R.string.settings_rec_gps_interval), style = MaterialTheme.typography.labelLarge)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -380,6 +391,26 @@ private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )
+    Text(
+        stringResource(R.string.settings_rec_apply_note),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
+        modifier = Modifier.padding(top = 8.dp),
+    )
+}
+
+// --- Profile: display units + personal data (weight/age/sex/max HR for calories & zones) ---
+
+@Composable
+private fun ProfileSection(prefs: ViewerPreferences) {
+    UnitsSection(prefs)
+
+    var maxHr by remember { mutableIntStateOf(prefs.userMaxHr) }
+    var weight by remember { mutableIntStateOf(prefs.userWeightKg) }
+    var age by remember { mutableIntStateOf(prefs.userAge) }
+    var sex by remember { mutableStateOf(prefs.userSex) }
+
+    Text(stringResource(R.string.settings_profile_personal), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 12.dp))
     Text(stringResource(R.string.settings_max_hr, maxHr), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
     Slider(
         value = maxHr.toFloat(),
@@ -425,12 +456,6 @@ private fun RecordingSection(prefs: ViewerPreferences, onOpenSensors: () -> Unit
         stringResource(R.string.settings_calories_hr_help),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
-    )
-    Text(
-        stringResource(R.string.settings_rec_apply_note),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.outline,
-        modifier = Modifier.padding(top = 8.dp),
     )
 }
 
@@ -676,6 +701,7 @@ private fun FollowRouteSection(prefs: ViewerPreferences) {
     var threshold by remember { mutableFloatStateOf(prefs.offRouteThresholdM.toFloat()) }
     var sound by remember { mutableStateOf(prefs.offRouteSound) }
     var vibrate by remember { mutableStateOf(prefs.offRouteVibrate) }
+    var spoken by remember { mutableStateOf(prefs.offRouteSpoken) }
 
     Text(stringResource(R.string.settings_route_follow), style = MaterialTheme.typography.labelLarge)
     ColorPalette(palette, color) { color = it; prefs.followColor = it }
@@ -711,6 +737,7 @@ private fun FollowRouteSection(prefs: ViewerPreferences) {
     )
     ToggleRow(stringResource(R.string.settings_route_sound), sound) { sound = it; prefs.offRouteSound = it }
     ToggleRow(stringResource(R.string.settings_route_vibration), vibrate) { vibrate = it; prefs.offRouteVibrate = it }
+    ToggleRow(stringResource(R.string.settings_audio_off_route_spoken), spoken) { spoken = it; prefs.offRouteSpoken = it }
 }
 
 // --- Audio announcements (moved from the HUD designer) ---
@@ -729,7 +756,6 @@ private fun AudioAnnouncementsSection(prefs: ViewerPreferences) {
     var fSplit by remember { mutableStateOf(prefs.annSplitPace) }
     var fElev by remember { mutableStateOf(prefs.annElevation) }
     var fHr by remember { mutableStateOf(prefs.annHeartRate) }
-    var offSpoken by remember { mutableStateOf(prefs.offRouteSpoken) }
     var beepIdx by remember { mutableIntStateOf(prefs.announceBeepSound) }
     var headsUp by remember { mutableStateOf(prefs.turnHeadsUp) }
 
@@ -790,7 +816,6 @@ private fun AudioAnnouncementsSection(prefs: ViewerPreferences) {
         ToggleRow(stringResource(R.string.settings_audio_split_pace), fSplit) { fSplit = it; prefs.annSplitPace = it }
         ToggleRow(stringResource(R.string.settings_audio_elevation), fElev) { fElev = it; prefs.annElevation = it }
         ToggleRow(stringResource(R.string.settings_audio_heart_rate), fHr) { fHr = it; prefs.annHeartRate = it }
-        ToggleRow(stringResource(R.string.settings_audio_off_route_spoken), offSpoken) { offSpoken = it; prefs.offRouteSpoken = it }
     }
 }
 
