@@ -50,6 +50,19 @@ class GhostEngineTest {
     }
 
     @Test
+    fun activeTimeRebasedGhostFinishesAtBestLapTime() {
+        // A lap ghost re-based to active time (pause gap compressed out, as buildActiveTimeLapPoints
+        // does): 10 s of movement whose timestamps already exclude a 60 s recording pause. The ghost's
+        // total duration must equal the active lap time, so it "finishes" exactly at bestLapMs and the
+        // chaser (driven by pause-excluding currentLapTimeMs) sees no lag.
+        val g = GhostEngine(steady(11)) // active timestamps 0..10 s
+        assertThat(g.totalDurationMs).isEqualTo(10_000) // == active lap time, NOT 10 s + pause
+        // Distance advances continuously across the (removed) pause instant.
+        assertThat(g.distanceAt(5_000)).isCloseTo(g.totalMeters * 0.5, within(1.5))
+        assertThat(g.distanceAt(9_000)).isGreaterThan(g.distanceAt(5_000))
+    }
+
+    @Test
     fun isTimedRequiresTwoTimedPoints() {
         assertThat(GhostEngine.isTimed(steady(2))).isTrue()
         assertThat(GhostEngine.isTimed(listOf(GpxPoint(41.0, 2.0), GpxPoint(41.1, 2.0)))).isFalse()

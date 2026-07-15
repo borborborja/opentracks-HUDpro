@@ -1113,9 +1113,7 @@ class MapViewerActivity : ComponentActivity() {
                 if (opens.size >= 2 && lastLap != null && (bestLapMs == null || lastLap < bestLapMs!!)) {
                     val startSeq = opens[opens.size - 2].seq
                     val endSeq = opens[opens.size - 1].seq
-                    val slice = ls.points()
-                        .filter { it.latLong != null && !it.isPause && it.id in startSeq until endSeq }
-                        .map { GpxPoint(it.latLong!!.latitude, it.latLong.longitude, it.altitude, it.time, heartRate = it.heartRate, cadence = it.cadence, power = it.power) }
+                    val slice = buildActiveTimeLapPoints(ls.points(), startSeq, endSeq)
                     if (cat.rumb.app.data.competition.GhostEngine.isTimed(slice)) {
                         bestLapMs = lastLap
                         lapGhost = cat.rumb.app.data.competition.GhostEngine(slice)
@@ -1143,14 +1141,18 @@ class MapViewerActivity : ComponentActivity() {
                 } else {
                     stats?.startTime?.takeIf { recording }?.let { java.time.Duration.between(it, java.time.Instant.now()).toMillis() } ?: 0L
                 }
-                ctrl.setGhost(ghost.positionAt(elapsed))
                 val progress = if (lapRacing) lapSnapshot?.currentLapDistanceM else state?.progressMeters
                 val offRoute = !lapRacing && (state?.offRouteMeters ?: 0.0) > offRouteThreshold
-                if (progress != null && !offRoute) {
-                    val delta = progress - ghost.distanceAt(elapsed)
-                    // Rough seconds equivalent at the current speed (skip when nearly stopped).
-                    val secs = metrics.speedKmh?.takeIf { it > 1.0 }?.let { delta / (it / 3.6) }
-                    metrics = metrics.copy(ghostDeltaMeters = delta, ghostSecondsEst = secs)
+                // Off-route (cross-day): the along-track distance is unreliable, so freeze BOTH the
+                // dot and the meters together — updating only one makes them visibly disagree.
+                if (!offRoute) {
+                    ctrl.setGhost(ghost.positionAt(elapsed))
+                    if (progress != null) {
+                        val delta = progress - ghost.distanceAt(elapsed)
+                        // Rough seconds equivalent at the current speed (skip when nearly stopped).
+                        val secs = metrics.speedKmh?.takeIf { it > 1.0 }?.let { delta / (it / 3.6) }
+                        metrics = metrics.copy(ghostDeltaMeters = delta, ghostSecondsEst = secs)
+                    }
                 }
             }
         } else if (lapCompeting) {
@@ -1426,4 +1428,40 @@ private fun StatusBarScrim() {
                 .background(Brush.verticalGradient(listOf(Color(0x66000000), Color.Transparent))),
         )
     }
+}
+
+/**
+ * Builds a lap ghost reference re-based to ACTIVE time: a recording pause inside the reference lap
+ * advances the wall clock but not the active-lap clock, so the raw timestamps carry a gap the chaser
+ * (driven by pause-excluding currentLapTimeMs) never sees. Compress that gap out by excluding any
+ * interval touching a pause point, so the ghost's timeline matches the chaser's. Without a pause this
+ * reduces to the raw wall-clock offsets — no behavior change.
+ */
+private fun buildActiveTimeLapPoints(
+    points: List<cat.rumb.app.data.opentracks.model.Trackpoint>,
+    startSeq: Long,
+    endSeq: Long,
+): List<GpxPoint> {
+    val lap = points.filter { it.id in startSeq until endSeq }
+    val out = ArrayList<GpxPoint>(lap.size)
+    var activeMs = 0L
+    var prev: cat.rumb.app.data.opentracks.model.Trackpoint? = null
+    for (p in lap) {
+        val before = prev
+        if (before != null && !before.isPause && !p.isPause) {
+            activeMs += (p.time.toEpochMilli() - before.time.toEpochMilli()).coerceAtLeast(0)
+        }
+        prev = p
+        val ll = p.latLong
+        if (ll != null && !p.isPause) {
+            out.add(
+                GpxPoint(
+                    ll.latitude, ll.longitude, p.altitude,
+                    java.time.Instant.ofEpochMilli(activeMs),
+                    heartRate = p.heartRate, cadence = p.cadence, power = p.power,
+                ),
+            )
+        }
+    }
+    return out
 }
