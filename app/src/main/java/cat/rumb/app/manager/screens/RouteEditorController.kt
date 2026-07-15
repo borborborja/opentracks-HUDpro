@@ -107,7 +107,11 @@ class RouteEditorController(private val map: MapLibreMap) {
         val bounds = org.maplibre.android.geometry.LatLngBounds.Builder()
             .includes(points.map { LatLng(it.latitude, it.longitude) })
             .build()
-        map.moveCamera(org.maplibre.android.camera.CameraUpdateFactory.newLatLngBounds(bounds, 80))
+        // newLatLngBounds throws if the map isn't measured yet; fall back to centering on the start.
+        runCatching { map.moveCamera(org.maplibre.android.camera.CameraUpdateFactory.newLatLngBounds(bounds, 80)) }
+            .onFailure {
+                map.moveCamera(org.maplibre.android.camera.CameraUpdateFactory.newLatLngZoom(LatLng(points[0].latitude, points[0].longitude), 13.0))
+            }
     }
 
     /**

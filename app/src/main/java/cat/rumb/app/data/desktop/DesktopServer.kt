@@ -62,18 +62,21 @@ class DesktopServer(
         // Everything else under /api requires a valid session token.
         if (!authorized(session)) return json(Response.Status.UNAUTHORIZED, OkDto(false, error = "auth"))
 
+        // A malformed id (non-numeric, or an unmatched subpath like /api/track/5/foo) must be a clean
+        // 404, not an uncaught NumberFormatException surfaced as HTTP 500.
+        val notFound = json(Response.Status.NOT_FOUND, OkDto(false, error = "not found"))
         return when {
             uri == "/api/tracks" -> handleTracks(session)
-            uri.startsWith("/api/track/") && uri.endsWith("/gpx") -> handleGpx(uri.removePrefix("/api/track/").removeSuffix("/gpx").toLong())
+            uri.startsWith("/api/track/") && uri.endsWith("/gpx") -> handleGpx(uri.removePrefix("/api/track/").removeSuffix("/gpx").toLongOrNull() ?: return notFound)
             uri.startsWith("/api/track/") && uri.endsWith("/rename") && session.method == Method.POST ->
-                handleRename(uri.removePrefix("/api/track/").removeSuffix("/rename").toLong(), session)
+                handleRename(uri.removePrefix("/api/track/").removeSuffix("/rename").toLongOrNull() ?: return notFound, session)
             uri.startsWith("/api/track/") && session.method == Method.DELETE ->
-                handleDelete(uri.removePrefix("/api/track/").toLong())
-            uri.startsWith("/api/track/") -> handleTrackDetail(uri.removePrefix("/api/track/").toLong())
+                handleDelete(uri.removePrefix("/api/track/").toLongOrNull() ?: return notFound)
+            uri.startsWith("/api/track/") -> handleTrackDetail(uri.removePrefix("/api/track/").toLongOrNull() ?: return notFound)
             uri == "/api/records" -> handleRecords()
             uri == "/api/progress" -> handleProgress()
             uri == "/api/competitions" -> handleCompetitions()
-            uri.startsWith("/api/competition/") -> handleCompetitionDetail(uri.removePrefix("/api/competition/").toLong())
+            uri.startsWith("/api/competition/") -> handleCompetitionDetail(uri.removePrefix("/api/competition/").toLongOrNull() ?: return notFound)
             uri == "/api/profiles" -> handleProfiles()
             uri == "/api/location" -> handleLocation()
             uri == "/api/route/preview" && session.method == Method.POST -> handleRoutePreview(session)

@@ -103,7 +103,11 @@ class AreaSelectController(private val map: MapLibreMap) {
             .include(LatLng(bbox.north, bbox.east))
             .include(LatLng(bbox.south, bbox.west))
             .build()
-        map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 60))
+        // newLatLngBounds throws if the map isn't measured yet; fall back to centering.
+        runCatching { map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 60)) }
+            .onFailure {
+                map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng((bbox.north + bbox.south) / 2, (bbox.east + bbox.west) / 2), 11.0))
+            }
     }
 
     fun visibleBounds(): BoundingBox {

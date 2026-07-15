@@ -327,6 +327,24 @@ class MapLibreController(private val map: MapLibreMap) {
                     }
                     i += step
                 }
+                // With step > 1 the loop stops short of the end; connect the last sampled point to the
+                // real final point so the colored track doesn't end early on long segments.
+                val lastConnected = i - step
+                if (lastConnected in 0 until pts.size - 1) {
+                    val a = pts[lastConnected].latLong!!
+                    val b = pts.last().latLong!!
+                    val v = trackColorMode.valueOf(pts.last()) ?: trackColorMode.valueOf(pts[lastConnected])
+                    if (v != null) {
+                        min = minOf(min, v); max = maxOf(max, v)
+                        features.add(
+                            Feature.fromGeometry(
+                                LineString.fromLngLats(
+                                    listOf(Point.fromLngLat(a.longitude, a.latitude), Point.fromLngLat(b.longitude, b.latitude)),
+                                ),
+                            ).also { it.addNumberProperty("v", v) },
+                        )
+                    }
+                }
             }
             trackSource?.setGeoJson(FeatureCollection.fromFeatures(features))
             if (features.isEmpty() || max - min < 1e-6) {
@@ -475,7 +493,9 @@ class MapLibreController(private val map: MapLibreMap) {
             val bounds = LatLngBounds.Builder()
                 .includes(all.map { LatLng(it.latitude, it.longitude) })
                 .build()
-            map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 80))
+            // newLatLngBounds needs the map measured; fall back to centering if it isn't yet.
+            runCatching { map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 80)) }
+                .onFailure { map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(all[0].latitude, all[0].longitude), 13.0)) }
         }
         hasFramedTrack = true
         cat.rumb.app.data.debug.DebugLog.d("Map", "frameTrack · ${all.size} punts")
@@ -591,7 +611,8 @@ class MapLibreController(private val map: MapLibreMap) {
             .include(LatLng(north, east))
             .include(LatLng(south, west))
             .build()
-        map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 40))
+        runCatching { map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 40)) }
+            .onFailure { map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng((north + south) / 2, (east + west) / 2), 12.0)) }
     }
 
     /** Reset orientation to north-up. */
