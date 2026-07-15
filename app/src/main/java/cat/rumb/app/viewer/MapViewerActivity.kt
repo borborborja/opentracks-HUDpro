@@ -364,6 +364,11 @@ class MapViewerActivity : ComponentActivity() {
                                     prefs.lapManagementEnabled = b
                                     hudDataFlow.value = hudDataFlow.value.copy(lapManagementEnabled = b)
                                 },
+                                autoLapByPosition = prefs.autoLapByPosition,
+                                onAutoLapByPosition = { b ->
+                                    DebugLog.i("UI", "quick-settings · auto-lap posició → $b")
+                                    prefs.autoLapByPosition = b
+                                },
                                 onDismiss = { settingsOpenFlow.value = false },
                                 competing = competing,
                                 ghostCandidates = ghostCandidates,

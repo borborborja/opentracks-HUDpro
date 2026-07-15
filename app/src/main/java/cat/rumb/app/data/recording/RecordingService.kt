@@ -303,6 +303,7 @@ class RecordingService : Service() {
     private fun configFrom(prefs: ViewerPreferences) = RecorderConfig(
         maxAccuracyM = prefs.recMaxAccuracyM,
         minDistanceM = prefs.recMinDistanceM.toDouble(),
+        autoLapByPosition = prefs.autoLapByPosition,
     )
 
     // --- Notification ---

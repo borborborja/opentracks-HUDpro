@@ -87,6 +87,11 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_LAP_MANAGEMENT, true)
         set(value) = prefs.edit().putBoolean(KEY_LAP_MANAGEMENT, value).apply()
 
+    /** Position auto-lap: the "start laps" spot becomes a start/finish line; each crossing auto-splits. */
+    var autoLapByPosition: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_LAP_BY_POSITION, false)
+        set(value) = prefs.edit().putBoolean(KEY_AUTO_LAP_BY_POSITION, value).apply()
+
     var recBarometer: Boolean
         get() = prefs.getBoolean(KEY_REC_BAROMETER, true)
         set(value) = prefs.edit().putBoolean(KEY_REC_BAROMETER, value).apply()
@@ -338,6 +343,7 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_REC_MAX_ACCURACY = "rec_max_accuracy"
         private const val KEY_REC_AUTO_PAUSE = "rec_auto_pause"
         private const val KEY_LAP_MANAGEMENT = "lap_management"
+        private const val KEY_AUTO_LAP_BY_POSITION = "auto_lap_by_position"
         private const val KEY_REC_BAROMETER = "rec_barometer"
         private const val KEY_BLE_SENSORS = "ble_sensors"
         private const val KEY_ROUTE_VIEW_MODE = "route_view_mode"

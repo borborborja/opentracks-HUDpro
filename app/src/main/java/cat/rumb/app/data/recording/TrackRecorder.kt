@@ -37,6 +37,18 @@ data class RecorderConfig(
      * fix's own uncertainty circle and is discarded (prevents phantom distance while stopped).
      */
     val jitterFactor: Double = 0.5,
+    /**
+     * Position auto-lap: when true, pressing "start laps" records the current position as the
+     * start/finish line, and each time the athlete crosses back within [autoLapRadiusM] a SPLIT is
+     * inserted automatically (same effect as the manual flag). Manual laps still work.
+     */
+    val autoLapByPosition: Boolean = false,
+    /** Proximity gate for crossing the start/finish line (m). */
+    val autoLapRadiusM: Double = 25.0,
+    /** A crossing only counts after the current lap has run at least this long (ms) — anti re-trigger. */
+    val autoLapMinLapMs: Long = 20_000,
+    /** …and at least this far (m). Both guards must pass. */
+    val autoLapMinLapM: Double = 100.0,
 )
 
 /** Immutable snapshot of an ongoing/finished native recording, consumed by the viewer pipeline. */
@@ -113,6 +125,11 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
     private var lapStartTotalMs = 0L
     private var lastLapMs: Long? = null
     private val lapMarks = mutableListOf<LapMark>()
+
+    // Position auto-lap: the start/finish line captured at startLaps, and an "armed" flag that is only
+    // true after leaving the radius since the last split (so we don't re-fire while still on the line).
+    private var lapLine: GeoPoint? = null
+    private var lapLineArmed = false
 
     fun start(time: Instant) {
         check(startedAt == null) { "already started" }
@@ -301,6 +318,26 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
                 (power?.let { " pot=${it.toInt()}W" } ?: "") +
                 " · total=${fmt(distanceM)}m",
         )
+
+        // Position auto-lap: proximity-gate state machine. Armed once we leave the radius; a re-entry
+        // while armed and past the min-lap guards inserts a SPLIT (identical to a manual flag press),
+        // then disarms until we leave again. The GPS filters above already ran, so `here` is clean.
+        if (config.autoLapByPosition && lapsActive) {
+            lapLine?.let { line ->
+                val d = MetricsCalculator.distanceMeters(here, line)
+                if (d > config.autoLapRadiusM) {
+                    lapLineArmed = true
+                } else if (lapLineArmed) {
+                    val sinceMs = totalMs(time) - lapStartTotalMs
+                    val sinceM = distanceM - lapStartDistanceM
+                    if (sinceMs >= config.autoLapMinLapMs && sinceM >= config.autoLapMinLapM) {
+                        DebugLog.i("Motor", "auto-lap: creuament línia (${fmt(d)}m) · vuelta ${lapCount + 1}")
+                        split(time)
+                        lapLineArmed = false
+                    }
+                }
+            }
+        }
         return point
     }
 
@@ -313,6 +350,11 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
     fun lap(now: Instant) {
         if (finished) return
         if (!lapsActive) { startLaps(now); return }
+        split(now)
+    }
+
+    /** Closes the current lap and opens the next. Shared by the manual flag and position auto-lap. */
+    private fun split(now: Instant) {
         lastLapMs = totalMs(now) - lapStartTotalMs
         lapMarks.add(LapMark(seq, distanceM, totalMs(now), LapMarkType.SPLIT))
         lapCount++
@@ -330,7 +372,11 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         lapStartDistanceM = distanceM
         lapStartTotalMs = totalMs(now)
         lapMarks.add(LapMark(seq, distanceM, totalMs(now), LapMarkType.START))
-        DebugLog.i("Motor", "vueltas iniciadas · vuelta 1")
+        // Position auto-lap: the current spot is the start/finish line. Start disarmed so the first
+        // crossing can't fire until we've left the radius (and past the min-lap guards).
+        lapLine = lastLatLong
+        lapLineArmed = false
+        DebugLog.i("Motor", "vueltas iniciadas · vuelta 1" + if (config.autoLapByPosition) " · línia auto @${lapLine != null}" else "")
     }
 
     /** Ends the lap block: closes the current lap; what follows is the return (not a lap). */
@@ -339,6 +385,8 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         lastLapMs = totalMs(now) - lapStartTotalMs
         lapMarks.add(LapMark(seq, distanceM, totalMs(now), LapMarkType.END))
         lapsActive = false
+        lapLine = null
+        lapLineArmed = false
         DebugLog.i("Motor", "fin de vueltas · $lapCount vueltas")
     }
 

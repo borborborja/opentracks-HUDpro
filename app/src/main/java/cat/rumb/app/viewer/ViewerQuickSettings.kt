@@ -79,6 +79,8 @@ fun ViewerQuickSettings(
     onTurnVoice: (Boolean) -> Unit = {},
     lapManagement: Boolean = true,
     onLapManagement: (Boolean) -> Unit = {},
+    autoLapByPosition: Boolean = false,
+    onAutoLapByPosition: (Boolean) -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var tab by remember { mutableIntStateOf(0) }
@@ -92,6 +94,7 @@ fun ViewerQuickSettings(
     var apSec by remember { mutableStateOf(autoPauseSec) }
     var autoZoom by remember { mutableStateOf(adaptiveZoom) }
     var lapMgmt by remember { mutableStateOf(lapManagement) }
+    var autoLap by remember { mutableStateOf(autoLapByPosition) }
 
     val tabs = TABS + if (competing) listOf(R.string.viewer_qs_tab_competition) else emptyList()
 
@@ -127,6 +130,8 @@ fun ViewerQuickSettings(
                     onAdaptiveZoom = { autoZoom = it; onAdaptiveZoom(it) },
                     lapManagement = lapMgmt,
                     onLapManagement = { lapMgmt = it; onLapManagement(it) },
+                    autoLapByPosition = autoLap,
+                    onAutoLapByPosition = { autoLap = it; onAutoLapByPosition(it) },
                 )
             }
         }
@@ -196,6 +201,8 @@ private fun OptionsTab(
     onAdaptiveZoom: (Boolean) -> Unit,
     lapManagement: Boolean = true,
     onLapManagement: (Boolean) -> Unit = {},
+    autoLapByPosition: Boolean = false,
+    onAutoLapByPosition: (Boolean) -> Unit = {},
 ) {
     Text(stringResource(R.string.viewer_qs_map_orientation), style = MaterialTheme.typography.labelLarge)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -214,6 +221,14 @@ private fun OptionsTab(
     ToggleRow(stringResource(R.string.viewer_qs_fullscreen), fullscreen, onFullscreen)
     ToggleRow(stringResource(R.string.viewer_qs_countdown), countdown, onCountdown)
     ToggleRow(stringResource(R.string.viewer_qs_lap_management), lapManagement, onLapManagement)
+    if (lapManagement) {
+        ToggleRow(stringResource(R.string.viewer_qs_auto_lap), autoLapByPosition, onAutoLapByPosition)
+        Text(
+            stringResource(R.string.viewer_qs_auto_lap_help),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
+    }
     ToggleRow(stringResource(R.string.viewer_qs_auto_pause), autoPause, onAutoPause)
     if (autoPause) {
         Text(

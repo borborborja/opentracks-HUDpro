@@ -254,4 +254,43 @@ class TrackRecorderTest {
         assertThat(s1.points()).hasSize(8)
         assertThat(s1.statistics.totalDistanceMeter).isEqualTo(55.7 + 11.1, within(3.0))
     }
+
+    // --- Position auto-lap ---
+
+    /** Records an out-and-back loop around a line captured at startLaps. 0.0002° lat ≈ 22 m/step. */
+    private fun autoLapLoop(cfg: RecorderConfig, outSteps: Int, stepDeg: Double = 0.0002): TrackRecorder {
+        val r = TrackRecorder(cfg)
+        r.start(t0)
+        r.warmUp()
+        r.onLocation(41.0, 2.0, 100.0, null, null, 5f, at(0)) // the line point
+        r.startLaps(at(0))
+        var sec = 1L
+        for (i in 1..outSteps) { r.onLocation(41.0 + i * stepDeg, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+        for (i in (outSteps - 1) downTo 0) { r.onLocation(41.0 + i * stepDeg, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+        return r
+    }
+
+    @Test
+    fun autoLapSplitsOnceWhenCrossingTheStartLine() {
+        // Out ~333 m over 15 s, back to the line by ~30 s → both guards (20 s / 100 m) pass.
+        val r = autoLapLoop(RecorderConfig(autoLapByPosition = true), outSteps = 15)
+        val s = r.snapshot(at(60))
+        assertThat(s.lapMarks.count { it.type == LapMarkType.SPLIT }).isEqualTo(1) // exactly one crossing
+        assertThat(s.lapCount).isEqualTo(2)
+        assertThat(s.lapMarks.none { it.type == LapMarkType.END }).isTrue()
+    }
+
+    @Test
+    fun autoLapDoesNotFireBelowTheMinLapGuards() {
+        // Out ~44 m over 2 s, back → leaves the 25 m radius (arms) but the lap is under 100 m / 20 s.
+        val r = autoLapLoop(RecorderConfig(autoLapByPosition = true), outSteps = 2)
+        assertThat(r.snapshot(at(30)).lapMarks.none { it.type == LapMarkType.SPLIT }).isTrue()
+    }
+
+    @Test
+    fun autoLapOffLeavesLapsManualOnly() {
+        val r = autoLapLoop(RecorderConfig(autoLapByPosition = false), outSteps = 15)
+        assertThat(r.snapshot(at(60)).lapMarks.none { it.type == LapMarkType.SPLIT }).isTrue()
+        assertThat(r.snapshot(at(60)).lapCount).isEqualTo(1)
+    }
 }

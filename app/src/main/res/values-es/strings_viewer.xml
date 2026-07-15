@@ -67,6 +67,8 @@
     <string name="comp_start_distance_km">Salida a %1$.1f km</string>
     <string name="viewer_qs_auto_pause">Auto-pausa al detenerte</string>
     <string name="viewer_qs_lap_management">Gestión de vueltas</string>
+    <string name="viewer_qs_auto_lap">Auto-vuelta por posición</string>
+    <string name="viewer_qs_auto_lap_help">Al iniciar las vueltas, ese punto se convierte en la línea de meta y cada cruce cierra una vuelta automáticamente. La bandera manual sigue funcionando.</string>
     <string name="viewer_qs_auto_pause_secs">Pausa tras estar parado:</string>
     <string name="viewer_qs_turn_voice">Avisos de giro (voz/pitidos)</string>
     <string name="data_record_start">Registrar</string>
