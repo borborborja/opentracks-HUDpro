@@ -1671,11 +1671,14 @@ private fun SaveRecordingDialog(
         defaultName = defaultName,
         folders = folders,
         activityTypes = cat.rumb.app.manager.screens.rememberActivityTypeOptions(prefs),
-        initialTypeId = cat.rumb.app.data.tracks.ActivityTypeSuggester.suggest(
-            avgMovingSpeedKmh = state.statistics.avgMovingSpeedMeterPerSecond?.times(3.6),
-            ascentM = state.statistics.elevationGainMeter,
-            distanceM = state.statistics.totalDistanceMeter,
-        ),
+        // The sport you chose before recording is the best guess there is — you said it out loud.
+        // Only fall back to guessing from the numbers when no sport was picked.
+        initialTypeId = prefs.activeSportId
+            ?: cat.rumb.app.data.tracks.ActivityTypeSuggester.suggest(
+                avgMovingSpeedKmh = state.statistics.avgMovingSpeedMeterPerSecond?.times(3.6),
+                ascentM = state.statistics.elevationGainMeter,
+                distanceM = state.statistics.totalDistanceMeter,
+            ),
         confirmLabel = androidx.compose.ui.res.stringResource(R.string.viewer_save),
         dismissLabel = androidx.compose.ui.res.stringResource(R.string.viewer_discard),
         onConfirm = onSave,
