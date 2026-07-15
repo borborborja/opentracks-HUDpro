@@ -101,4 +101,6 @@
     <string name="viewer_qs_auto_lap_off">Non</string>
     <string name="viewer_sport_picker_title">Que faites-vous ?</string>
     <string name="viewer_sport_picker_help">Le sport définit le HUD, les tours et les efforts auxquels vous êtes comparé.</string>
+    <string name="viewer_qs_sport">Sport</string>
+    <string name="viewer_qs_sport_locked">Non modifiable pendant l\'enregistrement.</string>
 </resources>

@@ -97,6 +97,9 @@ fun ViewerQuickSettings(
     onAutoLapByPosition: (Boolean) -> Unit = {},
     autoLapEveryM: Float = 0f,
     onAutoLapEveryM: (Float) -> Unit = {},
+    sportLabel: String? = null,
+    sportLocked: Boolean = false,
+    onChangeSport: () -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var tab by remember { mutableIntStateOf(0) }
@@ -154,6 +157,9 @@ fun ViewerQuickSettings(
                     onAutoLapByPosition = { autoLap = it; onAutoLapByPosition(it) },
                     autoLapEveryM = lapEveryM,
                     onAutoLapEveryM = { lapEveryM = it; onAutoLapEveryM(it) },
+                    sportLabel = sportLabel,
+                    sportLocked = sportLocked,
+                    onChangeSport = onChangeSport,
                 )
             }
         }
@@ -306,7 +312,29 @@ private fun OptionsTab(
     onAutoLapByPosition: (Boolean) -> Unit = {},
     autoLapEveryM: Float = 0f,
     onAutoLapEveryM: (Float) -> Unit = {},
+    sportLabel: String? = null,
+    sportLocked: Boolean = false,
+    onChangeSport: () -> Unit = {},
 ) {
+    // Sport row FIRST: it drives the HUD, the splits and the cadence unit. Without a way back in,
+    // the picker only ever showed once and the sport could never be changed again.
+    sportLabel?.let { label ->
+        Text(stringResource(R.string.viewer_qs_sport), style = MaterialTheme.typography.labelLarge)
+        FilterChip(
+            selected = false,
+            enabled = !sportLocked,
+            onClick = onChangeSport,
+            label = { Text(label) },
+        )
+        if (sportLocked) {
+            Text(
+                stringResource(R.string.viewer_qs_sport_locked),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+            )
+        }
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    }
     Text(stringResource(R.string.viewer_qs_map_orientation), style = MaterialTheme.typography.labelLarge)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         FilterChip(orientation == "NORTH_UP", { onOrientation("NORTH_UP") }, label = { Text(stringResource(R.string.viewer_qs_north_up)) })

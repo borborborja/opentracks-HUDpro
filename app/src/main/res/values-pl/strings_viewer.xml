@@ -101,4 +101,6 @@
     <string name="viewer_qs_auto_lap_off">Nie</string>
     <string name="viewer_sport_picker_title">Co robisz?</string>
     <string name="viewer_sport_picker_help">Sport określa HUD, okrążenia i z czym jesteś porównywany.</string>
+    <string name="viewer_qs_sport">Sport</string>
+    <string name="viewer_qs_sport_locked">Nie można zmienić podczas nagrywania.</string>
 </resources>

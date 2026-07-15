@@ -188,8 +188,10 @@ class MapViewerActivity : ComponentActivity() {
     private val competePromptFlow = MutableStateFlow(false)
     // Competition id awaiting confirmation because a recording is in progress (null = no prompt).
     private val confirmCompetitionFlow = MutableStateFlow<Long?>(null)
-    // Sport mode: shown when recording is requested with no sport chosen yet (sticky afterwards).
+    // Sport mode: shown when recording is requested with no sport chosen yet, or from settings.
     private val sportPickerFlow = MutableStateFlow(false)
+    /** True when the picker was opened by pressing record, so it should start once a sport is set. */
+    private var recordAfterSportPick = false
 
     // Circuit mode: record an attempt at a saved circuit. The fixed line is preset (auto-lap arms
     // from the start) and the ghost is the circuit's best lap. Efforts are persisted on save.
@@ -442,6 +444,20 @@ class MapViewerActivity : ComponentActivity() {
                                     DebugLog.i("UI", "quick-settings · auto-lap posició → $b")
                                     prefs.autoLapByPosition = b
                                 },
+                                sportLabel = prefs.activeSportId?.let {
+                                    cat.rumb.app.manager.screens.activityTypeLabel(
+                                        it,
+                                        cat.rumb.app.data.tracks.ActivityTypes.decodeCustom(prefs.customActivityTypesJson),
+                                    )
+                                },
+                                // The recorder reads its config at start, so a mid-recording switch
+                                // would silently do nothing.
+                                sportLocked = NativeRecording.isActive,
+                                onChangeSport = {
+                                    settingsOpenFlow.value = false
+                                    recordAfterSportPick = false
+                                    sportPickerFlow.value = true
+                                },
                                 autoLapEveryM = prefs.autoLapEveryM,
                                 onAutoLapEveryM = { m ->
                                     DebugLog.i("UI", "quick-settings · parcials cada ${m}m")
@@ -532,7 +548,10 @@ class MapViewerActivity : ComponentActivity() {
                                 onPick = { id ->
                                     sportPickerFlow.value = false
                                     applySport(id)
-                                    controller?.let { startNativeRecording(it) }
+                                    if (recordAfterSportPick) {
+                                        recordAfterSportPick = false
+                                        controller?.let { startNativeRecording(it) }
+                                    }
                                 },
                             )
                         }
@@ -839,6 +858,7 @@ class MapViewerActivity : ComponentActivity() {
         // Sport mode: what you're doing drives the HUD, the splits and which efforts you can be
         // compared against, so it must be known BEFORE recording. Sticky, so it's asked once.
         if (ViewerPreferences.get(this).activeSportId == null) {
+            recordAfterSportPick = true
             sportPickerFlow.value = true
             return
         }

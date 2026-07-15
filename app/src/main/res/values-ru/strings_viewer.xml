@@ -101,4 +101,6 @@
     <string name="viewer_qs_auto_lap_off">Нет</string>
     <string name="viewer_sport_picker_title">Чем займётесь?</string>
     <string name="viewer_sport_picker_help">Вид спорта задаёт HUD, круги и то, с чем вас сравнивают.</string>
+    <string name="viewer_qs_sport">Вид спорта</string>
+    <string name="viewer_qs_sport_locked">Нельзя изменить во время записи.</string>
 </resources>

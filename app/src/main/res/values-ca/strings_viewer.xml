@@ -100,4 +100,6 @@
     <string name="viewer_qs_auto_lap_off">No</string>
     <string name="viewer_sport_picker_title">Què faràs?</string>
     <string name="viewer_sport_picker_help">L\'esport determina el HUD, els parcials i amb quins esforços et poden comparar.</string>
+    <string name="viewer_qs_sport">Esport</string>
+    <string name="viewer_qs_sport_locked">No es pot canviar mentre graves.</string>
 </resources>

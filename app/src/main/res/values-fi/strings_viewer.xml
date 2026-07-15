@@ -101,4 +101,6 @@
     <string name="viewer_qs_auto_lap_off">Ei</string>
     <string name="viewer_sport_picker_title">Mitä teet?</string>
     <string name="viewer_sport_picker_help">Laji määrää HUDin, kierrokset ja mihin sinua verrataan.</string>
+    <string name="viewer_qs_sport">Laji</string>
+    <string name="viewer_qs_sport_locked">Ei voi vaihtaa tallennuksen aikana.</string>
 </resources>

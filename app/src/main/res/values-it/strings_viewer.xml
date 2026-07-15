@@ -101,4 +101,6 @@
     <string name="viewer_qs_auto_lap_off">No</string>
     <string name="viewer_sport_picker_title">Cosa fai?</string>
     <string name="viewer_sport_picker_help">Lo sport determina l\'HUD, i parziali e con quali sforzi vieni confrontato.</string>
+    <string name="viewer_qs_sport">Sport</string>
+    <string name="viewer_qs_sport_locked">Non modificabile durante la registrazione.</string>
 </resources>

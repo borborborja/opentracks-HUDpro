@@ -101,4 +101,6 @@
     <string name="viewer_qs_auto_lap_off">Uit</string>
     <string name="viewer_sport_picker_title">Wat ga je doen?</string>
     <string name="viewer_sport_picker_help">De sport bepaalt de HUD, de rondes en waarmee je wordt vergeleken.</string>
+    <string name="viewer_qs_sport">Sport</string>
+    <string name="viewer_qs_sport_locked">Niet te wijzigen tijdens opnemen.</string>
 </resources>

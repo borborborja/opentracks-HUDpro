@@ -101,4 +101,6 @@
     <string name="viewer_qs_auto_lap_off">Fra</string>
     <string name="viewer_sport_picker_title">Hvad skal du?</string>
     <string name="viewer_sport_picker_help">Sporten bestemmer HUD, omgange og hvad du sammenlignes med.</string>
+    <string name="viewer_qs_sport">Sport</string>
+    <string name="viewer_qs_sport_locked">Kan ikke ændres under optagelse.</string>
 </resources>

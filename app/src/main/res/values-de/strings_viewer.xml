@@ -101,4 +101,6 @@
     <string name="viewer_qs_auto_lap_off">Aus</string>
     <string name="viewer_sport_picker_title">Was machst du?</string>
     <string name="viewer_sport_picker_help">Die Sportart bestimmt HUD, Runden und womit du verglichen wirst.</string>
+    <string name="viewer_qs_sport">Sportart</string>
+    <string name="viewer_qs_sport_locked">Während der Aufzeichnung nicht änderbar.</string>
 </resources>

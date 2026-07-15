@@ -101,4 +101,6 @@
     <string name="viewer_qs_auto_lap_off">Kapalı</string>
     <string name="viewer_sport_picker_title">Ne yapacaksın?</string>
     <string name="viewer_sport_picker_help">Spor; HUD\'u, turları ve neyle karşılaştırıldığını belirler.</string>
+    <string name="viewer_qs_sport">Spor</string>
+    <string name="viewer_qs_sport_locked">Kayıt sırasında değiştirilemez.</string>
 </resources>

@@ -101,4 +101,6 @@
     <string name="viewer_qs_auto_lap_off">Nu</string>
     <string name="viewer_sport_picker_title">Ce vei face?</string>
     <string name="viewer_sport_picker_help">Sportul stabilește HUD-ul, tururile și cu ce ești comparat.</string>
+    <string name="viewer_qs_sport">Sport</string>
+    <string name="viewer_qs_sport_locked">Nu poate fi schimbat în timpul înregistrării.</string>
 </resources>
