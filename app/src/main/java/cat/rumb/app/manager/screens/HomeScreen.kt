@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
@@ -87,14 +89,19 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.rumb.app.RumbApplication
 import cat.rumb.app.R
+import cat.rumb.app.data.gpx.GpxPoint
 import cat.rumb.app.data.gpx.GpxShare
 import cat.rumb.app.data.map.MapSource
 import cat.rumb.app.data.map.MapStyleFactory
 import cat.rumb.app.data.opentracks.model.GeoPoint
 import cat.rumb.app.data.prefs.ViewerPreferences
 import cat.rumb.app.data.tracks.FollowTrackEntity
+import cat.rumb.app.data.tracks.LapKind
+import cat.rumb.app.data.tracks.Laps
 import cat.rumb.app.data.tracks.PolylineSimplifier
 import cat.rumb.app.data.tracks.TrackKind
+import cat.rumb.app.data.tracks.TrackStats
+import cat.rumb.app.data.tracks.TrackStatsCalculator
 import kotlinx.coroutines.launch
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
@@ -118,6 +125,7 @@ fun HomeScreen(
     onOpenLayers: () -> Unit = {},
     onOpenRoute: (Long) -> Unit = {},
     onOpenTraining: (Long) -> Unit = {},
+    onOpenCompare: (Long) -> Unit = {},
     onEditRoute: (Long) -> Unit = {},
     onCreateRoute: () -> Unit = {},
     onDownloadRouteMap: (cat.rumb.app.data.map.BoundingBox) -> Unit = {},
@@ -159,6 +167,8 @@ fun HomeScreen(
         it.id in activeCompIds || (it.competitionRefId != null && it.competitionRefId in activeCompIds)
     }.map { it.id }.toSet()
     val expanded = remember { mutableStateMapOf<String, Boolean>() }
+    // Per-row expansion of the lap dropdown (keyed by track id), independent of the folder expand.
+    val expandedLaps = remember { mutableStateMapOf<Long, Boolean>() }
 
     // Folders = user-created set ∪ collections present on this tab's tracks.
     fun folderSet(): Set<String> = if (kind == TrackKind.TRAINING) prefs.foldersTraining else prefs.foldersRoute
@@ -220,6 +230,7 @@ fun HomeScreen(
 
     val routeActions = RouteActions(
         onOpen = { if (it.kind == TrackKind.TRAINING) onOpenTraining(it.id) else onOpenRoute(it.id) },
+        onOpenCompare = { onOpenCompare(it.id) },
         onExport = ::exportTrack,
         onEdit = { t -> if (kind == TrackKind.ROUTE) onEditRoute(t.id) else renameFor = t },
         onMove = { moveFor = it },
@@ -370,7 +381,7 @@ fun HomeScreen(
                     ListView(
                         tracks = tracks, archived = archivedTracks, folders = folders, detailed = viewMode == "DETAILED",
                         kind = kind, compIds = compMemberIds, actions = routeActions,
-                        expanded = expanded,
+                        expanded = expanded, expandedLaps = expandedLaps,
                         onFolderMenu = { name, action -> if (action == "rename") folderRename = name else folderDelete = name },
                     )
                 }
@@ -671,6 +682,7 @@ private suspend fun createCompetitionFrom(context: android.content.Context, app:
 /** Per-route callbacks bundled to keep signatures sane. */
 private data class RouteActions(
     val onOpen: (FollowTrackEntity) -> Unit,
+    val onOpenCompare: (FollowTrackEntity) -> Unit,
     val onExport: (FollowTrackEntity) -> Unit,
     val onEdit: (FollowTrackEntity) -> Unit,
     val onMove: (FollowTrackEntity) -> Unit,
@@ -692,12 +704,13 @@ private fun ListView(
     compIds: Set<Long>,
     actions: RouteActions,
     expanded: MutableMap<String, Boolean>,
+    expandedLaps: MutableMap<Long, Boolean>,
     onFolderMenu: (String, String) -> Unit,
 ) {
     val root = tracks.filter { it.collection == ROOT }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(root, key = { it.id }) { t ->
-            RouteRow(t, detailed, kind, t.id in compIds, actions)
+            RouteRow(t, detailed, kind, t.id in compIds, actions, expandedLaps)
         }
         folders.forEach { folder ->
             val children = tracks.filter { it.collection == folder }
@@ -712,7 +725,7 @@ private fun ListView(
             }
             if (expanded[folder] == true) {
                 items(children, key = { it.id }) { t ->
-                    Box(Modifier.padding(start = 16.dp)) { RouteRow(t, detailed, kind, t.id in compIds, actions) }
+                    Box(Modifier.padding(start = 16.dp)) { RouteRow(t, detailed, kind, t.id in compIds, actions, expandedLaps) }
                 }
             }
         }
@@ -727,7 +740,7 @@ private fun ListView(
             }
             if (expanded[ARCHIVED_FOLDER] == true) {
                 items(archived, key = { it.id }) { t ->
-                    Box(Modifier.padding(start = 16.dp)) { RouteRow(t, detailed, kind, false, actions) }
+                    Box(Modifier.padding(start = 16.dp)) { RouteRow(t, detailed, kind, false, actions, expandedLaps) }
                 }
             }
         }
@@ -793,50 +806,141 @@ private fun RouteRow(
     kind: String,
     inCompetition: Boolean,
     actions: RouteActions,
+    expandedLaps: MutableMap<Long, Boolean>,
 ) {
+    // Recorded laps within this track (approach/return excluded). ≥2 → offer the lap dropdown.
+    val lapCount = remember(t.laps) { Laps.decode(t.laps).count { it.kind == LapKind.LAP } }
+    val hasLaps = kind == TrackKind.TRAINING && lapCount >= 2
+    val expanded = expandedLaps[t.id] == true
     Card {
-        Row(
-            Modifier.fillMaxWidth().clickable { actions.onOpen(t) }.padding(start = 8.dp, top = 4.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (t.activityType != null) {
-                Icon(
-                    ActivityTypeCatalog.iconFor(t.activityType),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            if (inCompetition) {
-                Icon(
-                    Icons.Filled.EmojiEvents,
-                    contentDescription = stringResource(R.string.home_tab_competition),
-                    tint = Color(0xFFF4A261),
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            Column(Modifier.weight(1f).padding(start = 4.dp)) {
-                Text(t.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
-                if (detailed) {
-                    val difficulty = cat.rumb.app.data.tracks.DifficultyCalculator.bandOf(t.distanceMeters, t.ascentM)
-                    val extra = buildString {
-                        t.municipality?.takeIf { it.isNotBlank() }?.let { append(" · ").append(it) }
-                        append(" · ").append(stringResource(difficultyLabel(difficulty)))
-                    }
-                    Text(
-                        stringResource(
-                            R.string.home_route_detail_format,
-                            t.distanceMeters / 1000.0, t.pointCount, t.source.name,
-                        ) + extra,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1,
+        Column {
+            Row(
+                Modifier.fillMaxWidth().clickable { actions.onOpen(t) }.padding(start = 8.dp, top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (t.activityType != null) {
+                    Icon(
+                        ActivityTypeCatalog.iconFor(t.activityType),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(20.dp),
                     )
-                } else {
-                    Text(stringResource(R.string.home_distance_km, t.distanceMeters / 1000.0), style = MaterialTheme.typography.bodySmall)
                 }
+                if (inCompetition) {
+                    Icon(
+                        Icons.Filled.EmojiEvents,
+                        contentDescription = stringResource(R.string.home_tab_competition),
+                        tint = Color(0xFFF4A261),
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Column(Modifier.weight(1f).padding(start = 4.dp)) {
+                    Text(t.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+                    if (detailed) {
+                        val difficulty = cat.rumb.app.data.tracks.DifficultyCalculator.bandOf(t.distanceMeters, t.ascentM)
+                        val extra = buildString {
+                            t.municipality?.takeIf { it.isNotBlank() }?.let { append(" · ").append(it) }
+                            append(" · ").append(stringResource(difficultyLabel(difficulty)))
+                        }
+                        Text(
+                            stringResource(
+                                R.string.home_route_detail_format,
+                                t.distanceMeters / 1000.0, t.pointCount, t.source.name,
+                            ) + extra,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                        )
+                    } else {
+                        Text(stringResource(R.string.home_distance_km, t.distanceMeters / 1000.0), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                if (hasLaps) {
+                    // Lap badge + chevron; the chevron only toggles the dropdown, the row still opens the track.
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Flag, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                        Text("$lapCount", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    }
+                    IconButton(onClick = { expandedLaps[t.id] = !expanded }) {
+                        Icon(
+                            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                            contentDescription = stringResource(R.string.home_laps_count, lapCount),
+                        )
+                    }
+                }
+                RouteMenu(t, kind, actions)
             }
-            RouteMenu(t, kind, actions)
+            if (hasLaps && expanded) {
+                LapsDropdown(t, onOpenCompare = { actions.onOpenCompare(t) })
+            }
         }
+    }
+}
+
+/**
+ * Ranked lap list shown under a training row: laps of this track presented like competition
+ * "attempts" (best highlighted, gap vs best). Points are loaded lazily on expand; tapping a lap
+ * opens the shared lap comparison (CompareScreen LAPS mode).
+ */
+@Composable
+private fun LapsDropdown(t: FollowTrackEntity, onOpenCompare: () -> Unit) {
+    val context = LocalContext.current
+    val app = remember { RumbApplication.from(context) }
+    val laps = remember(t.laps) { Laps.decode(t.laps).filter { it.kind == LapKind.LAP } }
+    val points by produceState<List<GpxPoint>?>(initialValue = null, t.id) {
+        value = runCatching { app.trackRepository.loadGpxRoute(t.id) }.getOrDefault(emptyList())
+    }
+    val pts = points
+    Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, bottom = 6.dp)) {
+        if (pts == null) {
+            Text(stringResource(R.string.debug_loading), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+        } else {
+        // Per-lap stats (sliced on the fly) + best time for the gap column.
+        val rows = laps.mapIndexedNotNull { i, lap ->
+            val from = lap.startIdx.coerceIn(0, pts.size)
+            val to = lap.endIdx.coerceIn(from, pts.size)
+            if (to - from < 2) return@mapIndexedNotNull null
+            val stats = TrackStatsCalculator.compute(pts.subList(from, to))
+            val secs = (stats.movingTime ?: stats.totalTime)?.seconds ?: 0L
+            Triple(i + 1, stats, secs)
+        }
+        val bestSecs = rows.filter { it.third > 0 }.minOfOrNull { it.third }
+        rows.forEach { (lapNo, stats, secs) ->
+            val isBest = bestSecs != null && secs == bestSecs
+            Row(
+                Modifier.fillMaxWidth().clickable { onOpenCompare() }.padding(vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.training_lap_n, lapNo),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isBest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.width(64.dp),
+                )
+                Text(lapStatsLine(stats), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                val gap = if (bestSecs != null && secs > 0) secs - bestSecs else 0L
+                Text(
+                    if (isBest) stringResource(R.string.home_laps_best) else "+%d:%02d".format(gap / 60, gap % 60),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isBest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        }
+    }
+}
+
+/** km · time · km/h for one lap slice (mirrors the training detail's per-lap line). */
+private fun lapStatsLine(s: TrackStats): String {
+    val km = s.distanceM / 1000.0
+    val dur = s.movingTime ?: s.totalTime
+    val secs = dur?.seconds ?: 0
+    val time = if (secs >= 3600) "%d:%02d:%02d".format(secs / 3600, (secs % 3600) / 60, secs % 60)
+    else "%d:%02d".format(secs / 60, secs % 60)
+    val speed = s.avgSpeedKmh
+    return buildString {
+        append("%.2f km".format(km))
+        append(" · ").append(time)
+        if (speed != null) append(" · ").append("%.1f km/h".format(speed))
     }
 }
 

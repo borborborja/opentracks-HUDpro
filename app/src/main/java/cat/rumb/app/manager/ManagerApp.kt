@@ -85,6 +85,7 @@ fun ManagerApp(
                 onOpenLayers = { nav.navigate(Routes.LAYERS) },
                 onOpenRoute = { id -> nav.navigate("${Routes.ROUTE_DETAIL}/$id") },
                 onOpenTraining = { id -> nav.navigate("${Routes.TRAINING_DETAIL}/$id") },
+                onOpenCompare = { id -> nav.navigate("${Routes.COMPARE}/$id") },
                 onEditRoute = { id -> nav.navigate("${Routes.EDIT_ROUTE}/$id") },
                 onCreateRoute = { nav.navigate(Routes.CREATE_ROUTE) },
                 onDownloadRouteMap = { bbox ->
