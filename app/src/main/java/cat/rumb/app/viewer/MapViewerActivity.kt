@@ -740,16 +740,21 @@ class MapViewerActivity : ComponentActivity() {
         )
     }
 
-    /** Relaunches the viewer in competition mode (the proven path used from the manager). */
+    /**
+     * Enters competition mode from within the live viewer. The activity is `singleTask`, so
+     * `startActivity` on itself would NOT create a new instance — it reuses this one via onNewIntent
+     * and our finish() would pop back to the manager (home). Instead, swap the intent and recreate:
+     * onCreate re-runs with the new competition id and reinitialises everything cleanly.
+     */
     private fun relaunchIntoCompetition(id: Long) {
-        // No CLEAR_TOP: it targets THIS same activity, so the framework recreates/finishes it in a
-        // race with our finish(), popping back to the manager (home). A plain start + finish stacks
-        // the fresh competition instance and drops the old one cleanly.
-        startActivity(
-            android.content.Intent(this, MapViewerActivity::class.java)
-                .putExtra(EXTRA_COMPETITION_ID, id),
-        )
-        finish()
+        setIntent(android.content.Intent(this, MapViewerActivity::class.java).putExtra(EXTRA_COMPETITION_ID, id))
+        recreate()
+    }
+
+    /** singleTask reuse (e.g. starting a competition from the manager while the viewer is alive). */
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        if (intent.getLongExtra(EXTRA_COMPETITION_ID, -1L) > 0) { setIntent(intent); recreate() }
     }
 
     /**
