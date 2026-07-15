@@ -31,7 +31,8 @@ class FoundationV16Test {
         assertThat(ActivityTypeSuggester.suggest(4.5, 20.0, 5_000.0)).isEqualTo(ActivityTypes.WALK)
         assertThat(ActivityTypeSuggester.suggest(5.0, 300.0, 5_000.0)).isEqualTo(ActivityTypes.HIKE) // 60 m/km
         assertThat(ActivityTypeSuggester.suggest(10.0, 50.0, 10_000.0)).isEqualTo(ActivityTypes.RUN)
-        assertThat(ActivityTypeSuggester.suggest(10.0, 500.0, 10_000.0)).isEqualTo(ActivityTypes.HIKE)
+        // 10 km/h with 50 m/km is a trail run, not a hike: nobody hikes at running pace.
+        assertThat(ActivityTypeSuggester.suggest(10.0, 500.0, 10_000.0)).isEqualTo(ActivityTypes.TRAIL_RUN)
         assertThat(ActivityTypeSuggester.suggest(16.0, 400.0, 10_000.0)).isEqualTo(ActivityTypes.MTB) // 40 m/km
         assertThat(ActivityTypeSuggester.suggest(28.0, 200.0, 40_000.0)).isEqualTo(ActivityTypes.ROAD_BIKE)
         assertThat(ActivityTypeSuggester.suggest(null, 0.0, 0.0)).isEqualTo(ActivityTypes.WALK)

@@ -31,4 +31,5 @@
     <string name="metric_lap_time">Χρόνος γύρου</string>
     <string name="metric_lap_distance">Απόστ. γύρου</string>
     <string name="metric_last_lap">Τελ. γύρος</string>
+    <string name="metric_avg_pace">Μέσος ρυθμός</string>
 </resources>

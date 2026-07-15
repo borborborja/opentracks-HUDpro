@@ -619,7 +619,16 @@ private fun lapStatsLine(s: TrackStats): String {
         append("%.2f km".format(km))
         append(" · ").append(time)
         if (speed != null) append(" · ").append("%.1f km/h".format(speed))
+        // A split without a pace is useless to a runner.
+        formatPace(speed)?.let { append(" · ").append(it) }
     }
+}
+
+/** Pace as m:ss /km from an average speed, or null when stopped. */
+private fun formatPace(speedKmh: Double?): String? {
+    val pace = cat.rumb.app.viewer.hud.MetricsCalculator.paceFromSpeedKmh(speedKmh) ?: return null
+    val totalSec = Math.round(pace * 60).toInt()
+    return "%d:%02d /km".format(totalSec / 60, totalSec % 60)
 }
 
 @Composable
@@ -629,6 +638,7 @@ private fun StatsCard(s: TrackStats, kcal: Int) {
         add(stringResource(R.string.training_stat_total_time) to (s.totalTime?.let(::formatDuration) ?: "—"))
         add(stringResource(R.string.training_stat_moving_time) to (s.movingTime?.let(::formatDuration) ?: "—"))
         add(stringResource(R.string.training_stat_avg_speed) to (s.avgSpeedKmh?.let { String.format("%.1f km/h", it) } ?: "—"))
+        add(stringResource(R.string.training_stat_avg_pace) to (formatPace(s.avgSpeedKmh) ?: "—"))
         add(stringResource(R.string.training_stat_max_speed) to (s.maxSpeedKmh?.let { String.format("%.1f km/h", it) } ?: "—"))
         add(stringResource(R.string.training_stat_ascent) to "${s.ascentM.toInt()} m")
         add(stringResource(R.string.training_stat_descent) to "${s.descentM.toInt()} m")

@@ -11,7 +11,8 @@ object ActivityTypeSuggester {
         val ascentPerKm = if (distanceM > 100) ascentM / (distanceM / 1000.0) else 0.0
         return when {
             speed < 6.5 -> if (ascentPerKm > 40) ActivityTypes.HIKE else ActivityTypes.WALK
-            speed < 13.0 -> if (ascentPerKm > 40) ActivityTypes.HIKE else ActivityTypes.RUN
+            // Running pace with hills is a trail run, not a hike — TRAIL_RUN was never suggested.
+            speed < 13.0 -> if (ascentPerKm > 40) ActivityTypes.TRAIL_RUN else ActivityTypes.RUN
             speed < 18.0 && ascentPerKm > 25 -> ActivityTypes.MTB
             else -> ActivityTypes.ROAD_BIKE
         }

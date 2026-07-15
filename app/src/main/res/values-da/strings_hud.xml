@@ -31,4 +31,5 @@
     <string name="metric_lap_time">Omgangstid</string>
     <string name="metric_lap_distance">Omgangsdist.</string>
     <string name="metric_last_lap">Sidste omgang</string>
+    <string name="metric_avg_pace">Gns. tempo</string>
 </resources>

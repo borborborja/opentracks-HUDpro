@@ -31,4 +31,5 @@
     <string name="metric_lap_time">Temps volta</string>
     <string name="metric_lap_distance">Dist. volta</string>
     <string name="metric_last_lap">Última volta</string>
+    <string name="metric_avg_pace">Ritme mitjà</string>
 </resources>

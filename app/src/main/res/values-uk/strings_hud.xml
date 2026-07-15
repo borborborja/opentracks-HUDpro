@@ -31,4 +31,5 @@
     <string name="metric_lap_time">Час кола</string>
     <string name="metric_lap_distance">Відст. кола</string>
     <string name="metric_last_lap">Останнє коло</string>
+    <string name="metric_avg_pace">Сер. темп</string>
 </resources>

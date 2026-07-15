@@ -58,4 +58,5 @@
     <string name="training_paint_altitude">Per altitud</string>
     <string name="training_paint_hr">Per pulsacions</string>
     <string name="training_paint_speed">Per velocitat</string>
+    <string name="training_stat_avg_pace">Ritme mitjà</string>
 </resources>

@@ -58,4 +58,5 @@
     <string name="training_paint_altitude">Par altitude</string>
     <string name="training_paint_hr">Par fréquence cardiaque</string>
     <string name="training_paint_speed">Par vitesse</string>
+    <string name="training_stat_avg_pace">Allure moyenne</string>
 </resources>

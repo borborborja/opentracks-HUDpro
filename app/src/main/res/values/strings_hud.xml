@@ -31,4 +31,5 @@
     <string name="metric_lap_time">Lap time</string>
     <string name="metric_lap_distance">Lap dist.</string>
     <string name="metric_last_lap">Last lap</string>
+    <string name="metric_avg_pace">Avg pace</string>
 </resources>

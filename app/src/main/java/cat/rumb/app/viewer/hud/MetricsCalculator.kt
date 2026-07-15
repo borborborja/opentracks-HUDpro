@@ -12,6 +12,7 @@ import kotlin.math.sqrt
 private const val MS_TO_KMH = 3.6
 private const val EARTH_RADIUS_M = 6_371_000.0
 private const val SLOPE_WINDOW = 10 // trailing points used to smooth slope/VAM
+private const val PACE_WINDOW_MS = 12_000L // trailing window used to smooth pace (see smoothedSpeedKmh)
 
 /**
  * Pure, unit-testable derivation of [LiveMetrics] from OpenTracks segments + track statistics.
@@ -42,7 +43,8 @@ object MetricsCalculator {
             distanceKm = (statistics?.totalDistanceMeter ?: 0.0) / 1000.0,
             totalTime = statistics?.totalTime ?: kotlin.time.Duration.ZERO,
             movingTime = statistics?.movingTime ?: kotlin.time.Duration.ZERO,
-            paceMinPerKm = paceFromSpeedKmh(currentSpeedKmh),
+            // Pace uses a smoothed speed, not the raw fix: see [smoothedSpeedKmh]. SPEED stays raw.
+            paceMinPerKm = paceFromSpeedKmh(smoothedSpeedKmh(points) ?: currentSpeedKmh),
             bearingDeg = bearing,
             elevationGainM = statistics?.elevationGainMeter,
             minElevationM = statistics?.minElevationMeter,
@@ -77,6 +79,23 @@ object MetricsCalculator {
         val slope = if (horiz > 1.0) dAlt / horiz * 100.0 else null
         val vam = if (dtSeconds > 1.0) dAlt / dtSeconds * 3600.0 else null
         return slope to vam
+    }
+
+    /**
+     * Speed (km/h) averaged over a trailing time window, used for pace.
+     *
+     * The raw per-fix speed is fine on a bike at 25 km/h, but a runner at 5:00/km watches it swing
+     * between 4:30 and 5:40 every second and never settle. This averages the REPORTED speeds rather
+     * than differentiating positions: the GPS figure is Doppler-derived and more accurate than
+     * position differencing, which would trade jitter for worse jitter. Windowed by time, not by
+     * point count, because fix density varies. Stateless, like [slopeAndVam].
+     */
+    fun smoothedSpeedKmh(points: List<Trackpoint>): Double? {
+        val usable = points.filter { it.latLong != null && it.speed >= 0.0 }
+        if (usable.isEmpty()) return null
+        val cutoff = usable.last().time.toEpochMilli() - PACE_WINDOW_MS
+        val window = usable.filter { it.time.toEpochMilli() >= cutoff }.ifEmpty { listOf(usable.last()) }
+        return window.sumOf { it.speed } / window.size * MS_TO_KMH
     }
 
     /** Pace in minutes per km from speed; null for non-positive speed. */

@@ -58,4 +58,5 @@
     <string name="training_paint_altitude">За висотою</string>
     <string name="training_paint_hr">За пульсом</string>
     <string name="training_paint_speed">За швидкістю</string>
+    <string name="training_stat_avg_pace">Середній темп</string>
 </resources>

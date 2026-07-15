@@ -14,6 +14,7 @@ enum class HudMetric(val labelRes: Int) {
     DURATION(cat.rumb.app.R.string.metric_duration),
     MOVING_TIME(cat.rumb.app.R.string.metric_moving_time),
     PACE(cat.rumb.app.R.string.metric_pace),
+    AVG_PACE(cat.rumb.app.R.string.metric_avg_pace),
     HEADING(cat.rumb.app.R.string.metric_heading),
     ELEV_GAIN(cat.rumb.app.R.string.metric_elev_gain),
     ALTITUDE(cat.rumb.app.R.string.metric_altitude),
@@ -42,6 +43,8 @@ enum class HudMetric(val labelRes: Int) {
         DURATION -> fmtDuration(m.totalTime)
         MOVING_TIME -> fmtDuration(m.movingTime)
         PACE -> fmtPace(pacePerUnit(m.paceMinPerKm, u.distance))
+        // Average pace: what a runner actually watches. Derived from moving speed, like AVG_SPEED.
+        AVG_PACE -> fmtPace(pacePerUnit(MetricsCalculator.paceFromSpeedKmh(m.avgMovingSpeedKmh), u.distance))
         HEADING -> fmt0(m.bearingDeg)
         ELEV_GAIN -> fmt0(m.elevationGainM?.let { u.elevation.fromMeters(it) })
         ALTITUDE -> fmt0(m.altitudeM?.let { u.elevation.fromMeters(it) })
@@ -66,7 +69,7 @@ enum class HudMetric(val labelRes: Int) {
         SPEED, AVG_SPEED, MAX_SPEED -> u.speed.label
         DISTANCE, REMAINING -> u.distance.label
         DURATION, MOVING_TIME -> ""
-        PACE -> "/${u.distance.label}"
+        PACE, AVG_PACE -> "/${u.distance.label}"
         HEADING -> "°"
         ELEV_GAIN, ALTITUDE, OFF_ROUTE -> u.elevation.label
         SLOPE -> "%"
@@ -245,6 +248,19 @@ data class HudLayout(
                 HudWidget(HudCatalog.CONTROL_RECENTER, HudZone.MIDDLE_RIGHT),
             ),
         )
+        /** Road running: pace first (a runner never thinks in km/h), average pace next to it. */
+        val RUNNING = HudLayout(
+            widgets = listOf(
+                m(HudMetric.PACE, HudZone.BOTTOM_LEFT),
+                m(HudMetric.AVG_PACE, HudZone.BOTTOM_LEFT),
+                m(HudMetric.DISTANCE, HudZone.BOTTOM_RIGHT),
+                m(HudMetric.MOVING_TIME, HudZone.BOTTOM_RIGHT),
+                m(HudMetric.HEART_RATE, HudZone.TOP_RIGHT),
+                m(HudMetric.LAP_TIME, HudZone.TOP_RIGHT),
+                HudWidget(HudCatalog.CONTROL_RECENTER, HudZone.MIDDLE_RIGHT),
+                HudWidget(HudCatalog.CONTROL_RECORD, HudZone.MIDDLE_RIGHT),
+            ),
+        )
         val SKI = HudLayout(
             widgets = listOf(
                 m(HudMetric.SPEED, HudZone.BOTTOM_LEFT),
@@ -259,6 +275,7 @@ data class HudLayout(
         val DEFAULT = CYCLING
         val PRESETS = mapOf(
             cat.rumb.app.R.string.preset_cycling to CYCLING,
+            cat.rumb.app.R.string.preset_running to RUNNING,
             cat.rumb.app.R.string.preset_trail to TRAIL,
             cat.rumb.app.R.string.preset_ski to SKI,
         )

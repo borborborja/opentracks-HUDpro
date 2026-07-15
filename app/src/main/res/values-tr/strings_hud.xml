@@ -31,4 +31,5 @@
     <string name="metric_lap_time">Tur süresi</string>
     <string name="metric_lap_distance">Tur mes.</string>
     <string name="metric_last_lap">Son tur</string>
+    <string name="metric_avg_pace">Ort. tempo</string>
 </resources>

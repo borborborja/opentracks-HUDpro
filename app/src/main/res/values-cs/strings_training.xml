@@ -58,4 +58,5 @@
     <string name="training_paint_altitude">Podle výšky</string>
     <string name="training_paint_hr">Podle tepové frekvence</string>
     <string name="training_paint_speed">Podle rychlosti</string>
+    <string name="training_stat_avg_pace">Průměrné tempo</string>
 </resources>

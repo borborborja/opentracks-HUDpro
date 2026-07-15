@@ -31,4 +31,5 @@
     <string name="metric_lap_time">Čas okruhu</string>
     <string name="metric_lap_distance">Vzd. okruhu</string>
     <string name="metric_last_lap">Poslední okruh</string>
+    <string name="metric_avg_pace">Prům. tempo</string>
 </resources>

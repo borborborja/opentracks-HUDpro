@@ -31,4 +31,5 @@
     <string name="metric_lap_time">Temps au tour</string>
     <string name="metric_lap_distance">Dist. tour</string>
     <string name="metric_last_lap">Dernier tour</string>
+    <string name="metric_avg_pace">Allure moy.</string>
 </resources>

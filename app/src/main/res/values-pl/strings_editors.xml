@@ -38,4 +38,5 @@
     <string name="preset_trail">Teren</string>
     <string name="preset_ski">Narty</string>
     <string name="editor_extra">Inne</string>
+    <string name="preset_running">Bieganie</string>
 </resources>

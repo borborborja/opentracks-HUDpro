@@ -58,4 +58,5 @@
     <string name="training_paint_altitude">Op hoogte</string>
     <string name="training_paint_hr">Op hartslag</string>
     <string name="training_paint_speed">Op snelheid</string>
+    <string name="training_stat_avg_pace">Gem. tempo</string>
 </resources>

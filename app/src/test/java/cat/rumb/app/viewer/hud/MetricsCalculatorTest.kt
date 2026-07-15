@@ -39,6 +39,29 @@ class MetricsCalculatorTest {
         assertThat(m.bearingDeg).isNotNull()
     }
 
+    /** A runner's per-fix speed swings every second; the tile must show the average, not the swing. */
+    @Test
+    fun paceIsSmoothedOverATrailingWindow() {
+        // 12 fixes, one per second, oscillating 2.8/3.2 m/s around 3.0 (≈5:33/km).
+        val points = (1..12).map { i -> tp(41.0 + i * 0.0001, 2.0, if (i % 2 == 0) 3.2 else 2.8, i.toLong()) }
+        val m = MetricsCalculator.compute(listOf(points), null, isRecording = true)
+
+        // Raw last fix would read 3.2 m/s → 5:12/km; the smoothed mean is 3.0 → 5:33/km.
+        assertThat(m.speedKmh!!).isEqualTo(11.52, within(0.001)) // SPEED stays raw for cyclists
+        assertThat(m.paceMinPerKm!!).isEqualTo(60.0 / 10.8, within(0.01))
+    }
+
+    /** Only the trailing window counts: a fast start must not drag the current pace down forever. */
+    @Test
+    fun paceWindowDropsOldFixes() {
+        // 60 s at 5 m/s, then 20 s at 2.5 m/s: the 12 s window lands entirely inside the slow part.
+        val fast = (1..60).map { i -> tp(41.0 + i * 0.0001, 2.0, 5.0, i.toLong()) }
+        val slow = (61..80).map { i -> tp(41.0 + i * 0.0001, 2.0, 2.5, i.toLong()) }
+        val m = MetricsCalculator.compute(listOf(fast + slow), null, isRecording = true)
+
+        assertThat(m.paceMinPerKm!!).isEqualTo(60.0 / 9.0, within(0.01)) // 2.5 m/s = 9 km/h
+    }
+
     @Test
     fun slopeAndVamFromAltitudePoints() {
         // 100 m climb over 1000 m horizontal in 200 s → slope 10%, VAM 1800 m/h

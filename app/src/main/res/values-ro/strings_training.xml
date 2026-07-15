@@ -58,4 +58,5 @@
     <string name="training_paint_altitude">După altitudine</string>
     <string name="training_paint_hr">După frecvență cardiacă</string>
     <string name="training_paint_speed">După viteză</string>
+    <string name="training_stat_avg_pace">Ritm mediu</string>
 </resources>

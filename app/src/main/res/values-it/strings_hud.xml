@@ -31,4 +31,5 @@
     <string name="metric_lap_time">Tempo giro</string>
     <string name="metric_lap_distance">Dist. giro</string>
     <string name="metric_last_lap">Ultimo giro</string>
+    <string name="metric_avg_pace">Ritmo medio</string>
 </resources>

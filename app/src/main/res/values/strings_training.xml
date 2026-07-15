@@ -58,4 +58,5 @@
     <string name="training_paint_altitude">By altitude</string>
     <string name="training_paint_hr">By heart rate</string>
     <string name="training_paint_speed">By speed</string>
+    <string name="training_stat_avg_pace">Avg pace</string>
 </resources>

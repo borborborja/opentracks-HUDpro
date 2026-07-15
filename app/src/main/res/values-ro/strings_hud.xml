@@ -31,4 +31,5 @@
     <string name="metric_lap_time">Timp tură</string>
     <string name="metric_lap_distance">Dist. tură</string>
     <string name="metric_last_lap">Ultima tură</string>
+    <string name="metric_avg_pace">Ritm mediu</string>
 </resources>

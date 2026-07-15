@@ -58,4 +58,5 @@
     <string name="training_paint_altitude">Κατά υψόμετρο</string>
     <string name="training_paint_hr">Κατά καρδιακούς παλμούς</string>
     <string name="training_paint_speed">Κατά ταχύτητα</string>
+    <string name="training_stat_avg_pace">Μέσος ρυθμός</string>
 </resources>
