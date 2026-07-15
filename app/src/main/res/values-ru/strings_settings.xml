@@ -191,4 +191,8 @@
     <string name="settings_route_arrows_help">Показываются только в соревновании (маршрут или круги), где важно направление.</string>
     <string name="settings_route_arrow_color">Цвет стрелок</string>
     <string name="settings_route_arrow_size">Размер стрелок</string>
+    <string name="update_notif_channel">Обновление приложения</string>
+    <string name="update_notif_title">Загрузка обновления</string>
+    <string name="update_notif_progress">%1$d%%</string>
+    <string name="settings_update_background_hint">Продолжается в фоне; можно уйти с этого экрана или выключить его.</string>
 </resources>

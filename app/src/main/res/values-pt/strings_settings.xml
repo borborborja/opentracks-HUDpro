@@ -191,4 +191,8 @@
     <string name="settings_route_arrows_help">Só aparecem em competição (percurso ou voltas), onde o sentido importa.</string>
     <string name="settings_route_arrow_color">Cor das setas</string>
     <string name="settings_route_arrow_size">Tamanho das setas</string>
+    <string name="update_notif_channel">Atualização da app</string>
+    <string name="update_notif_title">A descarregar a atualização</string>
+    <string name="update_notif_progress">%1$d%%</string>
+    <string name="settings_update_background_hint">Continua em segundo plano; podes sair deste ecrã ou desligá-lo.</string>
 </resources>

@@ -191,4 +191,8 @@
     <string name="settings_route_arrows_help">Näytetään vain kilpaillessa (reitti tai kierrokset), jolloin suunnalla on merkitystä.</string>
     <string name="settings_route_arrow_color">Nuolien väri</string>
     <string name="settings_route_arrow_size">Nuolien koko</string>
+    <string name="update_notif_channel">Sovelluspäivitys</string>
+    <string name="update_notif_title">Ladataan päivitystä</string>
+    <string name="update_notif_progress">%1$d%%</string>
+    <string name="settings_update_background_hint">Jatkuu taustalla; voit poistua näytöltä tai sammuttaa sen.</string>
 </resources>

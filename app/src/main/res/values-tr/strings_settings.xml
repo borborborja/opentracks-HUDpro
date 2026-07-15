@@ -191,4 +191,8 @@
     <string name="settings_route_arrows_help">Yalnızca yarışırken görünür (rota veya turlar), yönün önemli olduğu yerde.</string>
     <string name="settings_route_arrow_color">Ok rengi</string>
     <string name="settings_route_arrow_size">Ok boyutu</string>
+    <string name="update_notif_channel">Uygulama güncellemesi</string>
+    <string name="update_notif_title">Güncelleme indiriliyor</string>
+    <string name="update_notif_progress">%1$d%%</string>
+    <string name="settings_update_background_hint">Arka planda devam eder; bu ekrandan çıkabilir veya ekranı kapatabilirsin.</string>
 </resources>

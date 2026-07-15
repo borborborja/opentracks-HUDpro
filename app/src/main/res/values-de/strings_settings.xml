@@ -191,4 +191,8 @@
     <string name="settings_route_arrows_help">Nur im Wettkampf sichtbar (Strecke oder Runden), wo die Richtung zählt.</string>
     <string name="settings_route_arrow_color">Pfeilfarbe</string>
     <string name="settings_route_arrow_size">Pfeilgröße</string>
+    <string name="update_notif_channel">App-Update</string>
+    <string name="update_notif_title">Update wird heruntergeladen</string>
+    <string name="update_notif_progress">%1$d%%</string>
+    <string name="settings_update_background_hint">Läuft im Hintergrund weiter; du kannst diesen Bildschirm verlassen oder ausschalten.</string>
 </resources>

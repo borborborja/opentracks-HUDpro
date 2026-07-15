@@ -17,8 +17,11 @@ object ApkInstaller {
 
     private val client = OkHttpClient()
 
-    /** Downloads [url] to the app cache, reporting progress in [0,1]. Returns the file. */
-    suspend fun download(context: Context, url: String, onProgress: (Float) -> Unit): File =
+    /**
+     * Downloads [url] to the app cache, reporting progress in [0,1]. Returns the file.
+     * [onProgress] is suspending so a worker can publish progress / update its notification from it.
+     */
+    suspend fun download(context: Context, url: String, onProgress: suspend (Float) -> Unit): File =
         withContext(Dispatchers.IO) {
             val dir = File(context.externalCacheDir, "updates").apply { mkdirs() }
             val file = File(dir, "Rumb-update.apk")

@@ -191,4 +191,8 @@
     <string name="settings_route_arrows_help">Affichées uniquement en compétition (parcours ou tours), où le sens compte.</string>
     <string name="settings_route_arrow_color">Couleur des flèches</string>
     <string name="settings_route_arrow_size">Taille des flèches</string>
+    <string name="update_notif_channel">Mise à jour de l\'app</string>
+    <string name="update_notif_title">Téléchargement de la mise à jour</string>
+    <string name="update_notif_progress">%1$d%%</string>
+    <string name="settings_update_background_hint">Se poursuit en arrière-plan ; vous pouvez quitter cet écran ou l\'éteindre.</string>
 </resources>

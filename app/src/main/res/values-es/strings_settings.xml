@@ -191,4 +191,8 @@
     <string name="settings_route_arrows_help">Solo se muestran al competir (recorrido o vueltas), donde el sentido importa.</string>
     <string name="settings_route_arrow_color">Color de las flechas</string>
     <string name="settings_route_arrow_size">Tamaño de las flechas</string>
+    <string name="update_notif_channel">Actualización de la app</string>
+    <string name="update_notif_title">Descargando la actualización</string>
+    <string name="update_notif_progress">%1$d%%</string>
+    <string name="settings_update_background_hint">Continúa en segundo plano; puedes salir de esta pantalla o apagarla.</string>
 </resources>

@@ -37,6 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -58,6 +59,8 @@ import cat.rumb.app.R
 import cat.rumb.app.data.prefs.ViewerPreferences
 import cat.rumb.app.data.tracks.ActivityTypes
 import cat.rumb.app.data.tracks.CustomActivityType
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cat.rumb.app.data.update.ApkDownloadWorker
 import cat.rumb.app.data.update.ApkInstaller
 import cat.rumb.app.data.update.UpdateInfo
 import cat.rumb.app.data.update.UpdateRepository
@@ -70,7 +73,6 @@ private sealed interface UpdateState {
     data object Checking : UpdateState
     data object UpToDate : UpdateState
     data class Available(val info: UpdateInfo) : UpdateState
-    data object Downloading : UpdateState
     data class Error(val message: String) : UpdateState
 }
 
@@ -466,8 +468,30 @@ private fun AppSection(onOpenDebugLog: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val repo = remember { UpdateRepository() }
+    val requestNotif = rememberNotificationPermission()
     var state by remember { mutableStateOf<UpdateState>(UpdateState.Idle) }
-    var progress by remember { mutableFloatStateOf(0f) }
+
+    // The download runs in a foreground worker, so it survives leaving this screen and the screen
+    // going off. Observe it instead of owning it: re-entering settings re-attaches to it.
+    val downloadInfos by androidx.work.WorkManager.getInstance(context)
+        .getWorkInfosForUniqueWorkFlow(ApkDownloadWorker.WORK_NAME)
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val download = downloadInfos.lastOrNull()
+    val downloading = download?.state == androidx.work.WorkInfo.State.RUNNING ||
+        download?.state == androidx.work.WorkInfo.State.ENQUEUED
+    val progress = (download?.progress?.getInt(ApkDownloadWorker.KEY_PROGRESS, 0) ?: 0) / 100f
+
+    // Hand the finished APK to the system installer once per completed download.
+    var installedPath by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(download?.id, download?.state) {
+        if (download?.state == androidx.work.WorkInfo.State.SUCCEEDED) {
+            val path = download.outputData.getString(ApkDownloadWorker.KEY_PATH)
+            if (path != null && path != installedPath) {
+                installedPath = path
+                ApkInstaller.install(context, java.io.File(path))
+            }
+        }
+    }
 
     LanguageCard()
 
@@ -490,42 +514,45 @@ private fun AppSection(onOpenDebugLog: () -> Unit) {
                 }
             }
         },
-        enabled = state !is UpdateState.Checking && state !is UpdateState.Downloading,
+        enabled = state !is UpdateState.Checking && !downloading,
         modifier = Modifier.fillMaxWidth(),
     ) { Text(stringResource(R.string.settings_check_update)) }
+
+    if (downloading) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(stringResource(R.string.settings_update_downloading, (progress * 100).toInt()))
+            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+            Text(
+                stringResource(R.string.settings_update_background_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    download?.takeIf { it.state == androidx.work.WorkInfo.State.FAILED }?.let {
+        val msg = it.outputData.getString(ApkDownloadWorker.KEY_ERROR)
+            ?: stringResource(R.string.settings_update_download_error)
+        Text(stringResource(R.string.settings_error, msg), color = MaterialTheme.colorScheme.error)
+    }
 
     when (val s = state) {
         is UpdateState.Checking -> Text(stringResource(R.string.settings_update_checking))
         is UpdateState.UpToDate -> Text(stringResource(R.string.settings_update_up_to_date))
         is UpdateState.Error -> Text(stringResource(R.string.settings_error, s.message), color = MaterialTheme.colorScheme.error)
-        is UpdateState.Downloading ->
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(stringResource(R.string.settings_update_downloading, (progress * 100).toInt()))
-                LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
-            }
         is UpdateState.Available -> Card {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.settings_update_new_version, s.info.version), style = MaterialTheme.typography.titleMedium)
                 Text(s.info.changelog, style = MaterialTheme.typography.bodySmall)
-                val downloadError = stringResource(R.string.settings_update_download_error)
                 Button(
                     onClick = {
                         if (!ApkInstaller.canInstall(context)) {
                             ApkInstaller.requestInstallPermission(context)
                             return@Button
                         }
-                        state = UpdateState.Downloading
-                        progress = 0f
-                        scope.launch {
-                            try {
-                                val file = ApkInstaller.download(context, s.info.apkUrl) { progress = it }
-                                ApkInstaller.install(context, file)
-                                state = UpdateState.Idle
-                            } catch (e: Exception) {
-                                state = UpdateState.Error(e.message ?: downloadError)
-                            }
-                        }
+                        requestNotif()
+                        ApkDownloadWorker.enqueue(context, s.info.apkUrl)
                     },
+                    enabled = !downloading,
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text(stringResource(R.string.settings_update_download_install)) }
             }

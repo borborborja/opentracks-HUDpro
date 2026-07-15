@@ -191,4 +191,8 @@
     <string name="settings_route_arrows_help">Vises kun under konkurrence (rute eller omgange), hvor retningen betyder noget.</string>
     <string name="settings_route_arrow_color">Pilenes farve</string>
     <string name="settings_route_arrow_size">Pilenes størrelse</string>
+    <string name="update_notif_channel">App-opdatering</string>
+    <string name="update_notif_title">Downloader opdatering</string>
+    <string name="update_notif_progress">%1$d%%</string>
+    <string name="settings_update_background_hint">Fortsætter i baggrunden; du kan forlade skærmen eller slukke den.</string>
 </resources>
