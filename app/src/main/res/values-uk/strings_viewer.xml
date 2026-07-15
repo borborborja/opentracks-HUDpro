@@ -99,4 +99,6 @@
     <string name="viewer_qs_competition_none_subtitle">Не змагатися</string>
     <string name="viewer_qs_auto_lap_distance">Автокола за відстанню</string>
     <string name="viewer_qs_auto_lap_off">Ні</string>
+    <string name="viewer_sport_picker_title">Чим займатимешся?</string>
+    <string name="viewer_sport_picker_help">Вид спорту визначає HUD, кола і з чим тебе порівнюють.</string>
 </resources>

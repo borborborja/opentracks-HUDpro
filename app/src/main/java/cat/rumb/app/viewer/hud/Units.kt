@@ -28,10 +28,14 @@ enum class SpeedUnit(val label: String, val perKmh: Double) {
     fun fromKmh(kmh: Double): Double = kmh * perKmh
 }
 
+/** Cadence reads as crank rpm on a bike and as steps per minute on foot: same number, different name. */
+enum class CadenceUnit(val label: String) { RPM("rpm"), SPM("spm") }
+
 data class Units(
     val distance: DistanceUnit = DistanceUnit.KM,
     val elevation: ElevationUnit = ElevationUnit.METER,
     val speed: SpeedUnit = SpeedUnit.KMH,
+    val cadence: CadenceUnit = CadenceUnit.RPM,
 )
 
 /** Builds/reads [Units] from persisted preferences (kept out of the prefs class to avoid coupling). */
@@ -40,5 +44,9 @@ object UnitsStore {
         distance = runCatching { DistanceUnit.valueOf(prefs.distanceUnit) }.getOrDefault(DistanceUnit.KM),
         elevation = runCatching { ElevationUnit.valueOf(prefs.elevationUnit) }.getOrDefault(ElevationUnit.METER),
         speed = runCatching { SpeedUnit.valueOf(prefs.speedUnit) }.getOrDefault(SpeedUnit.KMH),
+        // Driven by the active sport: "rpm" was hardcoded, which is meaningless to a runner.
+        cadence = if (cat.rumb.app.data.tracks.ActivityTypes.familyOf(prefs.activeSportId) ==
+            cat.rumb.app.data.tracks.ActivityFamily.FOOT
+        ) CadenceUnit.SPM else CadenceUnit.RPM,
     )
 }

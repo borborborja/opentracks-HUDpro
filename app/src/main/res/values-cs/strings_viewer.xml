@@ -99,4 +99,6 @@
     <string name="viewer_qs_competition_none_subtitle">Nezávodit</string>
     <string name="viewer_qs_auto_lap_distance">Automatická kola podle vzdálenosti</string>
     <string name="viewer_qs_auto_lap_off">Ne</string>
+    <string name="viewer_sport_picker_title">Co budeš dělat?</string>
+    <string name="viewer_sport_picker_help">Sport určuje HUD, kola a s čím tě porovnáváme.</string>
 </resources>

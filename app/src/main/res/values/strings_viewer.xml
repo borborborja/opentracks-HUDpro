@@ -99,4 +99,6 @@
     <string name="viewer_qs_competition_none_subtitle">Don\'t compete</string>
     <string name="viewer_qs_auto_lap_distance">Automatic splits by distance</string>
     <string name="viewer_qs_auto_lap_off">Off</string>
+    <string name="viewer_sport_picker_title">What are you doing?</string>
+    <string name="viewer_sport_picker_help">The sport sets the HUD, the splits and which efforts you can be compared against.</string>
 </resources>

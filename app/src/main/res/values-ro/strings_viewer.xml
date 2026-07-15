@@ -99,4 +99,6 @@
     <string name="viewer_qs_competition_none_subtitle">Fără competiție</string>
     <string name="viewer_qs_auto_lap_distance">Tururi automate după distanță</string>
     <string name="viewer_qs_auto_lap_off">Nu</string>
+    <string name="viewer_sport_picker_title">Ce vei face?</string>
+    <string name="viewer_sport_picker_help">Sportul stabilește HUD-ul, tururile și cu ce ești comparat.</string>
 </resources>

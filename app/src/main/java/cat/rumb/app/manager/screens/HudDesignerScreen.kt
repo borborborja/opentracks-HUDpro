@@ -81,7 +81,9 @@ private val SAMPLE = HudData(
 fun HudDesignerScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { ViewerPreferences.get(context) }
-    var layout by remember { mutableStateOf(HudLayoutStore.load(prefs)) }
+    // Edits the ACTIVE sport's layout: without this you'd tune a HUD and see it "vanish" on switching.
+    val sportId = remember { prefs.activeSportId }
+    var layout by remember { mutableStateOf(HudLayoutStore.load(prefs, sportId)) }
     var selected by remember { mutableStateOf<Int?>(null) }
     var configFor by remember { mutableStateOf<Int?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -91,7 +93,7 @@ fun HudDesignerScreen(onBack: () -> Unit) {
 
     fun update(next: HudLayout) {
         layout = next
-        HudLayoutStore.save(prefs, next) // live editing: always persisted
+        HudLayoutStore.save(prefs, next, sportId) // live editing: always persisted
     }
 
     Box(Modifier.fillMaxSize()) {

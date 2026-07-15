@@ -99,4 +99,6 @@
     <string name="viewer_qs_competition_none_subtitle">Tävla inte</string>
     <string name="viewer_qs_auto_lap_distance">Automatiska varv per distans</string>
     <string name="viewer_qs_auto_lap_off">Av</string>
+    <string name="viewer_sport_picker_title">Vad ska du göra?</string>
+    <string name="viewer_sport_picker_help">Sporten styr HUD, varv och vad du jämförs med.</string>
 </resources>

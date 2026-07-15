@@ -99,4 +99,6 @@
     <string name="viewer_qs_competition_none_subtitle">Ne pas concourir</string>
     <string name="viewer_qs_auto_lap_distance">Tours automatiques par distance</string>
     <string name="viewer_qs_auto_lap_off">Non</string>
+    <string name="viewer_sport_picker_title">Que faites-vous ?</string>
+    <string name="viewer_sport_picker_help">Le sport définit le HUD, les tours et les efforts auxquels vous êtes comparé.</string>
 </resources>

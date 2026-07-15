@@ -99,4 +99,6 @@
     <string name="viewer_qs_competition_none_subtitle">Nie rywalizuj</string>
     <string name="viewer_qs_auto_lap_distance">Automatyczne okrążenia co dystans</string>
     <string name="viewer_qs_auto_lap_off">Nie</string>
+    <string name="viewer_sport_picker_title">Co robisz?</string>
+    <string name="viewer_sport_picker_help">Sport określa HUD, okrążenia i z czym jesteś porównywany.</string>
 </resources>

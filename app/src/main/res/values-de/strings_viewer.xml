@@ -99,4 +99,6 @@
     <string name="viewer_qs_competition_none_subtitle">Nicht antreten</string>
     <string name="viewer_qs_auto_lap_distance">Automatische Runden nach Distanz</string>
     <string name="viewer_qs_auto_lap_off">Aus</string>
+    <string name="viewer_sport_picker_title">Was machst du?</string>
+    <string name="viewer_sport_picker_help">Die Sportart bestimmt HUD, Runden und womit du verglichen wirst.</string>
 </resources>

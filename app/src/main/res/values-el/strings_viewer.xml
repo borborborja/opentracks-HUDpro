@@ -99,4 +99,6 @@
     <string name="viewer_qs_competition_none_subtitle">Χωρίς αγώνα</string>
     <string name="viewer_qs_auto_lap_distance">Αυτόματοι γύροι ανά απόσταση</string>
     <string name="viewer_qs_auto_lap_off">Όχι</string>
+    <string name="viewer_sport_picker_title">Τι θα κάνεις;</string>
+    <string name="viewer_sport_picker_help">Το άθλημα καθορίζει το HUD, τους γύρους και με τι συγκρίνεσαι.</string>
 </resources>

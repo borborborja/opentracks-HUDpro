@@ -198,6 +198,30 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_TURN_VOICE, true)
         set(value) = prefs.edit().putBoolean(KEY_TURN_VOICE, value).apply()
 
+    // --- Sport mode ---
+    /** Sport chosen for the next/current recording (an ActivityTypes id). Sticky across sessions. */
+    var activeSportId: String?
+        get() = prefs.getString(KEY_ACTIVE_SPORT, null)
+        set(value) = prefs.edit().putString(KEY_ACTIVE_SPORT, value).apply()
+
+    /** True once the pre-sport global HUD layout has been adopted by a sport (see HudLayoutStore). */
+    var hudLayoutAdopted: Boolean
+        get() = prefs.getBoolean(KEY_HUD_ADOPTED, false)
+        set(value) = prefs.edit().putBoolean(KEY_HUD_ADOPTED, value).apply()
+
+    /** Per-sport HUD layout JSON (null = never edited for that sport). */
+    fun hudLayoutJsonFor(sportId: String): String? = prefs.getString(KEY_HUD_LAYOUT + "_" + sportId, null)
+    fun setHudLayoutJsonFor(sportId: String, raw: String?) =
+        prefs.edit().putString(KEY_HUD_LAYOUT + "_" + sportId, raw).apply()
+
+    /** Per-sport split distance (m): 1 km for running, usually off for cycling. */
+    fun autoLapEveryMFor(sportId: String?): Float =
+        if (sportId == null) autoLapEveryM else prefs.getFloat(KEY_AUTO_LAP_EVERY_M + "_" + sportId, autoLapEveryM)
+    fun setAutoLapEveryMFor(sportId: String?, meters: Float) {
+        if (sportId == null) autoLapEveryM = meters
+        else prefs.edit().putFloat(KEY_AUTO_LAP_EVERY_M + "_" + sportId, meters).apply()
+    }
+
     /** Id of the last APK download whose installer we already offered (see SettingsScreen). */
     var lastInstalledDownloadId: String?
         get() = prefs.getString(KEY_LAST_INSTALL_ID, null)
@@ -428,6 +452,8 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_USER_WEIGHT = "user_weight_kg"
         private const val KEY_REC_COUNTDOWN = "rec_countdown"
         private const val KEY_LAP_COUNTDOWN = "lap_countdown"
+        private const val KEY_ACTIVE_SPORT = "active_sport_id"
+        private const val KEY_HUD_ADOPTED = "hud_layout_adopted"
         private const val KEY_LAST_INSTALL_ID = "last_install_work_id"
         private const val KEY_AUTO_LAP_EVERY_M = "auto_lap_every_m"
         private const val KEY_SIM_TRACK = "sim_track_id"

@@ -98,4 +98,6 @@
     <string name="viewer_qs_competition_none_subtitle">No competir</string>
     <string name="viewer_qs_auto_lap_distance">Parcials automàtics per distància</string>
     <string name="viewer_qs_auto_lap_off">No</string>
+    <string name="viewer_sport_picker_title">Què faràs?</string>
+    <string name="viewer_sport_picker_help">L\'esport determina el HUD, els parcials i amb quins esforços et poden comparar.</string>
 </resources>

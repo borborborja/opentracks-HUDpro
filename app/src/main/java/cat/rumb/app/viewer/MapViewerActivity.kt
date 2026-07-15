@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
@@ -187,6 +188,8 @@ class MapViewerActivity : ComponentActivity() {
     private val competePromptFlow = MutableStateFlow(false)
     // Competition id awaiting confirmation because a recording is in progress (null = no prompt).
     private val confirmCompetitionFlow = MutableStateFlow<Long?>(null)
+    // Sport mode: shown when recording is requested with no sport chosen yet (sticky afterwards).
+    private val sportPickerFlow = MutableStateFlow(false)
 
     // Circuit mode: record an attempt at a saved circuit. The fixed line is preset (auto-lap arms
     // from the start) and the ghost is the circuit's best lap. Efforts are persisted on save.
@@ -210,7 +213,7 @@ class MapViewerActivity : ComponentActivity() {
         applyWindowFlags()
 
         val prefs = ViewerPreferences.get(this)
-        hudLayoutFlow.value = HudLayoutStore.load(prefs)
+        hudLayoutFlow.value = HudLayoutStore.load(prefs, prefs.activeSportId)
         hudDataFlow.value = hudDataFlow.value.copy(lapManagementEnabled = prefs.lapManagementEnabled)
         units = cat.rumb.app.viewer.hud.UnitsStore.load(prefs)
         adaptiveZoom = prefs.adaptiveZoom
@@ -521,6 +524,18 @@ class MapViewerActivity : ComponentActivity() {
                                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 56.dp),
                             )
                         }
+                        // Sport mode: asked once, before the first recording.
+                        val askSport by sportPickerFlow.collectAsState()
+                        if (askSport) {
+                            SportPickerDialog(
+                                onDismiss = { sportPickerFlow.value = false },
+                                onPick = { id ->
+                                    sportPickerFlow.value = false
+                                    applySport(id)
+                                    controller?.let { startNativeRecording(it) }
+                                },
+                            )
+                        }
                         // Confirm before abandoning an in-progress recording to start a competition.
                         val confirmComp by confirmCompetitionFlow.collectAsState()
                         confirmComp?.let { id ->
@@ -821,8 +836,22 @@ class MapViewerActivity : ComponentActivity() {
             android.widget.Toast.makeText(this, getString(R.string.viewer_toast_location_permission_record), android.widget.Toast.LENGTH_SHORT).show()
             return
         }
+        // Sport mode: what you're doing drives the HUD, the splits and which efforts you can be
+        // compared against, so it must be known BEFORE recording. Sticky, so it's asked once.
+        if (ViewerPreferences.get(this).activeSportId == null) {
+            sportPickerFlow.value = true
+            return
+        }
         val countdownOn = cat.rumb.app.data.prefs.ViewerPreferences.get(this).recCountdown
         if (countdownOn) startWithCountdown(ctrl) else doStartNativeRecording(ctrl)
+    }
+
+    /** Applies a chosen sport: HUD layout, splits and the save-dialog prefill all follow from it. */
+    private fun applySport(sportId: String) {
+        val prefs = ViewerPreferences.get(this)
+        prefs.activeSportId = sportId
+        hudLayoutFlow.value = HudLayoutStore.load(prefs, sportId)
+        DebugLog.i("Viewer", "esport actiu → $sportId")
     }
 
     /** Best current GPS accuracy (m): prefers the hot warm-GPS fix, falls back to the map component. */
@@ -1528,7 +1557,7 @@ class MapViewerActivity : ComponentActivity() {
         super.onResume()
         mapView.onResume()
         // Pick up layout changes made in the editors (pencil button) while we were paused.
-        hudLayoutFlow.value = HudLayoutStore.load(ViewerPreferences.get(this))
+        ViewerPreferences.get(this).let { hudLayoutFlow.value = HudLayoutStore.load(it, it.activeSportId) }
         dataReloadFlow.value++
         // Reflect tracking-point changes made in general Settings while we were away.
         val p = ViewerPreferences.get(this)
@@ -1709,6 +1738,46 @@ private fun LapCompetePrompt(onYes: () -> Unit, onNo: () -> Unit, modifier: andr
             }
         }
     }
+}
+
+/** Asks what you're about to do. Reuses the save dialog's catalogue, so no new icons or strings. */
+@Composable
+private fun SportPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = androidx.compose.runtime.remember { ViewerPreferences.get(context) }
+    val options = cat.rumb.app.manager.screens.rememberActivityTypeOptions(prefs)
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_sport_picker_title)) },
+        text = {
+            androidx.compose.foundation.layout.Column(
+                Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()),
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
+            ) {
+                androidx.compose.material3.Text(
+                    androidx.compose.ui.res.stringResource(R.string.viewer_sport_picker_help),
+                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.outline,
+                )
+                options.forEach { opt ->
+                    androidx.compose.foundation.layout.Row(
+                        Modifier.fillMaxWidth().clickable { onPick(opt.id) }.padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+                    ) {
+                        androidx.compose.material3.Icon(opt.icon, contentDescription = null)
+                        androidx.compose.material3.Text(opt.label)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.training_cancel))
+            }
+        },
+    )
 }
 
 /** A subtle dark→transparent gradient covering the status bar, giving its icons contrast on light maps. */

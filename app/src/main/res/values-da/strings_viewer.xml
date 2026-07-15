@@ -99,4 +99,6 @@
     <string name="viewer_qs_competition_none_subtitle">Konkurrer ikke</string>
     <string name="viewer_qs_auto_lap_distance">Automatiske omgange efter distance</string>
     <string name="viewer_qs_auto_lap_off">Fra</string>
+    <string name="viewer_sport_picker_title">Hvad skal du?</string>
+    <string name="viewer_sport_picker_help">Sporten bestemmer HUD, omgange og hvad du sammenlignes med.</string>
 </resources>

@@ -75,7 +75,7 @@ enum class HudMetric(val labelRes: Int) {
         SLOPE -> "%"
         VAM -> "${u.elevation.label}/h"
         HEART_RATE -> "bpm"
-        CADENCE -> "rpm"
+        CADENCE -> u.cadence.label
         POWER -> "W"
         GHOST_DELTA -> "m"
         GHOST_SECONDS -> "s"
