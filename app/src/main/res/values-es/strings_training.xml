@@ -20,7 +20,9 @@
     <string name="training_resync_message">Esta actividad ya se había subido. Volver a subirla puede crear un duplicado en el servidor.</string>
     <string name="training_laps_title">Vueltas</string>
     <string name="laps_edit">Editar vueltas</string>
-    <string name="laps_edit_hint">Arrastra un tirador para mover el límite de una vuelta.</string>
+    <string name="laps_edit_hint">Arrastra un tirador para mover un límite. Toca el perfil para colocar un corte, o toca un tirador para quitarlo.</string>
+    <string name="laps_edit_add">Añadir corte</string>
+    <string name="laps_edit_remove">Quitar corte</string>
     <string name="training_lap_n">Vuelta %1$d</string>
     <string name="training_action_compare">Comparar</string>
     <string name="compare_title">Comparar</string>

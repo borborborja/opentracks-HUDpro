@@ -52,4 +52,55 @@ class LapsTest {
     fun emptyMarksYieldNoLaps() {
         assertThat(Laps.fromMarks(emptyList(), listOf(0L, 1L, 2L))).isEmpty()
     }
+
+    // --- LapEdits: add / remove split (post-hoc editor transforms) ---
+
+    // approach [0,10) · lap1 [10,20) · lap2 [20,30) · return [30,40)
+    private val cuts = listOf(0, 10, 20, 30, 40)
+    private val kinds = listOf(LapKind.APPROACH, LapKind.LAP, LapKind.LAP, LapKind.RETURN)
+
+    @Test
+    fun addSplitInsideLapSplitsItAndRenumbers() {
+        val (c, k) = LapEdits.addSplit(cuts, kinds, 15)!!
+        assertThat(c).containsExactly(0, 10, 15, 20, 30, 40)
+        assertThat(k).containsExactly(LapKind.APPROACH, LapKind.LAP, LapKind.LAP, LapKind.LAP, LapKind.RETURN)
+        val laps = LapEdits.rebuild(c, k).filter { it.kind == LapKind.LAP }
+        assertThat(laps.map { it.index }).containsExactly(1, 2, 3) // renumbered in order
+        assertThat(laps.map { it.startIdx to it.endIdx }).containsExactly(10 to 15, 15 to 20, 20 to 30)
+    }
+
+    @Test
+    fun cannotAddOnApproachReturnOrOnExistingCut() {
+        assertThat(LapEdits.canAdd(cuts, kinds, 5)).isFalse()  // inside APPROACH
+        assertThat(LapEdits.canAdd(cuts, kinds, 35)).isFalse() // inside RETURN
+        assertThat(LapEdits.canAdd(cuts, kinds, 20)).isFalse() // on an existing cut
+        assertThat(LapEdits.addSplit(cuts, kinds, 5)).isNull()
+    }
+
+    @Test
+    fun removeCutMergesTwoLaps() {
+        val (c, k) = LapEdits.removeCut(cuts, kinds, 2)!! // the cut between lap1 and lap2 (index 2)
+        assertThat(c).containsExactly(0, 10, 30, 40)
+        assertThat(k).containsExactly(LapKind.APPROACH, LapKind.LAP, LapKind.RETURN)
+        val laps = LapEdits.rebuild(c, k).filter { it.kind == LapKind.LAP }
+        assertThat(laps).hasSize(1)
+        assertThat(laps[0].startIdx to laps[0].endIdx).isEqualTo(10 to 30)
+    }
+
+    @Test
+    fun cannotRemoveApproachOrReturnBoundary() {
+        assertThat(LapEdits.canRemove(cuts, kinds, 1)).isFalse() // START boundary (approach|lap)
+        assertThat(LapEdits.canRemove(cuts, kinds, 3)).isFalse() // END boundary (lap|return)
+        assertThat(LapEdits.removeCut(cuts, kinds, 1)).isNull()
+    }
+
+    @Test
+    fun addThenRemoveRoundTripsThroughJson() {
+        val (c, k) = LapEdits.addSplit(cuts, kinds, 15)!!
+        val (c2, k2) = LapEdits.removeCut(c, k, 2)!! // remove the just-added cut → back to original laps
+        val ranges = LapEdits.rebuild(c2, k2)
+        assertThat(Laps.decode(Laps.encode(ranges))).isEqualTo(ranges)
+        assertThat(ranges.filter { it.kind == LapKind.LAP }.map { it.startIdx to it.endIdx })
+            .containsExactly(10 to 20, 20 to 30)
+    }
 }

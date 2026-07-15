@@ -20,7 +20,9 @@
     <string name="training_resync_message">This activity was already uploaded. Uploading again may create a duplicate on the server.</string>
     <string name="training_laps_title">Laps</string>
     <string name="laps_edit">Edit laps</string>
-    <string name="laps_edit_hint">Drag a handle to move a lap boundary.</string>
+    <string name="laps_edit_hint">Drag a handle to move a boundary. Tap the profile to place a split, or tap a handle to remove it.</string>
+    <string name="laps_edit_add">Add split</string>
+    <string name="laps_edit_remove">Remove split</string>
     <string name="training_lap_n">Lap %1$d</string>
     <string name="training_action_compare">Compare</string>
     <string name="compare_title">Compare</string>
