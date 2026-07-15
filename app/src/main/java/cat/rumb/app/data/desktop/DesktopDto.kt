@@ -162,6 +162,24 @@ data class SettingsDto(
     val keepScreenOn: Boolean, val fullscreen: Boolean, val adaptiveZoom: Boolean, val mapOrientation: String,
     val recCountdown: Boolean, val competitionHalo: Boolean, val competitionShowSeconds: Boolean, val desktopServerPort: Int,
 )
+// --- Map management ---
+
+@Serializable data class MapSourceDto(val id: String, val displayName: String, val attribution: String, val maxZoom: Int, val offlineAllowed: Boolean)
+@Serializable data class RegionDto(val name: String, val west: Double, val south: Double, val east: Double, val north: Double)
+@Serializable data class OfflineMapDto(
+    val name: String, val path: String, val sizeBytes: Long, val sourceId: String?,
+    val sectors: List<cat.rumb.app.data.map.OfflineSector>,
+)
+@Serializable data class MapsDto(
+    val sources: List<MapSourceDto>,
+    val offline: List<OfflineMapDto>,
+    val activeBaseMapId: String?,
+    val cacheSizeMb: Int,
+    val regions: List<RegionDto>,
+)
+@Serializable data class EstimateDto(val tiles: Long, val mb: Long, val overLimit: Boolean)
+@Serializable data class DownloadProgressDto(val state: String, val done: Int, val total: Int, val failed: Int)
+
 @Serializable data class EndurainDto(val host: String?, val apiKeySet: Boolean)
 @Serializable data class WebDavDto(val url: String?, val userSet: Boolean)
 @Serializable data class FolderDto(val enabled: Boolean, val folderSet: Boolean)

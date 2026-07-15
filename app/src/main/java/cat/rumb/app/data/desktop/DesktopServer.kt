@@ -93,6 +93,14 @@ class DesktopServer(
             uri == "/api/settings/webdav" && session.method == Method.POST -> handleWebDavSave(session)
             uri == "/api/settings/folder" && session.method == Method.POST -> handleFolderToggle(session)
             uri == "/api/settings/sync/retry" && session.method == Method.POST -> handleSyncRetry()
+            uri == "/api/maps" -> handleMaps()
+            uri == "/api/maps/base" && session.method == Method.POST -> handleSetBaseMap(session)
+            uri == "/api/maps/offline/delete" && session.method == Method.POST -> handleDeleteOffline(session)
+            uri == "/api/maps/sector/delete" && session.method == Method.POST -> handleDeleteSector(session)
+            uri == "/api/maps/cache/clear" && session.method == Method.POST -> handleClearCache()
+            uri == "/api/maps/download/estimate" && session.method == Method.POST -> handleEstimate(session)
+            uri == "/api/maps/download/progress" -> handleDownloadProgress()
+            uri == "/api/maps/download" && session.method == Method.POST -> handleDownload(session)
             uri == "/api/profiles" -> handleProfiles()
             uri == "/api/location" -> handleLocation()
             uri == "/api/route/preview" && session.method == Method.POST -> handleRoutePreview(session)
@@ -379,6 +387,103 @@ class DesktopServer(
     private fun handleSyncRetry(): Response {
         runBlocking { SyncTargets.retryFailed(context) }
         return json(Response.Status.OK, OkDto(true))
+    }
+
+    // --- Map management ---
+
+    private fun handleMaps(): Response {
+        val store = cat.rumb.app.data.map.OfflineMapStore.get(context)
+        val p = ViewerPreferences.get(context)
+        val sources = cat.rumb.app.data.map.MapSource.entries.map {
+            MapSourceDto(it.id, it.displayName, it.attribution, it.maxZoom, it.offlineAllowed)
+        }
+        val offline = store.list().map { m ->
+            OfflineMapDto(m.name, m.path, java.io.File(m.path).length(), m.sourceId, store.sectorsOf(m))
+        }
+        val regions = cat.rumb.app.data.map.CatalanRegions.all.map {
+            RegionDto(it.name, it.bbox.west, it.bbox.south, it.bbox.east, it.bbox.north)
+        }
+        return json(Response.Status.OK, MapsDto(sources, offline, p.baseMapId, p.mapCacheSizeMb, regions))
+    }
+
+    private fun handleSetBaseMap(session: IHTTPSession): Response {
+        val id = runCatching { json.decodeFromString<Map<String, String>>(readBody(session))["id"] }.getOrNull()
+            ?: return json(Response.Status.BAD_REQUEST, OkDto(false))
+        ViewerPreferences.get(context).baseMapId = id
+        return json(Response.Status.OK, OkDto(true))
+    }
+
+    private fun handleDeleteOffline(session: IHTTPSession): Response {
+        val path = runCatching { json.decodeFromString<Map<String, String>>(readBody(session))["path"] }.getOrNull()
+            ?: return json(Response.Status.BAD_REQUEST, OkDto(false))
+        val store = cat.rumb.app.data.map.OfflineMapStore.get(context)
+        store.byPath(path)?.let { store.delete(it) }
+        return json(Response.Status.OK, OkDto(true))
+    }
+
+    private fun handleDeleteSector(session: IHTTPSession): Response {
+        val body = runCatching { json.decodeFromString<Map<String, String>>(readBody(session)) }.getOrNull()
+            ?: return json(Response.Status.BAD_REQUEST, OkDto(false))
+        val store = cat.rumb.app.data.map.OfflineMapStore.get(context)
+        val map = body["path"]?.let { store.byPath(it) } ?: return json(Response.Status.NOT_FOUND, OkDto(false))
+        store.sectorsOf(map).firstOrNull { it.id == body["sectorId"] }?.let { store.deleteSector(map, it) }
+        return json(Response.Status.OK, OkDto(true))
+    }
+
+    private fun handleClearCache(): Response {
+        cat.rumb.app.data.map.MapCache.clearAmbient(context)
+        return json(Response.Status.OK, OkDto(true))
+    }
+
+    private fun bboxFrom(body: Map<String, String>): cat.rumb.app.data.map.BoundingBox? {
+        val w = body["west"]?.toDoubleOrNull() ?: return null
+        val s = body["south"]?.toDoubleOrNull() ?: return null
+        val e = body["east"]?.toDoubleOrNull() ?: return null
+        val n = body["north"]?.toDoubleOrNull() ?: return null
+        return cat.rumb.app.data.map.BoundingBox(w, s, e, n)
+    }
+
+    private fun handleEstimate(session: IHTTPSession): Response {
+        val body = runCatching { json.decodeFromString<Map<String, String>>(readBody(session)) }.getOrNull()
+            ?: return json(Response.Status.BAD_REQUEST, OkDto(false))
+        val bbox = bboxFrom(body) ?: return json(Response.Status.BAD_REQUEST, OkDto(false, error = "bbox"))
+        val minZ = body["minZoom"]?.toIntOrNull() ?: return json(Response.Status.BAD_REQUEST, OkDto(false))
+        val maxZ = body["maxZoom"]?.toIntOrNull() ?: return json(Response.Status.BAD_REQUEST, OkDto(false))
+        val tiles = cat.rumb.app.data.map.TileMath.tileCount(bbox, minZ, maxZ)
+        val mb = tiles * 25 / 1024
+        return json(Response.Status.OK, EstimateDto(tiles, mb, tiles > 60_000))
+    }
+
+    private fun handleDownload(session: IHTTPSession): Response {
+        val body = runCatching { json.decodeFromString<Map<String, String>>(readBody(session)) }.getOrNull()
+            ?: return json(Response.Status.BAD_REQUEST, OkDto(false))
+        val bbox = bboxFrom(body) ?: return json(Response.Status.BAD_REQUEST, OkDto(false, error = "bbox"))
+        val sourceId = body["sourceId"] ?: return json(Response.Status.BAD_REQUEST, OkDto(false))
+        val minZ = body["minZoom"]?.toIntOrNull() ?: return json(Response.Status.BAD_REQUEST, OkDto(false))
+        val maxZ = body["maxZoom"]?.toIntOrNull() ?: return json(Response.Status.BAD_REQUEST, OkDto(false))
+        if (cat.rumb.app.data.map.TileMath.tileCount(bbox, minZ, maxZ) > 60_000) {
+            return json(Response.Status.BAD_REQUEST, OkDto(false, error = "over limit"))
+        }
+        val name = body["name"]?.ifBlank { null } ?: cat.rumb.app.data.map.MapSource.byId(sourceId).displayName
+        cat.rumb.app.data.map.RegionDownloadWorker.enqueue(context, sourceId, name, bbox, minZ, maxZ)
+        return json(Response.Status.OK, OkDto(true))
+    }
+
+    private fun handleDownloadProgress(): Response {
+        val w = cat.rumb.app.data.map.RegionDownloadWorker
+        val infos = androidx.work.WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWork(w.WORK_NAME).get()
+        val info = infos.firstOrNull { it.state == androidx.work.WorkInfo.State.RUNNING } ?: infos.firstOrNull()
+        val prog = info?.progress
+        return json(
+            Response.Status.OK,
+            DownloadProgressDto(
+                info?.state?.name ?: "NONE",
+                prog?.getInt(w.KEY_DONE, 0) ?: 0,
+                prog?.getInt(w.KEY_TOTAL, 0) ?: 0,
+                prog?.getInt(w.KEY_FAILED, 0) ?: 0,
+            ),
+        )
     }
 
     // --- Write endpoints ---

@@ -75,6 +75,7 @@ const ICONS = {
   competition: { m: "s", c: '<line x1="10" y1="2" x2="14" y2="2"/><line x1="12" y1="14" x2="15" y2="11"/><circle cx="12" cy="14" r="8"/>' },
   records:     { m: "s", c: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>' },
   progress:    { m: "s", c: '<path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>' },
+  maps:        { m: "s", c: '<polygon points="1 6 8 3 16 6 23 3 23 18 16 21 8 18 1 21 1 6"/><line x1="8" y1="3" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="21"/>' },
   settings:    { m: "s", c: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>' },
   // --- activity types (Material-style filled figures) ---
   walk:  { m: "f", c: '<path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9 7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7z"/>' },
@@ -430,7 +431,7 @@ function drawTrackMap(el, key, samples) {
 /* ============================================================= *
  *  Tab routing                                                  *
  * ============================================================= */
-const TABS = ["library", "routes", "competition", "records", "progress", "settings"];
+const TABS = ["library", "routes", "competition", "records", "progress", "maps", "settings"];
 let currentTab = "library";
 
 function switchTab(tab) {
@@ -453,6 +454,7 @@ function renderTab(tab) {
   else if (tab === "competition") renderCompetitions();
   else if (tab === "records") renderRecords();
   else if (tab === "progress") renderProgress();
+  else if (tab === "maps") renderMaps();
   else if (tab === "settings") renderSettings();
 }
 
@@ -1011,6 +1013,124 @@ async function renderProgress() {
     return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1);
   });
   barChart(v.querySelector("#cWeeks"), labels, weeks.map(w => w.km), { color: "#E63946" });
+}
+
+/* ============================================================= *
+ *  View: Mapes                                                  *
+ * ============================================================= */
+function fmtBytes(n) { if (n >= 1048576) return (n / 1048576).toFixed(1) + " MB"; if (n >= 1024) return (n / 1024).toFixed(0) + " KB"; return n + " B"; }
+let mapsProgTimer = null;
+
+async function renderMaps() {
+  const v = document.getElementById("view-maps");
+  destroyMap("mapsPick");
+  if (mapsProgTimer) { clearInterval(mapsProgTimer); mapsProgTimer = null; }
+  v.innerHTML = loadingHtml();
+  let m;
+  try { m = await apiJson("/api/maps"); }
+  catch (e) { if (!e.auth) v.innerHTML = emptyHtml("No s'ha pogut carregar."); return; }
+  const base = m.sources.map(s =>
+    '<label class="set-row"><span>' + esc(s.displayName) + '</span><input type="radio" name="baseMap" value="' + s.id + '"' + (s.id === m.activeBaseMapId ? " checked" : "") + "></label>").join("");
+  const offline = m.offline.length ? m.offline.map(o =>
+    '<div class="off-map"><div class="row-between"><b>' + esc(o.name) + '</b><span>' + fmtBytes(o.sizeBytes) +
+    ' <button class="btn btn-danger sm" data-del-map="' + esc(o.path) + '">Borrar</button></span></div>' +
+    (o.sectors && o.sectors.length ? '<ul class="sectors">' + o.sectors.map(sec =>
+      "<li><span>zoom " + sec.minZoom + "–" + sec.maxZoom + " · " + sec.tileCount + ' tiles</span><button class="btn btn-ghost sm" data-del-sector="' + esc(o.path) + "|" + esc(sec.id) + '">×</button></li>').join("") + "</ul>" : "") +
+    "</div>").join("") : '<p class="set-status">Cap mapa offline.</p>';
+  const dlSources = m.sources.filter(s => s.offlineAllowed).map(s => '<option value="' + s.id + '">' + esc(s.displayName) + "</option>").join("");
+  const regionOpts = '<option value="">— comarca —</option>' + m.regions.map((r, i) => '<option value="' + i + '">' + esc(r.name) + "</option>").join("");
+  v.innerHTML =
+    '<h2 class="title">Mapes</h2><p class="subtitle">Mapa base, offline i descàrregues</p>' +
+    '<div class="set-grid">' +
+    '<div class="card static set-card"><h3>Mapa base</h3>' + base + "</div>" +
+    '<div class="card static set-card"><h3>Memòria cau</h3>' + sNum("mapCacheSizeMb", "Mida (MB)", m.cacheSizeMb, 100, 2000, 50) + '<button class="btn" id="clearCache">Buidar la memòria cau</button></div>' +
+    '<div class="card static set-card"><h3>Mapes offline</h3>' + offline + "</div>" +
+    "</div>" +
+    '<div class="card static set-card" style="margin-top:14px"><h3>Descarregar una àrea</h3>' +
+    '<div class="dl-grid">' +
+    "<label>Font<select id=\"dlSource\">" + dlSources + "</select></label>" +
+    "<label>Comarca<select id=\"dlRegion\">" + regionOpts + "</select></label>" +
+    '<label>Oest<input type="number" id="dlW" step="0.01"></label>' +
+    '<label>Sud<input type="number" id="dlS" step="0.01"></label>' +
+    '<label>Est<input type="number" id="dlE" step="0.01"></label>' +
+    '<label>Nord<input type="number" id="dlN" step="0.01"></label>' +
+    '<label>Zoom mín<input type="number" id="dlMin" value="10" min="6" max="19"></label>' +
+    '<label>Zoom màx<input type="number" id="dlMax" value="15" min="6" max="19"></label>' +
+    "</div>" +
+    '<div id="dlMap" class="dl-map"></div>' +
+    '<div class="row-actions" style="margin-top:10px"><button class="btn" id="useView">Usar vista actual</button><button class="btn" id="estimate">Estimar</button><button class="btn btn-primary" id="download">Descarregar</button></div>' +
+    '<p class="set-status" id="dlEstimate"></p><p class="set-status" id="dlProgress"></p></div>';
+
+  v.querySelectorAll('input[name="baseMap"]').forEach(r => r.addEventListener("change", async () => {
+    try { await api("/api/maps/base", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: r.value }) }); toast("Mapa base canviat"); }
+    catch (e) { if (!e.auth) toast("Error", true); }
+  }));
+  v.querySelector('[data-key="mapCacheSizeMb"]').addEventListener("change", (e) => setSetting("mapCacheSizeMb", e.target.value));
+  v.querySelector("#clearCache").addEventListener("click", async () => {
+    try { await api("/api/maps/cache/clear", { method: "POST" }); toast("Memòria cau buidada"); } catch (e) { if (!e.auth) toast("Error", true); }
+  });
+  v.querySelectorAll("[data-del-map]").forEach(b => b.addEventListener("click", async () => {
+    if (!confirm("Borrar aquest mapa offline?")) return;
+    try { await api("/api/maps/offline/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: b.dataset.delMap }) }); toast("Esborrat"); renderMaps(); }
+    catch (e) { if (!e.auth) toast("Error", true); }
+  }));
+  v.querySelectorAll("[data-del-sector]").forEach(b => b.addEventListener("click", async () => {
+    const parts = b.dataset.delSector.split("|");
+    try { await api("/api/maps/sector/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: parts[0], sectorId: parts[1] }) }); toast("Sector esborrat"); renderMaps(); }
+    catch (e) { if (!e.auth) toast("Error", true); }
+  }));
+
+  const dlMap = newMap(v.querySelector("#dlMap"), "mapsPick");
+  dlMap.setView([41.6, 1.7], 8);
+  setTimeout(() => dlMap.invalidateSize(), 60);
+  const setBox = (w, s, e, n) => {
+    v.querySelector("#dlW").value = w.toFixed(3); v.querySelector("#dlS").value = s.toFixed(3);
+    v.querySelector("#dlE").value = e.toFixed(3); v.querySelector("#dlN").value = n.toFixed(3);
+  };
+  v.querySelector("#dlRegion").addEventListener("change", (e) => {
+    if (e.target.value === "") return;
+    const r = m.regions[Number(e.target.value)];
+    setBox(r.west, r.south, r.east, r.north); dlMap.fitBounds([[r.south, r.west], [r.north, r.east]]);
+  });
+  v.querySelector("#useView").addEventListener("click", () => {
+    const b = dlMap.getBounds(); setBox(b.getWest(), b.getSouth(), b.getEast(), b.getNorth());
+  });
+  const readReq = () => ({
+    sourceId: v.querySelector("#dlSource").value, west: v.querySelector("#dlW").value, south: v.querySelector("#dlS").value,
+    east: v.querySelector("#dlE").value, north: v.querySelector("#dlN").value,
+    minZoom: v.querySelector("#dlMin").value, maxZoom: v.querySelector("#dlMax").value
+  });
+  v.querySelector("#estimate").addEventListener("click", async () => {
+    try {
+      const res = await api("/api/maps/download/estimate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(readReq()) });
+      const j = await res.json();
+      if (j.tiles == null) { v.querySelector("#dlEstimate").textContent = "Àrea no vàlida"; return; }
+      v.querySelector("#dlEstimate").textContent = j.tiles + " tiles · ~" + j.mb + " MB" + (j.overLimit ? " (supera el límit de 60.000)" : "");
+    } catch (e) { if (!e.auth) toast("Error", true); }
+  });
+  v.querySelector("#download").addEventListener("click", async () => {
+    try {
+      const res = await api("/api/maps/download", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(readReq()) });
+      const j = await res.json();
+      if (!j.ok) { toast(j.error === "over limit" ? "Massa tiles (límit 60.000)" : "Àrea no vàlida", true); return; }
+      toast("Descàrrega iniciada"); pollMapProgress(v);
+    } catch (e) { if (!e.auth) toast("Error", true); }
+  });
+}
+
+function pollMapProgress(v) {
+  if (mapsProgTimer) clearInterval(mapsProgTimer);
+  const el = v.querySelector("#dlProgress");
+  mapsProgTimer = setInterval(async () => {
+    if (currentTab !== "maps") { clearInterval(mapsProgTimer); return; }
+    try {
+      const p = await apiJson("/api/maps/download/progress");
+      if (p.state === "RUNNING") el.textContent = "Descarregant… " + p.done + "/" + p.total + (p.failed ? " (" + p.failed + " fallits)" : "");
+      else if (p.state === "SUCCEEDED") { el.textContent = "Completat ✓"; clearInterval(mapsProgTimer); renderMaps(); }
+      else if (p.state === "FAILED") { el.textContent = "Ha fallat"; clearInterval(mapsProgTimer); }
+      else if (p.state === "ENQUEUED") el.textContent = "A la cua…";
+    } catch (e) { clearInterval(mapsProgTimer); }
+  }, 1500);
 }
 
 /* ============================================================= *
