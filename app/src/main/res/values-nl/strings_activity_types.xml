@@ -15,4 +15,13 @@
     <string name="difficulty_moderate">Gemiddeld</string>
     <string name="difficulty_hard">Zwaar</string>
     <string name="difficulty_very_hard">Zeer zwaar</string>
+    <string name="family_foot">Te voet</string>
+    <string name="family_wheel">Fiets</string>
+    <string name="family_snow">Sneeuw</string>
+    <string name="family_skate">Skaten</string>
+    <string name="family_paddle">Peddelen</string>
+    <string name="family_swim">Zwemmen</string>
+    <string name="family_unknown">Overige</string>
+    <string name="family_picker_title">Hoe verplaatst het zich?</string>
+    <string name="family_picker_help">Alleen activiteiten uit dezelfde familie worden vergeleken (records, competities).</string>
 </resources>

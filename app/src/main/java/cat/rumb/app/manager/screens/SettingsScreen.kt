@@ -939,12 +939,14 @@ private fun ActivityTypesSection(prefs: ViewerPreferences) {
         CustomTypeDialog(
             initial = editing,
             onDismiss = { showEditor = false },
-            onSave = { name, iconId ->
+            onSave = { name, iconId, family ->
                 val current = editing
                 val newList = if (current == null) {
-                    custom + CustomActivityType(ActivityTypes.newCustomId(), name, iconId)
+                    custom + CustomActivityType(ActivityTypes.newCustomId(), name, iconId, family.name)
                 } else {
-                    custom.map { if (it.id == current.id) it.copy(name = name, iconId = iconId) else it }
+                    custom.map {
+                        if (it.id == current.id) it.copy(name = name, iconId = iconId, family = family.name) else it
+                    }
                 }
                 persist(newList)
                 showEditor = false
@@ -974,10 +976,12 @@ private fun ActivityTypesSection(prefs: ViewerPreferences) {
 private fun CustomTypeDialog(
     initial: CustomActivityType?,
     onDismiss: () -> Unit,
-    onSave: (name: String, iconId: String) -> Unit,
+    onSave: (name: String, iconId: String, family: cat.rumb.app.data.tracks.ActivityFamily) -> Unit,
 ) {
     var name by remember { mutableStateOf(initial?.name ?: "") }
     var iconId by remember { mutableStateOf(initial?.iconId ?: ActivityTypeCatalog.CURATED_ICON_IDS.first()) }
+    // Required: without a family this type can't be compared against anything (records, competitions).
+    var family by remember { mutableStateOf(initial?.familyEnum ?: cat.rumb.app.data.tracks.ActivityFamily.UNKNOWN) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1021,10 +1025,35 @@ private fun CustomTypeDialog(
                         }
                     }
                 }
+                Text(stringResource(R.string.family_picker_title), style = MaterialTheme.typography.labelMedium)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    cat.rumb.app.data.tracks.ActivityFamily.entries
+                        .filter { it != cat.rumb.app.data.tracks.ActivityFamily.UNKNOWN }
+                        .chunked(3)
+                        .forEach { rowFamilies ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                rowFamilies.forEach { f ->
+                                    FilterChip(
+                                        selected = family == f,
+                                        onClick = { family = f },
+                                        label = { Text(stringResource(activityFamilyLabel(f))) },
+                                    )
+                                }
+                            }
+                        }
+                }
+                Text(
+                    stringResource(R.string.family_picker_help),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSave(name.trim(), iconId) }, enabled = name.isNotBlank()) {
+            TextButton(
+                onClick = { onSave(name.trim(), iconId, family) },
+                enabled = name.isNotBlank() && family != cat.rumb.app.data.tracks.ActivityFamily.UNKNOWN,
+            ) {
                 Text(stringResource(R.string.settings_types_save))
             }
         },

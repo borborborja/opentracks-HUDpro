@@ -27,7 +27,11 @@ class RumbApplication : Application() {
         TrackRepository(database.followTrackDao(), contentResolver)
     }
     val competitionRepository: CompetitionRepository by lazy {
-        CompetitionRepository(database.competitionDao(), trackRepository)
+        CompetitionRepository(database.competitionDao(), trackRepository) {
+            cat.rumb.app.data.tracks.ActivityTypes.decodeCustom(
+                cat.rumb.app.data.prefs.ViewerPreferences.get(this).customActivityTypesJson,
+            )
+        }
     }
     val endurainRepository: EndurainRepository by lazy {
         EndurainRepository(EndurainPreferences.get(this))

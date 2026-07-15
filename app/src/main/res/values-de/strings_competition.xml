@@ -31,4 +31,5 @@
     <string name="competition_remove_attempt">Aus Wettkampf entfernen</string>
     <string name="competition_cd_menu">Wettkampfoptionen</string>
     <string name="competition_attempt_not_counted">Aufzeichnung gespeichert, zählt aber nicht als Wettkampfversuch.</string>
+    <string name="competition_attempt_wrong_sport">Aufzeichnung gespeichert, zählt aber nicht: andere Sportart als der Wettkampf.</string>
 </resources>

@@ -17,6 +17,8 @@ import kotlinx.coroutines.withContext
 class CompetitionRepository(
     private val dao: CompetitionDao,
     private val trackRepository: TrackRepository,
+    /** Custom activity types (from prefs) so their family can be resolved. */
+    private val customTypes: () -> List<CustomActivityType> = { emptyList() },
 ) {
     fun observeCompetitions(): Flow<List<CompetitionEntity>> = dao.observeCompetitions()
     fun attemptsFor(competitionId: Long): Flow<List<CompetitionAttemptEntity>> = dao.attemptsFor(competitionId)
@@ -147,30 +149,64 @@ class CompetitionRepository(
             }
         }
 
+    /** Why a recording did or didn't join a competition's leaderboard. */
+    enum class AttemptOutcome { FILED, WRONG_SPORT, ROUTE_NOT_RACED, NO_LAP, NOT_TIMED, NO_COMPETITION }
+
+    data class AttemptResult(val outcome: AttemptOutcome, val filed: Int = 0)
+
     /**
-     * Files a freshly-recorded [trackId] as attempt(s) of [competitionId] (branches on its type).
-     * Returns how many attempts were filed: 0 when the recording doesn't qualify (no completed lap
-     * for LAP; route not actually raced for ROUTE), so the caller can tell the user it didn't count.
+     * Files a freshly-recorded [trackId] as attempt(s) of [competitionId] (branches on its type),
+     * reporting WHY when it doesn't qualify so the caller can say so.
+     *
+     * The sport gate lives HERE and not in a screen on purpose: the desktop server creates
+     * competitions over HTTP too, and a rule living in the UI would simply be bypassed.
      */
-    suspend fun addAttemptsFromTrack(competitionId: Long, trackId: Long, name: String, now: Long): Int =
+    suspend fun addAttemptsFromTrack(competitionId: Long, trackId: Long, name: String, now: Long): AttemptResult =
         withContext(Dispatchers.IO) {
-            val comp = dao.getCompetition(competitionId) ?: return@withContext 0
+            val comp = dao.getCompetition(competitionId)
+                ?: return@withContext AttemptResult(AttemptOutcome.NO_COMPETITION)
+            // Same-family check. Ground truth is the SAVED activity type (the save dialog forces a
+            // choice), not any live "current sport" — we can't stop someone mislabelling a track.
+            val trackType = trackRepository.get(trackId)?.activityType
+            val compType = backfilledActivityType(comp)
+            if (!ActivityTypes.comparableTypes(trackType, compType, customTypes())) {
+                DebugLog.i("Competi", "intent descartat · esport $trackType ≠ competició $compType")
+                return@withContext AttemptResult(AttemptOutcome.WRONG_SPORT)
+            }
             if (comp.type == CompetitionType.LAP) {
                 val slices = timedSlices(trackId)
-                if (slices.isEmpty()) return@withContext 0
+                if (slices.isEmpty()) return@withContext AttemptResult(AttemptOutcome.NO_LAP)
                 insertLapAttempts(competitionId, trackId, name, slices, now)
-                slices.size
+                AttemptResult(AttemptOutcome.FILED, slices.size)
             } else {
                 val pts = trackRepository.loadGpxRoute(trackId)
-                if (!GhostEngine.isTimed(pts)) return@withContext 0
+                if (!GhostEngine.isTimed(pts)) return@withContext AttemptResult(AttemptOutcome.NOT_TIMED)
                 val refPts = runCatching { Gpx.read(comp.referenceGpx.byteInputStream()).points }
                     .getOrDefault(emptyList())
                 val distM = TrackStatsCalculator.compute(pts).distanceM
-                if (!isValidRouteAttempt(refPts, pts, distM)) return@withContext 0
+                if (!isValidRouteAttempt(refPts, pts, distM)) {
+                    return@withContext AttemptResult(AttemptOutcome.ROUTE_NOT_RACED)
+                }
                 insertRouteAttempt(competitionId, trackId, name, pts, now)
-                1
+                AttemptResult(AttemptOutcome.FILED, 1)
             }
         }
+
+    /**
+     * A competition's sport, recovering it for old rows created before it was recorded: fall back to
+     * the activity type of an attempt's source track. Persists the recovery so it's paid once.
+     * Still null → UNKNOWN, which is permissive (see [ActivityTypes.comparable]).
+     */
+    private suspend fun backfilledActivityType(comp: CompetitionEntity): String? {
+        comp.activityType?.let { return it }
+        val fromSource = dao.attemptsForOnce(comp.id)
+            .mapNotNull { it.sourceTrackId }
+            .firstNotNullOfOrNull { trackRepository.get(it)?.activityType }
+            ?: return null
+        dao.setActivityType(comp.id, fromSource)
+        DebugLog.i("Competi", "esport recuperat per competició ${comp.id} → $fromSource")
+        return fromSource
+    }
 
     private companion object {
         /** Share of the reference distance an attempt must cover to count as having raced it. */

@@ -31,4 +31,5 @@
     <string name="competition_remove_attempt">Αφαίρεση από τον αγώνα</string>
     <string name="competition_cd_menu">Επιλογές αγώνα</string>
     <string name="competition_attempt_not_counted">Η εγγραφή αποθηκεύτηκε, αλλά δεν μετράει ως προσπάθεια αγώνα.</string>
+    <string name="competition_attempt_wrong_sport">Η εγγραφή αποθηκεύτηκε, αλλά δεν μετράει: διαφορετικό άθλημα από τον αγώνα.</string>
 </resources>

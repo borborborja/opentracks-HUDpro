@@ -15,4 +15,13 @@
     <string name="difficulty_moderate">Moderat</string>
     <string name="difficulty_hard">Dificil</string>
     <string name="difficulty_very_hard">Foarte dificil</string>
+    <string name="family_foot">Pe jos</string>
+    <string name="family_wheel">Bicicletă</string>
+    <string name="family_snow">Zăpadă</string>
+    <string name="family_skate">Patine</string>
+    <string name="family_paddle">Vâslit</string>
+    <string name="family_swim">Înot</string>
+    <string name="family_unknown">Altele</string>
+    <string name="family_picker_title">Cum se deplasează?</string>
+    <string name="family_picker_help">Se compară doar activități din aceeași familie (recorduri, competiții).</string>
 </resources>

@@ -15,4 +15,13 @@
     <string name="difficulty_moderate">Μέτριο</string>
     <string name="difficulty_hard">Δύσκολο</string>
     <string name="difficulty_very_hard">Πολύ δύσκολο</string>
+    <string name="family_foot">Με τα πόδια</string>
+    <string name="family_wheel">Ποδήλατο</string>
+    <string name="family_snow">Χιόνι</string>
+    <string name="family_skate">Πατίνια</string>
+    <string name="family_paddle">Κωπηλασία</string>
+    <string name="family_swim">Κολύμβηση</string>
+    <string name="family_unknown">Άλλα</string>
+    <string name="family_picker_title">Πώς μετακινείται;</string>
+    <string name="family_picker_help">Συγκρίνονται μόνο δραστηριότητες της ίδιας οικογένειας (ρεκόρ, αγώνες).</string>
 </resources>

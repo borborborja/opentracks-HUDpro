@@ -18,6 +18,7 @@ enum class RecordKind(val distanceM: Double?) {
     FASTEST_5K(5_000.0),
     FASTEST_10K(10_000.0),
     FASTEST_HALF(21_097.5),
+    FASTEST_MARATHON(42_195.0),
     LONGEST_DISTANCE(null),
     MAX_ASCENT(null),
     MAX_SPEED(null),
@@ -55,16 +56,35 @@ object PersonalRecords {
         return best.takeIf { it != Long.MAX_VALUE }
     }
 
+    /** Families present in [tracks], most-recorded first — what the records screen offers to filter by. */
+    fun familiesIn(
+        tracks: List<FollowTrackEntity>,
+        custom: List<CustomActivityType> = emptyList(),
+    ): List<ActivityFamily> =
+        tracks.filter { it.kind == TrackKind.TRAINING }
+            .groupingBy { ActivityTypes.familyOf(it.activityType, custom) }
+            .eachCount()
+            .entries
+            .sortedByDescending { it.value }
+            .map { it.key }
+
     /**
      * Computes all records over [tracks] (summaries) using [loadPoints] for the per-point sweeps.
      * Scalar records come straight from the summaries; window records only parse timed tracks.
+     *
+     * [family] restricts to one activity family: a "fastest 5K" set on a bike is not a running
+     * record, and without this the library's fastest sport silently owns every distance record.
+     * Null keeps the old whole-library behaviour.
      */
     suspend fun compute(
         tracks: List<FollowTrackEntity>,
         loadPoints: suspend (Long) -> List<GpxPoint>,
+        family: ActivityFamily? = null,
+        custom: List<CustomActivityType> = emptyList(),
         onProgress: (done: Int, total: Int) -> Unit = { _, _ -> },
     ): List<Record> {
         val trainings = tracks.filter { it.kind == TrackKind.TRAINING }
+            .filter { family == null || ActivityTypes.familyOf(it.activityType, custom) == family }
         val records = mutableListOf<Record>()
 
         fun scalar(kind: RecordKind, selector: (FollowTrackEntity) -> Double?) {
@@ -76,7 +96,10 @@ object PersonalRecords {
         scalar(RecordKind.MAX_ASCENT) { it.ascentM.takeIf { a -> a > 0 } }
         scalar(RecordKind.LONGEST_TIME) { it.durationMs?.takeIf { d -> d > 0 }?.toDouble() }
 
-        val windowKinds = listOf(RecordKind.FASTEST_1K, RecordKind.FASTEST_5K, RecordKind.FASTEST_10K, RecordKind.FASTEST_HALF)
+        val windowKinds = listOf(
+            RecordKind.FASTEST_1K, RecordKind.FASTEST_5K, RecordKind.FASTEST_10K,
+            RecordKind.FASTEST_HALF, RecordKind.FASTEST_MARATHON,
+        )
         val bests = HashMap<RecordKind, Record>()
         var maxSpeed: Record? = null
         val timedTracks = trainings.filter { (it.durationMs ?: 0L) > 0L }

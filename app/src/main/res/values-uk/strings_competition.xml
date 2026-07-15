@@ -31,4 +31,5 @@
     <string name="competition_remove_attempt">Прибрати зі змагання</string>
     <string name="competition_cd_menu">Параметри змагання</string>
     <string name="competition_attempt_not_counted">Запис збережено, але він не зараховано як спробу змагання.</string>
+    <string name="competition_attempt_wrong_sport">Запис збережено, але не зараховано: інший вид спорту, ніж у змаганні.</string>
 </resources>

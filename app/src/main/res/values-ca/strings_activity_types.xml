@@ -15,4 +15,13 @@
     <string name="difficulty_moderate">Moderada</string>
     <string name="difficulty_hard">Difícil</string>
     <string name="difficulty_very_hard">Molt difícil</string>
+    <string name="family_foot">A peu</string>
+    <string name="family_wheel">Bicicleta</string>
+    <string name="family_snow">Neu</string>
+    <string name="family_skate">Patins</string>
+    <string name="family_paddle">Rem</string>
+    <string name="family_swim">Natació</string>
+    <string name="family_unknown">Altres</string>
+    <string name="family_picker_title">Com es desplaça?</string>
+    <string name="family_picker_help">Només es comparen activitats de la mateixa família (rècords, competicions).</string>
 </resources>

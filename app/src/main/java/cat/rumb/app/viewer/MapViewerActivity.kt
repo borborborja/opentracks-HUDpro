@@ -1022,13 +1022,17 @@ class MapViewerActivity : ComponentActivity() {
                 // track is always kept in the library; tell the user when it didn't qualify as an
                 // attempt (no completed lap, or the route wasn't actually raced).
                 if (competitionId > 0) {
-                    val filed = RumbApplication.from(this@MapViewerActivity).competitionRepository
+                    val result = RumbApplication.from(this@MapViewerActivity).competitionRepository
                         .addAttemptsFromTrack(competitionId, newId, name, System.currentTimeMillis())
-                    if (filed == 0) {
+                    val reason = when (result.outcome) {
+                        cat.rumb.app.data.tracks.CompetitionRepository.AttemptOutcome.FILED -> null
+                        cat.rumb.app.data.tracks.CompetitionRepository.AttemptOutcome.WRONG_SPORT ->
+                            R.string.competition_attempt_wrong_sport
+                        else -> R.string.competition_attempt_not_counted
+                    }
+                    reason?.let {
                         android.widget.Toast.makeText(
-                            this@MapViewerActivity,
-                            getString(R.string.competition_attempt_not_counted),
-                            android.widget.Toast.LENGTH_LONG,
+                            this@MapViewerActivity, getString(it), android.widget.Toast.LENGTH_LONG,
                         ).show()
                     }
                 }
@@ -1206,7 +1210,12 @@ class MapViewerActivity : ComponentActivity() {
         lifecycleScope.launch {
             val all = RumbApplication.from(this@MapViewerActivity).trackRepository.observeSummaries().first()
             val ref = all.firstOrNull { it.id == competitionRefId }
-            ghostCandidates = listOfNotNull(ref) + all.filter { it.competitionRefId == competitionRefId }
+            // Only same-family rivals: racing a bike ghost while running is a pointless comparison.
+            val prefs = ViewerPreferences.get(this@MapViewerActivity)
+            val custom = cat.rumb.app.data.tracks.ActivityTypes.decodeCustom(prefs.customActivityTypesJson)
+            val refType = ref?.activityType
+            ghostCandidates = (listOfNotNull(ref) + all.filter { it.competitionRefId == competitionRefId })
+                .filter { cat.rumb.app.data.tracks.ActivityTypes.comparableTypes(it.activityType, refType, custom) }
             val best = ghostCandidates.filter { (it.durationMs ?: 0) > 0 }.minByOrNull { it.durationMs!! } ?: ref
             opponentId = best?.id ?: -1L
             DebugLog.i("Competi", "candidats=${ghostCandidates.size} · rival per defecte id=$opponentId")

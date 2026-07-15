@@ -130,6 +130,8 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(name.ifBlank { stringResource(R.string.home_tab_competition) })
                         TypeBadge(isLap)
+                        // The sport was stored but never shown; it decides which attempts count.
+                        competition?.activityType?.let { SportBadge(it) }
                     }
                 },
                 navigationIcon = {
@@ -232,6 +234,29 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
                 }) { Text(stringResource(R.string.home_delete)) }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.home_cancel)) } },
+        )
+    }
+}
+
+/** The competition's sport: only same-family efforts are filed as attempts. */
+@Composable
+private fun SportBadge(activityTypeId: String) {
+    val context = LocalContext.current
+    val prefs = remember { ViewerPreferences.get(context) }
+    val custom = remember(prefs.customActivityTypesJson) {
+        cat.rumb.app.data.tracks.ActivityTypes.decodeCustom(prefs.customActivityTypesJson)
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Icon(
+            activityTypeIcon(activityTypeId, custom),
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            activityTypeLabel(activityTypeId, custom),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

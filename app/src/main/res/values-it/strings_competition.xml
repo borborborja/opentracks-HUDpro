@@ -31,4 +31,5 @@
     <string name="competition_remove_attempt">Rimuovi dalla competizione</string>
     <string name="competition_cd_menu">Opzioni competizione</string>
     <string name="competition_attempt_not_counted">Registrazione salvata, ma non conta come tentativo di gara.</string>
+    <string name="competition_attempt_wrong_sport">Registrazione salvata, ma non conta: è uno sport diverso da quello della competizione.</string>
 </resources>

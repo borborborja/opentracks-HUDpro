@@ -2,6 +2,7 @@ package cat.rumb.app.data.tracks
 
 import cat.rumb.app.data.gpx.Gpx
 import cat.rumb.app.data.gpx.GpxPoint
+import cat.rumb.app.data.tracks.CompetitionRepository.AttemptOutcome
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -11,9 +12,9 @@ import org.junit.jupiter.api.Test
 import java.time.Instant
 
 /**
- * A ROUTE recording only joins the leaderboard if it actually raced the route. Without that gate any
- * timed track became an attempt, and since the FASTEST attempt becomes the reference/ghost, an
- * abandoned run would win and replace it.
+ * A recording only joins a leaderboard if it raced the same thing, the same way. Two gates:
+ * the route must actually have been raced, and the sport must be of the same family — without the
+ * latter, a bike lap on a running circuit is the fastest and steals the reference/ghost.
  */
 class CompetitionRepositoryTest {
 
@@ -25,26 +26,39 @@ class CompetitionRepositoryTest {
             GpxPoint(41.0 + i * 0.0001, 2.0, 100.0, t0.plusSeconds(startSec + i))
         }
 
-    private fun competition(refPts: List<GpxPoint>) = CompetitionEntity(
+    private fun competition(refPts: List<GpxPoint>, sport: String? = null) = CompetitionEntity(
         id = 1L, name = "ruta", type = CompetitionType.ROUTE, createdAt = 0L,
-        referenceGpx = Gpx.write("ruta", refPts),
+        activityType = sport, referenceGpx = Gpx.write("ruta", refPts),
     )
 
-    private fun repoWith(refPts: List<GpxPoint>, attemptPts: List<GpxPoint>): Pair<CompetitionRepository, CompetitionDao> {
+    private fun track(sport: String?) = FollowTrackEntity(
+        id = 9L, name = "intent", gpx = "", activityType = sport,
+    )
+
+    private fun repoWith(
+        refPts: List<GpxPoint>,
+        attemptPts: List<GpxPoint>,
+        compSport: String? = null,
+        trackSport: String? = null,
+        custom: List<CustomActivityType> = emptyList(),
+    ): Pair<CompetitionRepository, CompetitionDao> {
         val dao = mockk<CompetitionDao>(relaxed = true)
         val tracks = mockk<TrackRepository>()
-        coEvery { dao.getCompetition(1L) } returns competition(refPts)
+        coEvery { dao.getCompetition(1L) } returns competition(refPts, compSport)
         coEvery { dao.attemptsForOnce(1L) } returns emptyList()
         coEvery { tracks.loadGpxRoute(9L) } returns attemptPts
-        return CompetitionRepository(dao, tracks) to dao
+        coEvery { tracks.get(9L) } returns track(trackSport)
+        return CompetitionRepository(dao, tracks) { custom } to dao
     }
+
+    // --- Route-raced gate ---
 
     @Test
     fun routeAttemptCoveringTheWholeRouteIsFiled() = runTest {
-        val ref = line(100)
-        val (repo, dao) = repoWith(ref, line(100)) // same route, same finish
-        val filed = repo.addAttemptsFromTrack(1L, 9L, "intent", 0L)
-        assertThat(filed).isEqualTo(1)
+        val (repo, dao) = repoWith(line(100), line(100)) // same route, same finish
+        val r = repo.addAttemptsFromTrack(1L, 9L, "intent", 0L)
+        assertThat(r.outcome).isEqualTo(AttemptOutcome.FILED)
+        assertThat(r.filed).isEqualTo(1)
         coVerify(exactly = 1) { dao.insertAttempt(any()) }
     }
 
@@ -52,16 +66,16 @@ class CompetitionRepositoryTest {
     fun abandonedRouteAttemptIsNotFiled() = runTest {
         // Gives up after ~10% of the route: short AND nowhere near the finish.
         val (repo, dao) = repoWith(line(100), line(10))
-        val filed = repo.addAttemptsFromTrack(1L, 9L, "intent", 0L)
-        assertThat(filed).isEqualTo(0)
+        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L).outcome)
+            .isEqualTo(AttemptOutcome.ROUTE_NOT_RACED)
         coVerify(exactly = 0) { dao.insertAttempt(any()) }
     }
 
     @Test
     fun routeAttemptStoppingShortOfTheFinishIsNotFiled() = runTest {
-        // Covers ~80% of the distance — under the coverage bar and far from the finish.
         val (repo, dao) = repoWith(line(100), line(80))
-        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L)).isEqualTo(0)
+        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L).outcome)
+            .isEqualTo(AttemptOutcome.ROUTE_NOT_RACED)
         coVerify(exactly = 0) { dao.insertAttempt(any()) }
     }
 
@@ -69,19 +83,85 @@ class CompetitionRepositoryTest {
     fun untimedRouteAttemptIsNotFiled() = runTest {
         val untimed = (0 until 100).map { GpxPoint(41.0 + it * 0.0001, 2.0) }
         val (repo, dao) = repoWith(line(100), untimed)
-        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L)).isEqualTo(0)
+        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L).outcome)
+            .isEqualTo(AttemptOutcome.NOT_TIMED)
         coVerify(exactly = 0) { dao.insertAttempt(any()) }
+    }
+
+    // --- Sport-family gate: the whole point is that a bike can't win a running competition ---
+
+    @Test
+    fun bikeAttemptOnARunningCompetitionIsNotFiled() = runTest {
+        val (repo, dao) = repoWith(
+            line(100), line(100), compSport = ActivityTypes.RUN, trackSport = ActivityTypes.ROAD_BIKE,
+        )
+        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L).outcome)
+            .isEqualTo(AttemptOutcome.WRONG_SPORT)
+        // Nothing written: the reference/ghost cannot be stolen.
+        coVerify(exactly = 0) { dao.insertAttempt(any()) }
+        coVerify(exactly = 0) { dao.updateReference(any(), any(), any()) }
+    }
+
+    @Test
+    fun trailRunOnARunningCompetitionIsFiled() = runTest {
+        // Same FOOT family — a legitimate attempt that must NOT be rejected.
+        val (repo, dao) = repoWith(
+            line(100), line(100), compSport = ActivityTypes.RUN, trackSport = ActivityTypes.TRAIL_RUN,
+        )
+        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L).outcome).isEqualTo(AttemptOutcome.FILED)
+        coVerify(exactly = 1) { dao.insertAttempt(any()) }
+    }
+
+    @Test
+    fun competitionWithNoSportAcceptsAnything() = runTest {
+        // Legacy rows can't be judged: UNKNOWN is permissive, so old data keeps working.
+        val (repo, dao) = repoWith(
+            line(100), line(100), compSport = null, trackSport = ActivityTypes.ROAD_BIKE,
+        )
+        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L).outcome).isEqualTo(AttemptOutcome.FILED)
+        coVerify(exactly = 1) { dao.insertAttempt(any()) }
+    }
+
+    @Test
+    fun legacyCompetitionRecoversItsSportFromTheAttemptSourceTrack() = runTest {
+        val dao = mockk<CompetitionDao>(relaxed = true)
+        val tracks = mockk<TrackRepository>()
+        coEvery { dao.getCompetition(1L) } returns competition(line(100), sport = null)
+        coEvery { dao.attemptsForOnce(1L) } returns listOf(
+            CompetitionAttemptEntity(id = 5L, competitionId = 1L, sourceTrackId = 7L, timeMs = 1000, gpx = ""),
+        )
+        coEvery { tracks.get(7L) } returns FollowTrackEntity(id = 7L, name = "src", gpx = "", activityType = ActivityTypes.RUN)
+        coEvery { tracks.get(9L) } returns track(ActivityTypes.ROAD_BIKE)
+        coEvery { tracks.loadGpxRoute(9L) } returns line(100)
+        val repo = CompetitionRepository(dao, tracks) { emptyList() }
+
+        // Sport recovered as RUN → the bike attempt is now correctly rejected...
+        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L).outcome).isEqualTo(AttemptOutcome.WRONG_SPORT)
+        // ...and the recovery is persisted so it's paid once.
+        coVerify(exactly = 1) { dao.setActivityType(1L, ActivityTypes.RUN) }
+    }
+
+    @Test
+    fun customTypeFamilyIsHonoured() = runTest {
+        val custom = listOf(
+            CustomActivityType("custom_1", "Cursa d'orientació", "run", ActivityFamily.FOOT.name),
+        )
+        val (repo, dao) = repoWith(
+            line(100), line(100), compSport = ActivityTypes.RUN, trackSport = "custom_1", custom = custom,
+        )
+        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L).outcome).isEqualTo(AttemptOutcome.FILED)
+        coVerify(exactly = 1) { dao.insertAttempt(any()) }
     }
 
     @Test
     fun lapCompetitionWithNoCompletedLapFilesNothing() = runTest {
         val dao = mockk<CompetitionDao>(relaxed = true)
         val tracks = mockk<TrackRepository>()
-        coEvery { dao.getCompetition(1L) } returns competition(line(100)).copy(type = CompetitionType.LAP)
+        coEvery { dao.getCompetition(1L) } returns competition(line(100), ActivityTypes.RUN).copy(type = CompetitionType.LAP)
         coEvery { tracks.loadGpxRoute(9L) } returns line(100)
-        coEvery { tracks.get(9L) } returns null // no saved lap ranges → no completed lap
-        val repo = CompetitionRepository(dao, tracks)
-        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L)).isEqualTo(0)
+        coEvery { tracks.get(9L) } returns track(ActivityTypes.RUN) // no saved lap ranges → no completed lap
+        val repo = CompetitionRepository(dao, tracks) { emptyList() }
+        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L).outcome).isEqualTo(AttemptOutcome.NO_LAP)
         coVerify(exactly = 0) { dao.insertAttempt(any()) }
     }
 }

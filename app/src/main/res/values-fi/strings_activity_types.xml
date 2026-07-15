@@ -15,4 +15,13 @@
     <string name="difficulty_moderate">Kohtalainen</string>
     <string name="difficulty_hard">Vaikea</string>
     <string name="difficulty_very_hard">Erittäin vaikea</string>
+    <string name="family_foot">Jalan</string>
+    <string name="family_wheel">Pyöräily</string>
+    <string name="family_snow">Lumi</string>
+    <string name="family_skate">Luistelu</string>
+    <string name="family_paddle">Melonta</string>
+    <string name="family_swim">Uinti</string>
+    <string name="family_unknown">Muu</string>
+    <string name="family_picker_title">Miten se liikkuu?</string>
+    <string name="family_picker_help">Vain saman perheen aktiviteetteja verrataan (ennätykset, kilpailut).</string>
 </resources>

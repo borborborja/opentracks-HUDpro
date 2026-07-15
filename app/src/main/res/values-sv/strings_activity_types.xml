@@ -15,4 +15,13 @@
     <string name="difficulty_moderate">Medel</string>
     <string name="difficulty_hard">Svår</string>
     <string name="difficulty_very_hard">Mycket svår</string>
+    <string name="family_foot">Till fots</string>
+    <string name="family_wheel">Cykel</string>
+    <string name="family_snow">Snö</string>
+    <string name="family_skate">Skridskor</string>
+    <string name="family_paddle">Paddling</string>
+    <string name="family_swim">Simning</string>
+    <string name="family_unknown">Övrigt</string>
+    <string name="family_picker_title">Hur förflyttar den sig?</string>
+    <string name="family_picker_help">Bara aktiviteter i samma familj jämförs (rekord, tävlingar).</string>
 </resources>

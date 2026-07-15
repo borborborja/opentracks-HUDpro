@@ -18,4 +18,5 @@
     <string name="heatmap_title">Mappa di calore</string>
     <string name="heatmap_include_routes">Includi percorsi</string>
     <string name="heatmap_loading">%1$d/%2$d tracce</string>
+    <string name="records_fastest_marathon">Maratona più veloce</string>
 </resources>

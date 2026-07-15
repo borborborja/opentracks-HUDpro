@@ -31,4 +31,5 @@
     <string name="competition_remove_attempt">Uit competitie halen</string>
     <string name="competition_cd_menu">Competitieopties</string>
     <string name="competition_attempt_not_counted">Opname opgeslagen, maar telt niet als competitiepoging.</string>
+    <string name="competition_attempt_wrong_sport">Opname opgeslagen, maar telt niet: andere sport dan de competitie.</string>
 </resources>

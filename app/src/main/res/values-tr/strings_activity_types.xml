@@ -15,4 +15,13 @@
     <string name="difficulty_moderate">Orta</string>
     <string name="difficulty_hard">Zor</string>
     <string name="difficulty_very_hard">Çok zor</string>
+    <string name="family_foot">Yaya</string>
+    <string name="family_wheel">Bisiklet</string>
+    <string name="family_snow">Kar</string>
+    <string name="family_skate">Paten</string>
+    <string name="family_paddle">Kürek</string>
+    <string name="family_swim">Yüzme</string>
+    <string name="family_unknown">Diğer</string>
+    <string name="family_picker_title">Nasıl hareket eder?</string>
+    <string name="family_picker_help">Yalnızca aynı ailedeki etkinlikler karşılaştırılır (rekorlar, yarışlar).</string>
 </resources>

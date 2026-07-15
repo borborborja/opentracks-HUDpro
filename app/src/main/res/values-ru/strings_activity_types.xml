@@ -15,4 +15,13 @@
     <string name="difficulty_moderate">Средняя</string>
     <string name="difficulty_hard">Сложная</string>
     <string name="difficulty_very_hard">Очень сложная</string>
+    <string name="family_foot">Пешком</string>
+    <string name="family_wheel">Велосипед</string>
+    <string name="family_snow">Снег</string>
+    <string name="family_skate">Коньки</string>
+    <string name="family_paddle">Гребля</string>
+    <string name="family_swim">Плавание</string>
+    <string name="family_unknown">Другое</string>
+    <string name="family_picker_title">Как передвигается?</string>
+    <string name="family_picker_help">Сравниваются только занятия одного семейства (рекорды, соревнования).</string>
 </resources>

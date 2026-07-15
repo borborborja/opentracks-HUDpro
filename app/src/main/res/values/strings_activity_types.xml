@@ -15,4 +15,13 @@
     <string name="difficulty_moderate">Moderate</string>
     <string name="difficulty_hard">Hard</string>
     <string name="difficulty_very_hard">Very hard</string>
+    <string name="family_foot">On foot</string>
+    <string name="family_wheel">Cycling</string>
+    <string name="family_snow">Snow</string>
+    <string name="family_skate">Skating</string>
+    <string name="family_paddle">Paddling</string>
+    <string name="family_swim">Swimming</string>
+    <string name="family_unknown">Other</string>
+    <string name="family_picker_title">How does it move?</string>
+    <string name="family_picker_help">Only activities of the same family are compared (records, competitions).</string>
 </resources>

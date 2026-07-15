@@ -15,4 +15,13 @@
     <string name="difficulty_moderate">Střední</string>
     <string name="difficulty_hard">Těžká</string>
     <string name="difficulty_very_hard">Velmi těžká</string>
+    <string name="family_foot">Pěšky</string>
+    <string name="family_wheel">Kolo</string>
+    <string name="family_snow">Sníh</string>
+    <string name="family_skate">Brusle</string>
+    <string name="family_paddle">Pádlování</string>
+    <string name="family_swim">Plavání</string>
+    <string name="family_unknown">Ostatní</string>
+    <string name="family_picker_title">Jak se pohybuje?</string>
+    <string name="family_picker_help">Porovnávají se jen aktivity stejné rodiny (rekordy, závody).</string>
 </resources>

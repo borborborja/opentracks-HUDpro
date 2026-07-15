@@ -31,4 +31,5 @@
     <string name="competition_remove_attempt">Quitar de la competición</string>
     <string name="competition_cd_menu">Opciones de la competición</string>
     <string name="competition_attempt_not_counted">Grabación guardada, pero no cuenta como intento de la competición.</string>
+    <string name="competition_attempt_wrong_sport">Grabación guardada, pero no cuenta: es un deporte distinto al de la competición.</string>
 </resources>

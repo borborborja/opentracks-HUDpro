@@ -15,4 +15,13 @@
     <string name="difficulty_moderate">Помірно</string>
     <string name="difficulty_hard">Важко</string>
     <string name="difficulty_very_hard">Дуже важко</string>
+    <string name="family_foot">Пішки</string>
+    <string name="family_wheel">Велосипед</string>
+    <string name="family_snow">Сніг</string>
+    <string name="family_skate">Ковзани</string>
+    <string name="family_paddle">Веслування</string>
+    <string name="family_swim">Плавання</string>
+    <string name="family_unknown">Інше</string>
+    <string name="family_picker_title">Як пересувається?</string>
+    <string name="family_picker_help">Порівнюються лише активності однієї родини (рекорди, змагання).</string>
 </resources>
