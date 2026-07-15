@@ -220,13 +220,6 @@ private fun FollowTab(
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
         var tv by remember { mutableStateOf(turnVoice) }
         ToggleRow(stringResource(R.string.viewer_qs_turn_voice), tv) { tv = it; onTurnVoice(it) }
-        var lapCd by remember { mutableStateOf(lapCountdown) }
-        ToggleRow(stringResource(R.string.viewer_qs_lap_countdown), lapCd) { lapCd = it; onLapCountdown(it) }
-        Text(
-            stringResource(R.string.viewer_qs_lap_countdown_help),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline,
-        )
     } else {
         if (competitions.isEmpty()) {
             Text(stringResource(R.string.viewer_qs_no_competitions_yet),
@@ -239,6 +232,15 @@ private fun FollowTab(
                 isLap = isLap,
             ) { onStartCompetition(c.id) }
         }
+        // Lap-only setting: it counts you into a circuit's finish line, so it belongs here.
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+        var lapCd by remember { mutableStateOf(lapCountdown) }
+        ToggleRow(stringResource(R.string.viewer_qs_lap_countdown), lapCd) { lapCd = it; onLapCountdown(it) }
+        Text(
+            stringResource(R.string.viewer_qs_lap_countdown_help),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
     }
 }
 
