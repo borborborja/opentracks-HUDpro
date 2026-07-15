@@ -195,4 +195,9 @@
     <string name="update_notif_title">Ladataan päivitystä</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Jatkuu taustalla; voit poistua näytöltä tai sammuttaa sen.</string>
+    <string name="settings_sim_title">Simuloi jälki (väärennetty GPS)</string>
+    <string name="settings_sim_help">Toistaa tallennetun jäljen GPS:n sijaan, jotta kierroksia ja kilpailuja voi testata sisällä. Tallenne merkitään simuloiduksi eikä se koskaan kelpaa.</string>
+    <string name="settings_sim_off">Pois (oikea GPS)</string>
+    <string name="settings_sim_speed">Nopeus: %1$dx</string>
+    <string name="settings_sim_active_warning">Simulaatio PÄÄLLÄ: katselin ei käytä oikeaa GPS:ää.</string>
 </resources>

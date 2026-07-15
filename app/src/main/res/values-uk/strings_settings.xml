@@ -195,4 +195,9 @@
     <string name="update_notif_title">Завантаження оновлення</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Триває у фоні; можна вийти з цього екрана або вимкнути його.</string>
+    <string name="settings_sim_title">Симуляція треку (фальшивий GPS)</string>
+    <string name="settings_sim_help">Відтворює збережений трек замість GPS, щоб тестувати кола та змагання вдома. Запис позначається як симуляція і ніколи не зараховується.</string>
+    <string name="settings_sim_off">Вимкнено (справжній GPS)</string>
+    <string name="settings_sim_speed">Швидкість: %1$dx</string>
+    <string name="settings_sim_active_warning">Симуляція УВІМКНЕНА: переглядач не використовуватиме справжній GPS.</string>
 </resources>

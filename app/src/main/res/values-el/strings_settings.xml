@@ -195,4 +195,9 @@
     <string name="update_notif_title">Λήψη ενημέρωσης</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Συνεχίζεται στο παρασκήνιο· μπορείς να φύγεις από την οθόνη ή να την κλείσεις.</string>
+    <string name="settings_sim_title">Προσομοίωση διαδρομής (ψεύτικο GPS)</string>
+    <string name="settings_sim_help">Αναπαράγει μια αποθηκευμένη διαδρομή αντί για το GPS, για δοκιμή γύρων και αγώνων στο σπίτι. Ό,τι καταγραφεί σημειώνεται ως προσομοίωση και δεν μετράει ποτέ.</string>
+    <string name="settings_sim_off">Ανενεργό (πραγματικό GPS)</string>
+    <string name="settings_sim_speed">Ταχύτητα: %1$dx</string>
+    <string name="settings_sim_active_warning">Προσομοίωση ΕΝΕΡΓΗ: ο προβολέας δεν θα χρησιμοποιήσει πραγματικό GPS.</string>
 </resources>

@@ -195,4 +195,9 @@
     <string name="update_notif_title">Téléchargement de la mise à jour</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Se poursuit en arrière-plan ; vous pouvez quitter cet écran ou l\'éteindre.</string>
+    <string name="settings_sim_title">Simuler un tracé (faux GPS)</string>
+    <string name="settings_sim_help">Rejoue un tracé enregistré au lieu du GPS, pour tester tours et compétitions chez soi. Ce qui est enregistré est marqué comme simulé et ne compte jamais.</string>
+    <string name="settings_sim_off">Désactivé (vrai GPS)</string>
+    <string name="settings_sim_speed">Vitesse : %1$dx</string>
+    <string name="settings_sim_active_warning">Simulation ACTIVE : le visualiseur n\'utilisera pas le vrai GPS.</string>
 </resources>

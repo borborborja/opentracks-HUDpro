@@ -195,4 +195,9 @@
     <string name="update_notif_title">Update wird heruntergeladen</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Läuft im Hintergrund weiter; du kannst diesen Bildschirm verlassen oder ausschalten.</string>
+    <string name="settings_sim_title">Track simulieren (Fake-GPS)</string>
+    <string name="settings_sim_help">Spielt einen gespeicherten Track statt des GPS ab, um Runden und Wettkämpfe drinnen zu testen. Aufgezeichnetes wird als simuliert markiert und zählt nie.</string>
+    <string name="settings_sim_off">Aus (echtes GPS)</string>
+    <string name="settings_sim_speed">Tempo: %1$dx</string>
+    <string name="settings_sim_active_warning">Simulation AKTIV: Der Viewer nutzt nicht das echte GPS.</string>
 </resources>

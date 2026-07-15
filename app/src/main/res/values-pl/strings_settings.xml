@@ -195,4 +195,9 @@
     <string name="update_notif_title">Pobieranie aktualizacji</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Trwa w tle; możesz opuścić ten ekran lub go wyłączyć.</string>
+    <string name="settings_sim_title">Symuluj trasę (fałszywy GPS)</string>
+    <string name="settings_sim_help">Odtwarza zapisaną trasę zamiast GPS, aby testować okrążenia i zawody w domu. Nagranie jest oznaczone jako symulowane i nigdy się nie liczy.</string>
+    <string name="settings_sim_off">Wyłączone (prawdziwy GPS)</string>
+    <string name="settings_sim_speed">Prędkość: %1$dx</string>
+    <string name="settings_sim_active_warning">Symulacja WŁĄCZONA: podgląd nie użyje prawdziwego GPS.</string>
 </resources>

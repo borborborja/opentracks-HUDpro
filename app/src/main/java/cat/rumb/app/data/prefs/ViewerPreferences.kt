@@ -198,6 +198,16 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_TURN_VOICE, true)
         set(value) = prefs.edit().putBoolean(KEY_TURN_VOICE, value).apply()
 
+    /** Debug: replay this track as fake GPS instead of the real one (-1 = off). */
+    var simulateTrackId: Long
+        get() = prefs.getLong(KEY_SIM_TRACK, -1L)
+        set(value) = prefs.edit().putLong(KEY_SIM_TRACK, value).apply()
+
+    /** Debug: how much faster than real time the replay runs. */
+    var simulateSpeed: Float
+        get() = prefs.getFloat(KEY_SIM_SPEED, 5f)
+        set(value) = prefs.edit().putFloat(KEY_SIM_SPEED, value).apply()
+
     /** 3-2-1 countdown as you close in on a circuit's finish line, landing on the new lap. */
     var lapCountdown: Boolean
         get() = prefs.getBoolean(KEY_LAP_COUNTDOWN, false)
@@ -408,6 +418,8 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_USER_WEIGHT = "user_weight_kg"
         private const val KEY_REC_COUNTDOWN = "rec_countdown"
         private const val KEY_LAP_COUNTDOWN = "lap_countdown"
+        private const val KEY_SIM_TRACK = "sim_track_id"
+        private const val KEY_SIM_SPEED = "sim_speed"
         private const val KEY_REC_AUTO_PAUSE_SEC = "rec_auto_pause_sec"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"
         private const val KEY_TRACK_COLOR_MODE = "track_color_mode"

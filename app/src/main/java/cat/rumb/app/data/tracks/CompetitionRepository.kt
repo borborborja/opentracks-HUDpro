@@ -150,7 +150,7 @@ class CompetitionRepository(
         }
 
     /** Why a recording did or didn't join a competition's leaderboard. */
-    enum class AttemptOutcome { FILED, WRONG_SPORT, ROUTE_NOT_RACED, NO_LAP, NOT_TIMED, NO_COMPETITION }
+    enum class AttemptOutcome { FILED, WRONG_SPORT, SIMULATED, ROUTE_NOT_RACED, NO_LAP, NOT_TIMED, NO_COMPETITION }
 
     data class AttemptResult(val outcome: AttemptOutcome, val filed: Int = 0)
 
@@ -165,9 +165,15 @@ class CompetitionRepository(
         withContext(Dispatchers.IO) {
             val comp = dao.getCompetition(competitionId)
                 ?: return@withContext AttemptResult(AttemptOutcome.NO_COMPETITION)
+            val track = trackRepository.get(trackId)
+            // A replayed track is not an effort — it would be the fastest attempt ever recorded.
+            if (track?.source == TrackSource.SIMULATED) {
+                DebugLog.i("Competi", "intent descartat · track simulat")
+                return@withContext AttemptResult(AttemptOutcome.SIMULATED)
+            }
             // Same-family check. Ground truth is the SAVED activity type (the save dialog forces a
             // choice), not any live "current sport" — we can't stop someone mislabelling a track.
-            val trackType = trackRepository.get(trackId)?.activityType
+            val trackType = track?.activityType
             val compType = backfilledActivityType(comp)
             if (!ActivityTypes.comparableTypes(trackType, compType, customTypes())) {
                 DebugLog.i("Competi", "intent descartat · esport $trackType ≠ competició $compType")

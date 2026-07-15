@@ -195,4 +195,9 @@
     <string name="update_notif_title">Download dell\'aggiornamento</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Continua in background; puoi uscire da questa schermata o spegnerla.</string>
+    <string name="settings_sim_title">Simula un track (GPS finto)</string>
+    <string name="settings_sim_help">Riproduce un track salvato invece del GPS, per provare giri e competizioni in casa. Ciò che registra è marcato come simulato e non conta mai.</string>
+    <string name="settings_sim_off">Disattivato (GPS reale)</string>
+    <string name="settings_sim_speed">Velocità: %1$dx</string>
+    <string name="settings_sim_active_warning">Simulazione ATTIVA: il visore non userà il GPS reale.</string>
 </resources>

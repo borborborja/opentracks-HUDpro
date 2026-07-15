@@ -195,4 +195,9 @@
     <string name="update_notif_title">Se descarcă actualizarea</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Continuă în fundal; poți părăsi acest ecran sau îl poți stinge.</string>
+    <string name="settings_sim_title">Simulează un traseu (GPS fals)</string>
+    <string name="settings_sim_help">Redă un traseu salvat în locul GPS-ului, ca să testezi tururi și competiții acasă. Ce înregistrează e marcat ca simulat și nu contează niciodată.</string>
+    <string name="settings_sim_off">Dezactivat (GPS real)</string>
+    <string name="settings_sim_speed">Viteză: %1$dx</string>
+    <string name="settings_sim_active_warning">Simulare ACTIVĂ: vizualizatorul nu va folosi GPS-ul real.</string>
 </resources>

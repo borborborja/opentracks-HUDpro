@@ -195,4 +195,9 @@
     <string name="update_notif_title">Downloader opdatering</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Fortsætter i baggrunden; du kan forlade skærmen eller slukke den.</string>
+    <string name="settings_sim_title">Simulér et spor (falsk GPS)</string>
+    <string name="settings_sim_help">Afspiller et gemt spor i stedet for GPS, så du kan teste omgange og konkurrencer indendørs. Det optagne markeres som simuleret og tæller aldrig.</string>
+    <string name="settings_sim_off">Fra (rigtig GPS)</string>
+    <string name="settings_sim_speed">Hastighed: %1$dx</string>
+    <string name="settings_sim_active_warning">Simulering TIL: viseren bruger ikke rigtig GPS.</string>
 </resources>

@@ -59,8 +59,13 @@ import cat.rumb.app.R
 import cat.rumb.app.data.prefs.ViewerPreferences
 import cat.rumb.app.data.tracks.ActivityTypes
 import cat.rumb.app.data.tracks.CustomActivityType
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cat.rumb.app.RumbApplication
 import cat.rumb.app.data.update.ApkDownloadWorker
+import kotlinx.coroutines.flow.first
 import cat.rumb.app.data.update.ApkInstaller
 import cat.rumb.app.data.update.UpdateInfo
 import cat.rumb.app.data.update.UpdateRepository
@@ -574,6 +579,7 @@ private fun AppSection(onOpenDebugLog: () -> Unit) {
                 onClick = { scope.launch { diag = buildDiagnostics(context) } },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(R.string.settings_debug_full)) }
+            SimulatorSection()
             diag?.let { report ->
                 OutlinedButton(
                     onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(report)) },
@@ -968,6 +974,65 @@ private fun ActivityTypesSection(prefs: ViewerPreferences) {
             dismissButton = {
                 TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.settings_types_cancel)) }
             },
+        )
+    }
+}
+
+/**
+ * Debug: replay a saved track as fake GPS. It swaps the recorder's location source, so pressing
+ * record in the viewer exercises the real path (engine → auto-lap → competition → save) from a
+ * chair. What it records is marked SIMULATED and is excluded from records and competitions.
+ */
+@Composable
+private fun SimulatorSection() {
+    val context = LocalContext.current
+    val app = remember { RumbApplication.from(context) }
+    val prefs = remember { ViewerPreferences.get(context) }
+    var trackId by remember { mutableStateOf(prefs.simulateTrackId) }
+    var speed by remember { mutableFloatStateOf(prefs.simulateSpeed) }
+    var tracks by remember { mutableStateOf<List<cat.rumb.app.data.tracks.FollowTrackEntity>>(emptyList()) }
+    var expanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        tracks = app.trackRepository.observeSummaries().first()
+            .filter { !it.archived && (it.pointCount) > 1 }
+    }
+
+    HorizontalDivider(Modifier.padding(vertical = 4.dp))
+    Text(stringResource(R.string.settings_sim_title), style = MaterialTheme.typography.labelMedium)
+    Text(
+        stringResource(R.string.settings_sim_help),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
+    )
+    val active = tracks.firstOrNull { it.id == trackId }
+    OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
+        Text(active?.name ?: stringResource(R.string.settings_sim_off))
+    }
+    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.settings_sim_off)) },
+            onClick = { trackId = -1L; prefs.simulateTrackId = -1L; expanded = false },
+        )
+        tracks.forEach { t ->
+            DropdownMenuItem(
+                text = { Text(t.name, maxLines = 1) },
+                onClick = { trackId = t.id; prefs.simulateTrackId = t.id; expanded = false },
+            )
+        }
+    }
+    if (trackId > 0) {
+        Text(stringResource(R.string.settings_sim_speed, speed.toInt()), style = MaterialTheme.typography.bodySmall)
+        Slider(
+            value = speed,
+            onValueChange = { speed = it; prefs.simulateSpeed = it },
+            valueRange = 1f..20f,
+            steps = 18,
+        )
+        Text(
+            stringResource(R.string.settings_sim_active_warning),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
         )
     }
 }

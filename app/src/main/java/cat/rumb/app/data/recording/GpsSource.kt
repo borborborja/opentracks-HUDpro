@@ -10,20 +10,26 @@ import android.os.Build
 import android.os.Looper
 import cat.rumb.app.data.debug.DebugLog
 
+/** Where the recorder's fixes come from: the real GPS, or a replayed track (see GpxReplaySource). */
+interface LocationSource {
+    fun start(intervalMs: Long, onLocation: (Location) -> Unit): Boolean
+    fun stop()
+}
+
 /**
  * GPS fixes for the native recorder via [LocationManager] (no Play Services dependency, like
  * OpenTracks). Prefers the raw **GPS provider** at high accuracy — requesting GPS directly is what
  * powers the GPS chip into a hot, precise fix (the platform `fused` provider in low-power mode does
  * not, which stalled the warm-up). Falls back to `fused` only when there is no GPS provider.
  */
-class GpsSource(private val context: Context) {
+class GpsSource(private val context: Context) : LocationSource {
 
     private var manager: LocationManager? = null
     private var listener: LocationListener? = null
 
     /** Starts updates every [intervalMs]; returns false if no provider or permission is missing. */
     @SuppressLint("MissingPermission")
-    fun start(intervalMs: Long = INTERVAL_MS, onLocation: (Location) -> Unit): Boolean {
+    override fun start(intervalMs: Long, onLocation: (Location) -> Unit): Boolean {
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
         // GPS first (forces a hot high-accuracy fix); fused only as a last resort.
         val provider = when {
@@ -55,7 +61,7 @@ class GpsSource(private val context: Context) {
         }
     }
 
-    fun stop() {
+    override fun stop() {
         listener?.let { manager?.removeUpdates(it) }
         listener = null
         manager = null

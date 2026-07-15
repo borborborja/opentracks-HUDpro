@@ -13,7 +13,8 @@ import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import kotlinx.coroutines.flow.Flow
 
-enum class TrackSource { GPX_IMPORT, ENDURAIN, RECORDED }
+/** SIMULATED = replayed from another track (GpxReplaySource); excluded from records/competitions. */
+enum class TrackSource { GPX_IMPORT, ENDURAIN, RECORDED, SIMULATED }
 
 /** What a saved track IS: a route to follow, or a recorded/imported training. */
 object TrackKind {

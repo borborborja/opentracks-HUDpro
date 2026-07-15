@@ -195,4 +195,9 @@
     <string name="update_notif_title">Stahování aktualizace</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Pokračuje na pozadí; můžeš tuto obrazovku opustit nebo vypnout.</string>
+    <string name="settings_sim_title">Simulovat trasu (falešná GPS)</string>
+    <string name="settings_sim_help">Přehraje uloženou trasu místo GPS, abys mohl testovat kola a závody doma. Záznam se označí jako simulovaný a nikdy se nepočítá.</string>
+    <string name="settings_sim_off">Vypnuto (skutečná GPS)</string>
+    <string name="settings_sim_speed">Rychlost: %1$dx</string>
+    <string name="settings_sim_active_warning">Simulace ZAPNUTA: prohlížeč nepoužije skutečnou GPS.</string>
 </resources>

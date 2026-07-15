@@ -195,4 +195,9 @@
     <string name="update_notif_title">Laddar ner uppdatering</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Fortsätter i bakgrunden; du kan lämna skärmen eller stänga av den.</string>
+    <string name="settings_sim_title">Simulera ett spår (falsk GPS)</string>
+    <string name="settings_sim_help">Spelar upp ett sparat spår i stället för GPS, för att testa varv och tävlingar inomhus. Det som spelas in märks som simulerat och räknas aldrig.</string>
+    <string name="settings_sim_off">Av (riktig GPS)</string>
+    <string name="settings_sim_speed">Hastighet: %1$dx</string>
+    <string name="settings_sim_active_warning">Simulering PÅ: visaren använder inte riktig GPS.</string>
 </resources>

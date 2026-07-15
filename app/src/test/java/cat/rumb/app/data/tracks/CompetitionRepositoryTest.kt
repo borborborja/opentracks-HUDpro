@@ -31,8 +31,8 @@ class CompetitionRepositoryTest {
         activityType = sport, referenceGpx = Gpx.write("ruta", refPts),
     )
 
-    private fun track(sport: String?) = FollowTrackEntity(
-        id = 9L, name = "intent", gpx = "", activityType = sport,
+    private fun track(sport: String?, source: TrackSource = TrackSource.RECORDED) = FollowTrackEntity(
+        id = 9L, name = "intent", gpx = "", activityType = sport, source = source,
     )
 
     private fun repoWith(
@@ -151,6 +151,23 @@ class CompetitionRepositoryTest {
         )
         assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L).outcome).isEqualTo(AttemptOutcome.FILED)
         coVerify(exactly = 1) { dao.insertAttempt(any()) }
+    }
+
+    /** The debug simulator replays a track as fake GPS: at 5x it would be the best attempt ever. */
+    @Test
+    fun simulatedTrackIsNeverFiledAsAnAttempt() = runTest {
+        val dao = mockk<CompetitionDao>(relaxed = true)
+        val tracks = mockk<TrackRepository>()
+        coEvery { dao.getCompetition(1L) } returns competition(line(100), ActivityTypes.RUN)
+        coEvery { dao.attemptsForOnce(1L) } returns emptyList()
+        coEvery { tracks.loadGpxRoute(9L) } returns line(100)
+        // Same sport, a perfectly raced route — rejected purely for being simulated.
+        coEvery { tracks.get(9L) } returns track(ActivityTypes.RUN, TrackSource.SIMULATED)
+        val repo = CompetitionRepository(dao, tracks) { emptyList() }
+
+        assertThat(repo.addAttemptsFromTrack(1L, 9L, "intent", 0L).outcome).isEqualTo(AttemptOutcome.SIMULATED)
+        coVerify(exactly = 0) { dao.insertAttempt(any()) }
+        coVerify(exactly = 0) { dao.updateReference(any(), any(), any()) }
     }
 
     @Test

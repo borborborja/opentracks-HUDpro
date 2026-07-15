@@ -195,4 +195,9 @@
     <string name="update_notif_title">Загрузка обновления</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Продолжается в фоне; можно уйти с этого экрана или выключить его.</string>
+    <string name="settings_sim_title">Симуляция трека (ложный GPS)</string>
+    <string name="settings_sim_help">Воспроизводит сохранённый трек вместо GPS, чтобы тестировать круги и соревнования дома. Запись помечается как симуляция и никогда не засчитывается.</string>
+    <string name="settings_sim_off">Выключено (реальный GPS)</string>
+    <string name="settings_sim_speed">Скорость: %1$dx</string>
+    <string name="settings_sim_active_warning">Симуляция ВКЛ: просмотрщик не будет использовать реальный GPS.</string>
 </resources>

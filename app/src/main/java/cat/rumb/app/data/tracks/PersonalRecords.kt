@@ -84,6 +84,8 @@ object PersonalRecords {
         onProgress: (done: Int, total: Int) -> Unit = { _, _ -> },
     ): List<Record> {
         val trainings = tracks.filter { it.kind == TrackKind.TRAINING }
+            // A replayed track isn't a performance: at 5x it would own every record.
+            .filter { it.source != TrackSource.SIMULATED }
             .filter { family == null || ActivityTypes.familyOf(it.activityType, custom) == family }
         val records = mutableListOf<Record>()
 

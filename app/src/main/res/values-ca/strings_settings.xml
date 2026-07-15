@@ -195,4 +195,9 @@
     <string name="update_notif_title">Baixant l\'actualització</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Continua en segon pla; pots sortir d\'aquesta pantalla o apagar-la.</string>
+    <string name="settings_sim_title">Simular un track (GPS fals)</string>
+    <string name="settings_sim_help">Reprodueix un track desat en lloc del GPS, per provar voltes i competicions a casa. El que gravi es marca com a simulat i mai compta per a rècords ni competicions.</string>
+    <string name="settings_sim_off">Desactivat (GPS real)</string>
+    <string name="settings_sim_speed">Velocitat: %1$dx</string>
+    <string name="settings_sim_active_warning">Simulació ACTIVA: el visor no farà servir el GPS real.</string>
 </resources>

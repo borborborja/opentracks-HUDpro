@@ -195,4 +195,9 @@
     <string name="update_notif_title">Update downloaden</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Gaat door op de achtergrond; je kunt dit scherm verlaten of uitzetten.</string>
+    <string name="settings_sim_title">Track simuleren (nep-GPS)</string>
+    <string name="settings_sim_help">Speelt een opgeslagen track af in plaats van de GPS, om ronden en competities binnen te testen. Wat wordt opgenomen is gemarkeerd als gesimuleerd en telt nooit mee.</string>
+    <string name="settings_sim_off">Uit (echte GPS)</string>
+    <string name="settings_sim_speed">Snelheid: %1$dx</string>
+    <string name="settings_sim_active_warning">Simulatie AAN: de viewer gebruikt de echte GPS niet.</string>
 </resources>

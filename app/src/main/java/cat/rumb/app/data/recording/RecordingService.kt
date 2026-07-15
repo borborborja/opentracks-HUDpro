@@ -37,7 +37,9 @@ import java.util.Locale
 class RecordingService : Service() {
 
     private var recorder: TrackRecorder? = null
-    private val gps = GpsSource(this)
+    // Swapped for a GpxReplaySource when the debug simulator is on, so the ENTIRE real path
+    // (engine → auto-lap → competition → save) is exercised rather than a mock of it.
+    private var gps: LocationSource = GpsSource(this)
     private val pressure = PressureSource(this)
     private var ble: cat.rumb.app.data.recording.ble.BleSensorManager? = null
     private var autoPause: AutoPause? = null
@@ -130,6 +132,13 @@ class RecordingService : Service() {
     }
 
     private fun startSensors(prefs: ViewerPreferences) {
+        val simTrack = prefs.simulateTrackId
+        gps = if (simTrack > 0) {
+            DebugLog.w("Record", "SIMULACIÓ activa · track=$simTrack · ${prefs.simulateSpeed}x")
+            GpxReplaySource(this, simTrack, prefs.simulateSpeed)
+        } else {
+            GpsSource(this)
+        }
         val gpsOk = gps.start(intervalMs = prefs.recGpsIntervalSec.coerceAtLeast(1) * 1000L) { loc ->
             val rec = recorder ?: return@start
             val time = Instant.ofEpochMilli(loc.time)

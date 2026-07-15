@@ -195,4 +195,9 @@
     <string name="update_notif_title">Downloading update</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Continues in the background; you can leave this screen or turn the screen off.</string>
+    <string name="settings_sim_title">Simulate a track (fake GPS)</string>
+    <string name="settings_sim_help">Replays a saved track instead of the GPS, to test laps and competitions indoors. What it records is marked as simulated and never counts for records or competitions.</string>
+    <string name="settings_sim_off">Off (use the real GPS)</string>
+    <string name="settings_sim_speed">Speed: %1$dx</string>
+    <string name="settings_sim_active_warning">Simulation ON: the viewer will not use the real GPS.</string>
 </resources>

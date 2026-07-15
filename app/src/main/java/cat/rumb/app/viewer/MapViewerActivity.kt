@@ -1004,8 +1004,15 @@ class MapViewerActivity : ComponentActivity() {
                 )
             }
             if (pts.size >= 2) {
+                // A replayed recording is marked at the source, so records and competitions can
+                // exclude it: a track simulated at 5x would otherwise be the best of your life.
+                val simulated = cat.rumb.app.data.prefs.ViewerPreferences.get(this@MapViewerActivity)
+                    .simulateTrackId > 0
                 val newId = RumbApplication.from(this@MapViewerActivity).trackRepository.insertRoute(
-                    name, pts, cat.rumb.app.data.tracks.TrackSource.RECORDED, remoteId = null,
+                    name, pts,
+                    if (simulated) cat.rumb.app.data.tracks.TrackSource.SIMULATED
+                    else cat.rumb.app.data.tracks.TrackSource.RECORDED,
+                    remoteId = null,
                     kind = cat.rumb.app.data.tracks.TrackKind.TRAINING,
                     collection = folder, activityType = activityType,
                     competitionRefId = null,

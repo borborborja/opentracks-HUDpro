@@ -195,4 +195,9 @@
     <string name="update_notif_title">Güncelleme indiriliyor</string>
     <string name="update_notif_progress">%1$d%%</string>
     <string name="settings_update_background_hint">Arka planda devam eder; bu ekrandan çıkabilir veya ekranı kapatabilirsin.</string>
+    <string name="settings_sim_title">Track simüle et (sahte GPS)</string>
+    <string name="settings_sim_help">GPS yerine kayıtlı bir track oynatır; turları ve yarışları evde test etmek için. Kaydedilen simüle olarak işaretlenir ve asla sayılmaz.</string>
+    <string name="settings_sim_off">Kapalı (gerçek GPS)</string>
+    <string name="settings_sim_speed">Hız: %1$dx</string>
+    <string name="settings_sim_active_warning">Simülasyon AÇIK: görüntüleyici gerçek GPS\'i kullanmayacak.</string>
 </resources>
