@@ -198,6 +198,11 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_TURN_VOICE, true)
         set(value) = prefs.edit().putBoolean(KEY_TURN_VOICE, value).apply()
 
+    /** Id of the last APK download whose installer we already offered (see SettingsScreen). */
+    var lastInstalledDownloadId: String?
+        get() = prefs.getString(KEY_LAST_INSTALL_ID, null)
+        set(value) = prefs.edit().putString(KEY_LAST_INSTALL_ID, value).apply()
+
     /** Auto-lap every N metres (runner splits). 0 = off. */
     var autoLapEveryM: Float
         get() = prefs.getFloat(KEY_AUTO_LAP_EVERY_M, 0f)
@@ -423,6 +428,7 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_USER_WEIGHT = "user_weight_kg"
         private const val KEY_REC_COUNTDOWN = "rec_countdown"
         private const val KEY_LAP_COUNTDOWN = "lap_countdown"
+        private const val KEY_LAST_INSTALL_ID = "last_install_work_id"
         private const val KEY_AUTO_LAP_EVERY_M = "auto_lap_every_m"
         private const val KEY_SIM_TRACK = "sim_track_id"
         private const val KEY_SIM_SPEED = "sim_speed"

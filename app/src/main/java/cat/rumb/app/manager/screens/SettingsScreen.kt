@@ -486,16 +486,18 @@ private fun AppSection(onOpenDebugLog: () -> Unit) {
         download?.state == androidx.work.WorkInfo.State.ENQUEUED
     val progress = (download?.progress?.getInt(ApkDownloadWorker.KEY_PROGRESS, 0) ?: 0) / 100f
 
-    // Hand the finished APK to the system installer once per completed download.
-    var installedPath by remember { mutableStateOf<String?>(null) }
+    // Hand the finished APK to the system installer once per completed download. The marker MUST be
+    // persisted: WorkManager keeps a SUCCEEDED work around, so a remember-scoped flag reset on every
+    // navigation and re-launched the installer for an old download each time this screen was opened.
+    val prefs = remember { ViewerPreferences.get(context) }
     LaunchedEffect(download?.id, download?.state) {
-        if (download?.state == androidx.work.WorkInfo.State.SUCCEEDED) {
-            val path = download.outputData.getString(ApkDownloadWorker.KEY_PATH)
-            if (path != null && path != installedPath) {
-                installedPath = path
-                ApkInstaller.install(context, java.io.File(path))
-            }
-        }
+        val d = download ?: return@LaunchedEffect
+        if (d.state != androidx.work.WorkInfo.State.SUCCEEDED) return@LaunchedEffect
+        val workId = d.id.toString()
+        if (prefs.lastInstalledDownloadId == workId) return@LaunchedEffect
+        val path = d.outputData.getString(ApkDownloadWorker.KEY_PATH) ?: return@LaunchedEffect
+        prefs.lastInstalledDownloadId = workId
+        ApkInstaller.install(context, java.io.File(path))
     }
 
     LanguageCard()
