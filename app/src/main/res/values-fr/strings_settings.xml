@@ -188,4 +188,7 @@
     <string name="settings_sex_male">Homme</string>
     <string name="settings_sex_female">Femme</string>
     <string name="settings_calories_hr_help">Avec l\'âge et le sexe, les calories sont estimées à partir de votre fréquence cardiaque (plus précis). Sinon, une estimation MET selon le type d\'activité et le poids est utilisée.</string>
+    <string name="settings_route_arrows_help">Affichées uniquement en compétition (parcours ou tours), où le sens compte.</string>
+    <string name="settings_route_arrow_color">Couleur des flèches</string>
+    <string name="settings_route_arrow_size">Taille des flèches</string>
 </resources>

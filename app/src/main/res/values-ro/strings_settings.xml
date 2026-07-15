@@ -188,4 +188,7 @@
     <string name="settings_sex_male">Masculin</string>
     <string name="settings_sex_female">Feminin</string>
     <string name="settings_calories_hr_help">Cu vârstă și sex, caloriile sunt estimate din frecvența cardiacă (mai precis). Altfel se folosește o estimare MET pe baza tipului de activitate și a greutății.</string>
+    <string name="settings_route_arrows_help">Apar doar în competiție (traseu sau tururi), unde sensul contează.</string>
+    <string name="settings_route_arrow_color">Culoarea săgeților</string>
+    <string name="settings_route_arrow_size">Dimensiunea săgeților</string>
 </resources>

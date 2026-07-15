@@ -188,4 +188,7 @@
     <string name="settings_sex_male">Mand</string>
     <string name="settings_sex_female">Kvinde</string>
     <string name="settings_calories_hr_help">Med alder og køn beregnes kalorier ud fra din puls (mere præcist). Ellers bruges et MET-estimat ud fra aktivitetstype og vægt.</string>
+    <string name="settings_route_arrows_help">Vises kun under konkurrence (rute eller omgange), hvor retningen betyder noget.</string>
+    <string name="settings_route_arrow_color">Pilenes farve</string>
+    <string name="settings_route_arrow_size">Pilenes størrelse</string>
 </resources>

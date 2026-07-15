@@ -42,6 +42,8 @@ class MapLibreController(private val map: MapLibreMap) {
     private var followColorHex: String = FOLLOW_COLOR
     private var followWidth: Float = 6f
     private var followArrows: Boolean = true
+    private var followArrowColorHex: String = FOLLOW_COLOR
+    private var followArrowSize: Float = 0.7f
     private var followProgress: Boolean = true
     private var hasFramedTrack = false
 
@@ -132,11 +134,11 @@ class MapLibreController(private val map: MapLibreMap) {
         // needs NO glyphs and is safe on a raster style (same proven recipe as the tracking arrow).
         val followArrow = GeoJsonSource(FOLLOW_ARROW_SOURCE, FeatureCollection.fromFeatures(emptyList()))
         style.addSource(followArrow)
-        style.addImage(FOLLOW_ARROW_ICON, arrowBitmap(followColorHex))
+        style.addImage(FOLLOW_ARROW_ICON, arrowBitmap(followArrowColorHex))
         style.addLayer(
             SymbolLayer(FOLLOW_ARROW_LAYER, FOLLOW_ARROW_SOURCE).withProperties(
                 PropertyFactory.iconImage(FOLLOW_ARROW_ICON),
-                PropertyFactory.iconSize(0.45f),
+                PropertyFactory.iconSize(followArrowSize),
                 PropertyFactory.iconRotate(Expression.get("bearing")),
                 PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
                 // Let MapLibre cull colliding chevrons: dense when zoomed in, sparse when zoomed out.
@@ -409,23 +411,33 @@ class MapLibreController(private val map: MapLibreMap) {
     )
 
     /** Applies the followed-route appearance (color, width, direction arrows, progress split). */
-    fun setFollowRouteStyle(colorHex: String, width: Float, arrows: Boolean, progress: Boolean) {
+    fun setFollowRouteStyle(
+        colorHex: String,
+        width: Float,
+        arrows: Boolean,
+        progress: Boolean,
+        arrowColorHex: String = FOLLOW_COLOR,
+        arrowSize: Float = 0.7f,
+    ) {
         cat.rumb.app.data.debug.DebugLog.d("Map", "setFollowRouteStyle · $colorHex w=$width fletxes=$arrows progrés=$progress")
         // Guard against a malformed stored color (would make the line fail to render).
         followColorHex = colorHex.takeIf { it.startsWith("#") && (it.length == 7 || it.length == 9) } ?: FOLLOW_COLOR
         followWidth = width
         followArrows = arrows
         followProgress = progress
+        followArrowColorHex = arrowColorHex.takeIf { it.startsWith("#") && (it.length == 7 || it.length == 9) } ?: FOLLOW_COLOR
+        followArrowSize = arrowSize
         followLayer?.setProperties(
             PropertyFactory.lineColor(followColorHex),
             PropertyFactory.lineWidth(width),
             PropertyFactory.visibility(org.maplibre.android.style.layers.Property.VISIBLE),
         )
         followDoneLayer?.setProperties(PropertyFactory.lineWidth((width - 2f).coerceAtLeast(2f)))
-        // Re-register the chevron icon in the route colour, then show/hide the layer.
+        // Re-register the chevron icon in its own colour, then apply size + show/hide.
         map.style?.let { s ->
-            runCatching { s.addImage(FOLLOW_ARROW_ICON, arrowBitmap(followColorHex)) }
+            runCatching { s.addImage(FOLLOW_ARROW_ICON, arrowBitmap(followArrowColorHex)) }
             (s.getLayer(FOLLOW_ARROW_LAYER) as? SymbolLayer)?.setProperties(
+                PropertyFactory.iconSize(followArrowSize),
                 PropertyFactory.visibility(if (arrows) Property.VISIBLE else Property.NONE),
             )
         }
@@ -494,6 +506,9 @@ class MapLibreController(private val map: MapLibreMap) {
         if (points.size < 2) {
             followSrc?.setGeoJson(FeatureCollection.fromFeatures(emptyList<Feature>()))
             doneSrc?.setGeoJson(FeatureCollection.fromFeatures(emptyList<Feature>()))
+            // Clear the chevrons too: returning early here left the previous competition's arrows
+            // painted over the map after the route itself was gone.
+            drawFollowArrows()
             return
         }
         fun line(sub: List<GeoPoint>) = if (sub.size >= 2) {

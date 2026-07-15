@@ -188,4 +188,7 @@
     <string name="settings_sex_male">Mężczyzna</string>
     <string name="settings_sex_female">Kobieta</string>
     <string name="settings_calories_hr_help">Przy podanym wieku i płci kalorie są szacowane na podstawie tętna (dokładniej). W przeciwnym razie używany jest szacunek MET z typu aktywności i wagi.</string>
+    <string name="settings_route_arrows_help">Widoczne tylko podczas zawodów (trasa lub okrążenia), gdzie kierunek ma znaczenie.</string>
+    <string name="settings_route_arrow_color">Kolor strzałek</string>
+    <string name="settings_route_arrow_size">Rozmiar strzałek</string>
 </resources>

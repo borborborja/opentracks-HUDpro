@@ -188,4 +188,7 @@
     <string name="settings_sex_male">Home</string>
     <string name="settings_sex_female">Dona</string>
     <string name="settings_calories_hr_help">Amb edat i sexe, les calories s\'estimen a partir de la freqüència cardíaca (més precís). Si no, s\'usa una estimació MET pel tipus d\'activitat i el pes.</string>
+    <string name="settings_route_arrows_help">Només es mostren en competir (recorregut o voltes), on el sentit importa.</string>
+    <string name="settings_route_arrow_color">Color de les fletxes</string>
+    <string name="settings_route_arrow_size">Mida de les fletxes</string>
 </resources>

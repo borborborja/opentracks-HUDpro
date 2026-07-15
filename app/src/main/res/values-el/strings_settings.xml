@@ -188,4 +188,7 @@
     <string name="settings_sex_male">Άνδρας</string>
     <string name="settings_sex_female">Γυναίκα</string>
     <string name="settings_calories_hr_help">Με ηλικία και φύλο, οι θερμίδες εκτιμώνται από τους καρδιακούς παλμούς (πιο ακριβές). Διαφορετικά χρησιμοποιείται εκτίμηση MET από τον τύπο δραστηριότητας και το βάρος.</string>
+    <string name="settings_route_arrows_help">Εμφανίζονται μόνο σε αγώνα (διαδρομή ή γύροι), όπου η φορά μετράει.</string>
+    <string name="settings_route_arrow_color">Χρώμα βελών</string>
+    <string name="settings_route_arrow_size">Μέγεθος βελών</string>
 </resources>

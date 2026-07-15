@@ -1110,7 +1110,10 @@ class MapViewerActivity : ComponentActivity() {
                 val geo = gpx.map { it.toGeoPoint() }
                 followEngine = FollowRouteEngine(geo, gpx.map { it.elevation })
                 ctrl.setFollowRoute(geo)
-                ctrl.setFollowRouteStyle(prefs.followColor, prefs.followWidth, showFollowArrows(prefs), prefs.followProgress)
+                ctrl.setFollowRouteStyle(
+                    prefs.followColor, prefs.followWidth, showFollowArrows(prefs), prefs.followProgress,
+                    prefs.followArrowColor, prefs.followArrowSize,
+                )
                 offRouteThreshold = prefs.offRouteThresholdM
                 offRouteSound = prefs.offRouteSound
                 offRouteVibrate = prefs.offRouteVibrate
@@ -1128,11 +1131,11 @@ class MapViewerActivity : ComponentActivity() {
     }
 
     /**
-     * Direction chevrons on the followed route. Just following a track, the way round is the user's
-     * business (their setting decides); racing a competition it is NOT — a ROUTE or lap only counts
-     * ridden the right way, so the arrows are forced on.
+     * Direction chevrons on the followed route. Only while racing: a ROUTE or lap only counts ridden
+     * the right way round, whereas just following a track the direction doesn't matter. The setting
+     * is the on/off switch for that competition-only behaviour.
      */
-    private fun showFollowArrows(prefs: ViewerPreferences) = prefs.followArrows || competing || circuitMode
+    private fun showFollowArrows(prefs: ViewerPreferences) = prefs.followArrows && (competing || circuitMode)
 
     /** Draws a follow route directly from inline points (ROUTE competition reference; no track id). */
     private fun drawFollowRouteFromPoints(
@@ -1146,7 +1149,10 @@ class MapViewerActivity : ComponentActivity() {
         val geo = gpx.map { it.toGeoPoint() }
         followEngine = FollowRouteEngine(geo, gpx.map { it.elevation })
         ctrl.setFollowRoute(geo)
-        ctrl.setFollowRouteStyle(prefs.followColor, prefs.followWidth, showFollowArrows(prefs), prefs.followProgress)
+        ctrl.setFollowRouteStyle(
+                    prefs.followColor, prefs.followWidth, showFollowArrows(prefs), prefs.followProgress,
+                    prefs.followArrowColor, prefs.followArrowSize,
+                )
         offRouteThreshold = prefs.offRouteThresholdM
         offRouteSound = prefs.offRouteSound
         offRouteVibrate = prefs.offRouteVibrate

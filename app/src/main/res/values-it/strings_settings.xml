@@ -188,4 +188,7 @@
     <string name="settings_sex_male">Uomo</string>
     <string name="settings_sex_female">Donna</string>
     <string name="settings_calories_hr_help">Con età e sesso, le calorie sono stimate dalla frequenza cardiaca (più accurato). Altrimenti si usa una stima MET dal tipo di attività e dal peso.</string>
+    <string name="settings_route_arrows_help">Mostrate solo in gara (percorso o giri), dove il senso conta.</string>
+    <string name="settings_route_arrow_color">Colore delle frecce</string>
+    <string name="settings_route_arrow_size">Dimensione delle frecce</string>
 </resources>

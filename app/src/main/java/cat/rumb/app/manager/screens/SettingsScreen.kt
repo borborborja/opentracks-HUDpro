@@ -700,6 +700,8 @@ private fun FollowRouteSection(prefs: ViewerPreferences) {
     var color by remember { mutableStateOf(prefs.followColor) }
     var width by remember { mutableFloatStateOf(prefs.followWidth) }
     var arrows by remember { mutableStateOf(prefs.followArrows) }
+    var arrowColor by remember { mutableStateOf(prefs.followArrowColor) }
+    var arrowSize by remember { mutableFloatStateOf(prefs.followArrowSize) }
     var progress by remember { mutableStateOf(prefs.followProgress) }
     var tpStyle by remember { mutableStateOf(prefs.trackingPointStyle) }
     var tpColor by remember { mutableStateOf(prefs.trackingPointColor) }
@@ -714,6 +716,21 @@ private fun FollowRouteSection(prefs: ViewerPreferences) {
     Text(stringResource(R.string.settings_route_width, width.toInt()), style = MaterialTheme.typography.bodySmall)
     Slider(value = width, onValueChange = { width = it; prefs.followWidth = it }, valueRange = 3f..12f)
     ToggleRow(stringResource(R.string.settings_route_arrows), arrows) { arrows = it; prefs.followArrows = it }
+    Text(
+        stringResource(R.string.settings_route_arrows_help),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    if (arrows) {
+        Text(stringResource(R.string.settings_route_arrow_color), style = MaterialTheme.typography.bodySmall)
+        ColorPalette(palette, arrowColor) { arrowColor = it; prefs.followArrowColor = it }
+        Text(stringResource(R.string.settings_route_arrow_size), style = MaterialTheme.typography.bodySmall)
+        Slider(
+            value = arrowSize,
+            onValueChange = { arrowSize = it; prefs.followArrowSize = it },
+            valueRange = 0.4f..2.0f,
+        )
+    }
     ToggleRow(stringResource(R.string.settings_route_progress), progress) { progress = it; prefs.followProgress = it }
 
     Text(stringResource(R.string.settings_route_tracking_point), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))

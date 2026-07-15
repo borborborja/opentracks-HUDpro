@@ -188,4 +188,7 @@
     <string name="settings_sex_male">Male</string>
     <string name="settings_sex_female">Female</string>
     <string name="settings_calories_hr_help">With age and sex, calories are estimated from your heart rate (more accurate). Otherwise a MET estimate from activity type and weight is used.</string>
+    <string name="settings_route_arrows_help">Only shown while competing (route or laps), where direction matters.</string>
+    <string name="settings_route_arrow_color">Arrow colour</string>
+    <string name="settings_route_arrow_size">Arrow size</string>
 </resources>

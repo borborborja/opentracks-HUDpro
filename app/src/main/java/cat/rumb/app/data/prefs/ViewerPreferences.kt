@@ -247,9 +247,18 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getFloat(KEY_FOLLOW_WIDTH, 6f)
         set(value) = prefs.edit().putFloat(KEY_FOLLOW_WIDTH, value).apply()
 
+    /** Direction chevrons on the followed route. Only ever drawn while competing. */
     var followArrows: Boolean
         get() = prefs.getBoolean(KEY_FOLLOW_ARROWS, true)
         set(value) = prefs.edit().putBoolean(KEY_FOLLOW_ARROWS, value).apply()
+
+    var followArrowColor: String
+        get() = prefs.getString(KEY_FOLLOW_ARROW_COLOR, DEFAULT_FOLLOW_COLOR) ?: DEFAULT_FOLLOW_COLOR
+        set(value) = prefs.edit().putString(KEY_FOLLOW_ARROW_COLOR, value).apply()
+
+    var followArrowSize: Float
+        get() = prefs.getFloat(KEY_FOLLOW_ARROW_SIZE, 0.7f)
+        set(value) = prefs.edit().putFloat(KEY_FOLLOW_ARROW_SIZE, value).apply()
 
     var followProgress: Boolean
         get() = prefs.getBoolean(KEY_FOLLOW_PROGRESS, true)
@@ -406,6 +415,8 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_FOLLOW_COLOR = "follow_color"
         private const val KEY_FOLLOW_WIDTH = "follow_width"
         private const val KEY_FOLLOW_ARROWS = "follow_arrows"
+        private const val KEY_FOLLOW_ARROW_COLOR = "follow_arrow_color"
+        private const val KEY_FOLLOW_ARROW_SIZE = "follow_arrow_size"
         private const val KEY_FOLLOW_PROGRESS = "follow_progress"
         private const val KEY_TRACKING_STYLE = "tracking_point_style"
         private const val KEY_TRACKING_COLOR = "tracking_point_color"

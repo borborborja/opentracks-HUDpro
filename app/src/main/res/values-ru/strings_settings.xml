@@ -188,4 +188,7 @@
     <string name="settings_sex_male">Мужской</string>
     <string name="settings_sex_female">Женский</string>
     <string name="settings_calories_hr_help">С учётом возраста и пола калории оцениваются по пульсу (точнее). Иначе используется оценка MET по типу активности и весу.</string>
+    <string name="settings_route_arrows_help">Показываются только в соревновании (маршрут или круги), где важно направление.</string>
+    <string name="settings_route_arrow_color">Цвет стрелок</string>
+    <string name="settings_route_arrow_size">Размер стрелок</string>
 </resources>

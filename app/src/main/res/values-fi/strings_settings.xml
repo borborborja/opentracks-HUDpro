@@ -188,4 +188,7 @@
     <string name="settings_sex_male">Mies</string>
     <string name="settings_sex_female">Nainen</string>
     <string name="settings_calories_hr_help">Iän ja sukupuolen kanssa kalorit arvioidaan sykkeestä (tarkempi). Muuten käytetään MET-arviota aktiviteetin tyypistä ja painosta.</string>
+    <string name="settings_route_arrows_help">Näytetään vain kilpaillessa (reitti tai kierrokset), jolloin suunnalla on merkitystä.</string>
+    <string name="settings_route_arrow_color">Nuolien väri</string>
+    <string name="settings_route_arrow_size">Nuolien koko</string>
 </resources>
