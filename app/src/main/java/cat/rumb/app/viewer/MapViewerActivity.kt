@@ -242,7 +242,11 @@ class MapViewerActivity : ComponentActivity() {
                     prefs.circuitMinLapMs = comp.minLapMs ?: 20_000
                     prefs.circuitMinLapM = comp.minLapM ?: 100.0
                     prefs.circuitActive = true
-                    DebugLog.i("Competi", "mode competició LAP · id=$compId")
+                    // Preload the reference lap (meta-to-meta) on the map, like ROUTE does, so the
+                    // circuit you're about to race is visible from the start.
+                    pendingRouteRefPts = refPts
+                    controller?.let { drawFollowRouteFromPoints(prefs, it, refPts, frame = !NativeRecording.isActive) }
+                    DebugLog.i("Competi", "mode competició LAP · id=$compId · ${refPts.size} punts")
                 } else {
                     competing = true
                     if (cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
@@ -738,10 +742,12 @@ class MapViewerActivity : ComponentActivity() {
 
     /** Relaunches the viewer in competition mode (the proven path used from the manager). */
     private fun relaunchIntoCompetition(id: Long) {
+        // No CLEAR_TOP: it targets THIS same activity, so the framework recreates/finishes it in a
+        // race with our finish(), popping back to the manager (home). A plain start + finish stacks
+        // the fresh competition instance and drops the old one cleanly.
         startActivity(
             android.content.Intent(this, MapViewerActivity::class.java)
-                .putExtra(EXTRA_COMPETITION_ID, id)
-                .addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                .putExtra(EXTRA_COMPETITION_ID, id),
         )
         finish()
     }
