@@ -134,9 +134,6 @@ interface FollowTrackDao {
     @Query("SELECT DISTINCT collection FROM follow_tracks WHERE kind = :kind")
     suspend fun collections(kind: String): List<String>
 
-    @Query("UPDATE follow_tracks SET is_competition = :flag WHERE id = :id")
-    suspend fun setCompetition(id: Long, flag: Boolean)
-
     @Query("UPDATE follow_tracks SET duration_ms = :ms WHERE id = :id")
     suspend fun setDuration(id: Long, ms: Long)
 
@@ -146,18 +143,8 @@ interface FollowTrackDao {
     @Query("UPDATE follow_tracks SET archived = :flag WHERE id = :id")
     suspend fun setArchived(id: Long, flag: Boolean)
 
-    @Query("UPDATE follow_tracks SET competition_archived = :flag WHERE id = :id")
-    suspend fun setCompetitionArchived(id: Long, flag: Boolean)
-
-    @Query("UPDATE follow_tracks SET competition_ref_id = NULL WHERE id = :id")
-    suspend fun clearCompetitionRef(id: Long)
-
     @Query("UPDATE follow_tracks SET laps = :laps WHERE id = :id")
     suspend fun setLaps(id: Long, laps: String?)
-
-    /** Dissolves a competition: unflags the reference and unlinks every attempt. Tracks stay. */
-    @Query("UPDATE follow_tracks SET competition_ref_id = NULL WHERE competition_ref_id = :refId")
-    suspend fun unlinkAttempts(refId: Long)
 }
 
 @Database(
