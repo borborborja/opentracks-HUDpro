@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">În competiție pe circuit, numără invers pe măsură ce te apropii de linia de sosire, ca 0 să cadă pe turul nou.</string>
     <string name="viewer_qs_competition_none">Niciuna</string>
     <string name="viewer_qs_competition_none_subtitle">Fără competiție</string>
+    <string name="viewer_qs_auto_lap_distance">Tururi automate după distanță</string>
+    <string name="viewer_qs_auto_lap_off">Nu</string>
 </resources>

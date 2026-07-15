@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">В соревновании на круге отсчитывает при приближении к финишу, чтобы 0 совпал с новым кругом.</string>
     <string name="viewer_qs_competition_none">Нет</string>
     <string name="viewer_qs_competition_none_subtitle">Не соревноваться</string>
+    <string name="viewer_qs_auto_lap_distance">Автокруги по расстоянию</string>
+    <string name="viewer_qs_auto_lap_off">Нет</string>
 </resources>

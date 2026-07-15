@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">Σε αγώνα σε πίστα, μετρά αντίστροφα καθώς πλησιάζεις στον τερματισμό ώστε το 0 να πέσει στον νέο γύρο.</string>
     <string name="viewer_qs_competition_none">Καμία</string>
     <string name="viewer_qs_competition_none_subtitle">Χωρίς αγώνα</string>
+    <string name="viewer_qs_auto_lap_distance">Αυτόματοι γύροι ανά απόσταση</string>
+    <string name="viewer_qs_auto_lap_off">Όχι</string>
 </resources>

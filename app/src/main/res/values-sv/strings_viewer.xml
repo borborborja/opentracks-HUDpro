@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">Vid tävling på bana räknar den ned när du närmar dig mållinjen så att 0 hamnar på det nya varvet.</string>
     <string name="viewer_qs_competition_none">Ingen</string>
     <string name="viewer_qs_competition_none_subtitle">Tävla inte</string>
+    <string name="viewer_qs_auto_lap_distance">Automatiska varv per distans</string>
+    <string name="viewer_qs_auto_lap_off">Av</string>
 </resources>

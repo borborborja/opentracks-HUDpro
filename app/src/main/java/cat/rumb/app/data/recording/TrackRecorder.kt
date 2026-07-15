@@ -18,6 +18,9 @@ data class RecorderConfig(
     val maxAccuracyM: Float = 25f,
     /** Minimum distance between recorded points (m); closer fixes are skipped (idle jitter). */
     val minDistanceM: Double = 3.0,
+    /** Auto-lap every N metres of travel (runner splits). 0 = off. Mutually exclusive with the
+     *  position/preset-line modes. */
+    val autoLapEveryM: Double = 0.0,
     /** Reject fixes implying a speed above this (m/s) — GPS jumps. */
     val maxImpliedSpeedMs: Double = 50.0,
     /** Below this speed (m/s) the athlete counts as idle (no moving-time accrual). */
@@ -138,6 +141,8 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
     private var lapLineArmed = false
     // True after an explicit End-Laps, so circuit auto-lap doesn't re-open a block on the next crossing.
     private var lapsEnded = false
+    /** Next exact multiple of [RecorderConfig.autoLapEveryM] at which a distance split is due. */
+    private var nextSplitDistanceM = Double.MAX_VALUE
 
     fun start(time: Instant) {
         check(startedAt == null) { "already started" }
@@ -148,6 +153,9 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
             "start · acc≤${config.maxAccuracyM}m minDist=${config.minDistanceM}m " +
                 "warm-up=${config.startGoodFixes}×≤${config.startAccuracyM}m jitter=acc×${config.jitterFactor}",
         )
+        // Distance splits open the lap block immediately: a runner's lap 1 is 0→1 km. Waiting for a
+        // manual first press would make lap 1 span km1→km2 (startLaps rebases lapStartDistanceM).
+        if (config.autoLapEveryM > 0) startLaps(time)
     }
 
     fun onHeartRate(bpm: Double?) { heartRate = bpm }
@@ -327,6 +335,19 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
                 " · total=${fmt(distanceM)}m",
         )
 
+        // Distance auto-lap (runner splits): a lap every N metres of travel.
+        //
+        // Boundaries are tracked as exact multiples in [nextSplitDistanceM] rather than rebasing on
+        // each split: split() sets lapStartDistanceM to the CURRENT distance, so a fix landing at
+        // 1005 m would push every later boundary to 2005, 3005... — ~5 m of drift per lap, a couple
+        // of hundred metres by the end of a marathon. Only ONE split per fix: two laps between two
+        // consecutive points would map to the same point index and be dropped by Laps.fromMarks, so
+        // a fix that jumps over several multiples skips them instead of forging empty laps.
+        if (config.autoLapEveryM > 0 && lapsActive && distanceM >= nextSplitDistanceM) {
+            split(time)
+            while (nextSplitDistanceM <= distanceM) nextSplitDistanceM += config.autoLapEveryM
+        }
+
         // Position auto-lap: proximity-gate state machine. Armed once we leave the radius; a re-entry
         // while armed and past the min-lap guards inserts a SPLIT (identical to a manual flag press),
         // then disarms until we leave again. The GPS filters above already ran, so `here` is clean.
@@ -398,6 +419,8 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         lapStartDistanceM = distanceM
         lapStartTotalMs = totalMs(now)
         lapMarks.add(LapMark(seq, distanceM, totalMs(now), LapMarkType.START))
+        // First distance boundary, measured from where the block actually opened.
+        nextSplitDistanceM = if (config.autoLapEveryM > 0) distanceM + config.autoLapEveryM else Double.MAX_VALUE
         // Position auto-lap: the current spot is the start/finish line. Start disarmed so the first
         // crossing can't fire until we've left the radius (and past the min-lap guards).
         lapLine = lastLatLong

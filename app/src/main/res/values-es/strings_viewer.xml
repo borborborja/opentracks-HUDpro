@@ -96,4 +96,6 @@
     <string name="viewer_qs_lap_countdown_help">Al competir en un circuito, cuenta atrás al acercarte a la meta para que el 0 coincida con la vuelta nueva.</string>
     <string name="viewer_qs_competition_none">Ninguna</string>
     <string name="viewer_qs_competition_none_subtitle">No competir</string>
+    <string name="viewer_qs_auto_lap_distance">Parciales automáticos por distancia</string>
+    <string name="viewer_qs_auto_lap_off">No</string>
 </resources>

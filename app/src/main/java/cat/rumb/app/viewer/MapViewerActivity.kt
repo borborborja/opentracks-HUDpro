@@ -439,6 +439,11 @@ class MapViewerActivity : ComponentActivity() {
                                     DebugLog.i("UI", "quick-settings · auto-lap posició → $b")
                                     prefs.autoLapByPosition = b
                                 },
+                                autoLapEveryM = prefs.autoLapEveryM,
+                                onAutoLapEveryM = { m ->
+                                    DebugLog.i("UI", "quick-settings · parcials cada ${m}m")
+                                    prefs.autoLapEveryM = m
+                                },
                                 onDismiss = { settingsOpenFlow.value = false },
                                 competing = competing,
                                 ghostCandidates = ghostCandidates,

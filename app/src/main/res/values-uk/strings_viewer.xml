@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">У змаганні на колі веде відлік під час наближення до фінішу, щоб 0 збігся з новим колом.</string>
     <string name="viewer_qs_competition_none">Немає</string>
     <string name="viewer_qs_competition_none_subtitle">Не змагатися</string>
+    <string name="viewer_qs_auto_lap_distance">Автокола за відстанню</string>
+    <string name="viewer_qs_auto_lap_off">Ні</string>
 </resources>

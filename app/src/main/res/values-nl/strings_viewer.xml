@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">Bij een circuitwedstrijd telt het af als je de finish nadert, zodat 0 samenvalt met de nieuwe ronde.</string>
     <string name="viewer_qs_competition_none">Geen</string>
     <string name="viewer_qs_competition_none_subtitle">Niet meedoen</string>
+    <string name="viewer_qs_auto_lap_distance">Automatische rondes op afstand</string>
+    <string name="viewer_qs_auto_lap_off">Uit</string>
 </resources>

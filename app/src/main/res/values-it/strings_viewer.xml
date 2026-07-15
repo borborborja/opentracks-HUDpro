@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">In gara su circuito, conta alla rovescia avvicinandoti al traguardo così lo 0 coincide con il nuovo giro.</string>
     <string name="viewer_qs_competition_none">Nessuna</string>
     <string name="viewer_qs_competition_none_subtitle">Non gareggiare</string>
+    <string name="viewer_qs_auto_lap_distance">Parziali automatici per distanza</string>
+    <string name="viewer_qs_auto_lap_off">No</string>
 </resources>

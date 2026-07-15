@@ -198,6 +198,11 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_TURN_VOICE, true)
         set(value) = prefs.edit().putBoolean(KEY_TURN_VOICE, value).apply()
 
+    /** Auto-lap every N metres (runner splits). 0 = off. */
+    var autoLapEveryM: Float
+        get() = prefs.getFloat(KEY_AUTO_LAP_EVERY_M, 0f)
+        set(value) = prefs.edit().putFloat(KEY_AUTO_LAP_EVERY_M, value).apply()
+
     /** Debug: replay this track as fake GPS instead of the real one (-1 = off). */
     var simulateTrackId: Long
         get() = prefs.getLong(KEY_SIM_TRACK, -1L)
@@ -418,6 +423,7 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_USER_WEIGHT = "user_weight_kg"
         private const val KEY_REC_COUNTDOWN = "rec_countdown"
         private const val KEY_LAP_COUNTDOWN = "lap_countdown"
+        private const val KEY_AUTO_LAP_EVERY_M = "auto_lap_every_m"
         private const val KEY_SIM_TRACK = "sim_track_id"
         private const val KEY_SIM_SPEED = "sim_speed"
         private const val KEY_REC_AUTO_PAUSE_SEC = "rec_auto_pause_sec"

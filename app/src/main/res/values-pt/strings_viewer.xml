@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">Ao competir num circuito, conta decrescente ao aproximares-te da meta para que o 0 coincida com a nova volta.</string>
     <string name="viewer_qs_competition_none">Nenhuma</string>
     <string name="viewer_qs_competition_none_subtitle">Não competir</string>
+    <string name="viewer_qs_auto_lap_distance">Parciais automáticas por distância</string>
+    <string name="viewer_qs_auto_lap_off">Não</string>
 </resources>

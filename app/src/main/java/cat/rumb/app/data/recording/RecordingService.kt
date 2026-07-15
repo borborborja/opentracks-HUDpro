@@ -313,6 +313,8 @@ class RecordingService : Service() {
         maxAccuracyM = prefs.recMaxAccuracyM,
         minDistanceM = prefs.recMinDistanceM.toDouble(),
         autoLapByPosition = prefs.autoLapByPosition,
+        // Distance splits are off during a circuit: the meta owns the laps there.
+        autoLapEveryM = if (prefs.circuitActive) 0.0 else prefs.autoLapEveryM.toDouble(),
         presetLapLine = if (prefs.circuitActive) {
             cat.rumb.app.data.opentracks.model.GeoPoint(prefs.circuitLineLat, prefs.circuitLineLng)
         } else {

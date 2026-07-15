@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">Při závodu na okruhu odpočítává, když se blížíš k cíli, aby 0 padla na nové kolo.</string>
     <string name="viewer_qs_competition_none">Žádná</string>
     <string name="viewer_qs_competition_none_subtitle">Nezávodit</string>
+    <string name="viewer_qs_auto_lap_distance">Automatická kola podle vzdálenosti</string>
+    <string name="viewer_qs_auto_lap_off">Ne</string>
 </resources>

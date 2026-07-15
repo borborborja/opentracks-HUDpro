@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">Podczas zawodów na torze odlicza przy zbliżaniu się do mety, tak aby 0 wypadło na nowym okrążeniu.</string>
     <string name="viewer_qs_competition_none">Brak</string>
     <string name="viewer_qs_competition_none_subtitle">Nie rywalizuj</string>
+    <string name="viewer_qs_auto_lap_distance">Automatyczne okrążenia co dystans</string>
+    <string name="viewer_qs_auto_lap_off">Nie</string>
 </resources>

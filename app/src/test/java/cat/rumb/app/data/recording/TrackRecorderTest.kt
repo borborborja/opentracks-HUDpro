@@ -336,6 +336,59 @@ class TrackRecorderTest {
         assertThat(s2.lapMarks.count { it.type == LapMarkType.SPLIT }).isEqualTo(1)
     }
 
+    // --- Distance auto-lap (runner splits) ---
+
+    /** Runs [meters] north in ~11 m steps (0.0001° lat), one fix per second. */
+    private fun runStraight(cfg: RecorderConfig, meters: Int): TrackRecorder {
+        val r = TrackRecorder(cfg)
+        r.start(t0)
+        r.warmUp()
+        var sec = 0L
+        val steps = meters / 11
+        for (i in 0..steps) { r.onLocation(41.0 + i * 0.0001, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+        return r
+    }
+
+    @Test
+    fun distanceAutoLapSplitsEveryKilometre() {
+        val r = runStraight(RecorderConfig(autoLapEveryM = 1000.0), meters = 3_100)
+        val s = r.snapshot(at(400))
+        // Lap 1 opens at start (0 m), then a split at each km: 3 splits by 3.1 km.
+        assertThat(s.lapMarks.count { it.type == LapMarkType.START }).isEqualTo(1)
+        assertThat(s.lapMarks.count { it.type == LapMarkType.SPLIT }).isEqualTo(3)
+        // Lap 1 must be 0→1 km, not 1→2 km: the block opens at start(), not on the first crossing,
+        // so there is no APPROACH stretch.
+        val ranges = cat.rumb.app.data.tracks.Laps.fromMarks(s.lapMarks, s.points().map { it.id })
+        assertThat(ranges.none { it.kind == cat.rumb.app.data.tracks.LapKind.APPROACH }).isTrue()
+        // 3 full km + the trailing 100 m, which a runner DOES want as a final partial lap (any watch
+        // shows it). Note this is the opposite of circuit mode, where the stretch after the last meta
+        // is a RETURN, not a lap — there the finish line owns the boundary; here distance does.
+        val laps = ranges.filter { it.kind == cat.rumb.app.data.tracks.LapKind.LAP }
+        assertThat(laps).hasSize(4)
+        assertThat(laps.first().startIdx).isEqualTo(0)
+    }
+
+    /** Boundaries are exact multiples, so a split landing past the mark can't drift the next one. */
+    @Test
+    fun distanceAutoLapBoundariesDoNotDrift() {
+        val r = runStraight(RecorderConfig(autoLapEveryM = 1000.0), meters = 5_100)
+        val splits = r.snapshot(at(600)).lapMarks.filter { it.type == LapMarkType.SPLIT }
+        assertThat(splits).hasSize(5)
+        // Each split fires just past its own km, never accumulating the previous overshoot.
+        splits.forEachIndexed { i, mark ->
+            val expected = (i + 1) * 1000.0
+            assertThat(mark.distanceM).isBetween(expected, expected + 15.0)
+        }
+    }
+
+    @Test
+    fun distanceAutoLapOffChangesNothing() {
+        val r = runStraight(RecorderConfig(autoLapEveryM = 0.0), meters = 3_100)
+        val s = r.snapshot(at(400))
+        assertThat(s.lapMarks).isEmpty()
+        assertThat(s.lapsActive).isFalse()
+    }
+
     @Test
     fun circuitStopAfterMetaEndsLapAtTheMetaNotAtStop() {
         // Two full laps (START + 2 crossings), then ride PAST the meta and stop a bit later. The lap

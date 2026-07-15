@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">Kilpaillessasi radalla laskee alas, kun lähestyt maaliviivaa, jotta 0 osuu uuteen kierrokseen.</string>
     <string name="viewer_qs_competition_none">Ei mitään</string>
     <string name="viewer_qs_competition_none_subtitle">Älä kilpaile</string>
+    <string name="viewer_qs_auto_lap_distance">Automaattiset kierrokset matkan mukaan</string>
+    <string name="viewer_qs_auto_lap_off">Ei</string>
 </resources>

@@ -95,6 +95,8 @@ fun ViewerQuickSettings(
     onLapManagement: (Boolean) -> Unit = {},
     autoLapByPosition: Boolean = false,
     onAutoLapByPosition: (Boolean) -> Unit = {},
+    autoLapEveryM: Float = 0f,
+    onAutoLapEveryM: (Float) -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var tab by remember { mutableIntStateOf(0) }
@@ -109,6 +111,7 @@ fun ViewerQuickSettings(
     var autoZoom by remember { mutableStateOf(adaptiveZoom) }
     var lapMgmt by remember { mutableStateOf(lapManagement) }
     var autoLap by remember { mutableStateOf(autoLapByPosition) }
+    var lapEveryM by remember { mutableStateOf(autoLapEveryM) }
 
     val tabs = TABS + if (competing) listOf(R.string.viewer_qs_tab_competition) else emptyList()
 
@@ -149,6 +152,8 @@ fun ViewerQuickSettings(
                     onLapManagement = { lapMgmt = it; onLapManagement(it) },
                     autoLapByPosition = autoLap,
                     onAutoLapByPosition = { autoLap = it; onAutoLapByPosition(it) },
+                    autoLapEveryM = lapEveryM,
+                    onAutoLapEveryM = { lapEveryM = it; onAutoLapEveryM(it) },
                 )
             }
         }
@@ -299,6 +304,8 @@ private fun OptionsTab(
     onLapManagement: (Boolean) -> Unit = {},
     autoLapByPosition: Boolean = false,
     onAutoLapByPosition: (Boolean) -> Unit = {},
+    autoLapEveryM: Float = 0f,
+    onAutoLapEveryM: (Float) -> Unit = {},
 ) {
     Text(stringResource(R.string.viewer_qs_map_orientation), style = MaterialTheme.typography.labelLarge)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -324,6 +331,29 @@ private fun OptionsTab(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.outline,
         )
+        // Runner splits: a lap every N km, no buttons. Off (0) keeps laps fully manual.
+        Text(
+            stringResource(R.string.viewer_qs_auto_lap_distance),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(0f, 500f, 1000f, 5000f).forEach { m ->
+                FilterChip(
+                    selected = autoLapEveryM == m,
+                    onClick = { onAutoLapEveryM(m) },
+                    label = {
+                        Text(
+                            when {
+                                m == 0f -> stringResource(R.string.viewer_qs_auto_lap_off)
+                                m < 1000f -> "%.1f km".format(m / 1000f)
+                                else -> "%.0f km".format(m / 1000f)
+                            },
+                        )
+                    },
+                )
+            }
+        }
     }
     ToggleRow(stringResource(R.string.viewer_qs_auto_pause), autoPause, onAutoPause)
     if (autoPause) {

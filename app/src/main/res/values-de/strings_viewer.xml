@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">Beim Wettkampf auf einem Rundkurs zählt es bei Annäherung an die Ziellinie herunter, sodass 0 auf die neue Runde fällt.</string>
     <string name="viewer_qs_competition_none">Keiner</string>
     <string name="viewer_qs_competition_none_subtitle">Nicht antreten</string>
+    <string name="viewer_qs_auto_lap_distance">Automatische Runden nach Distanz</string>
+    <string name="viewer_qs_auto_lap_off">Aus</string>
 </resources>

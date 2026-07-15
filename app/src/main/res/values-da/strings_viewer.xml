@@ -97,4 +97,6 @@
     <string name="viewer_qs_lap_countdown_help">Når du konkurrerer på en bane, tæller den ned, når du nærmer dig mållinjen, så 0 rammer den nye omgang.</string>
     <string name="viewer_qs_competition_none">Ingen</string>
     <string name="viewer_qs_competition_none_subtitle">Konkurrer ikke</string>
+    <string name="viewer_qs_auto_lap_distance">Automatiske omgange efter distance</string>
+    <string name="viewer_qs_auto_lap_off">Fra</string>
 </resources>
