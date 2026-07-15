@@ -193,6 +193,16 @@ class CompetitionRepository(
         }
 
     /**
+     * Recovers and persists the sport of [competitionId] if it predates the field being stored.
+     * Call it when showing a competition: the recovery in [addAttemptsFromTrack] is lazy, so without
+     * this an old competition would show no sport until the next attempt was filed.
+     */
+    suspend fun ensureActivityType(competitionId: Long): String? = withContext(Dispatchers.IO) {
+        val comp = dao.getCompetition(competitionId) ?: return@withContext null
+        backfilledActivityType(comp)
+    }
+
+    /**
      * A competition's sport, recovering it for old rows created before it was recorded: fall back to
      * the activity type of an attempt's source track. Persists the recovery so it's paid once.
      * Still null → UNKNOWN, which is permissive (see [ActivityTypes.comparable]).

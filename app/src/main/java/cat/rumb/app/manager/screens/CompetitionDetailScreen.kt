@@ -88,6 +88,10 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
     val name = competition?.name ?: ""
     val isLap = competition?.type == CompetitionType.LAP
 
+    // Competitions created before the sport was stored have none: recover it on open, or the badge
+    // (and the sport gate's usefulness) would stay invisible until the next attempt was filed.
+    LaunchedEffect(competitionId) { app.competitionRepository.ensureActivityType(competitionId) }
+
     var pointsById by remember { mutableStateOf<Map<Long, List<GpxPoint>>>(emptyMap()) }
     LaunchedEffect(attempts) {
         val m = withContext(Dispatchers.Default) {
@@ -128,7 +132,14 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(name.ifBlank { stringResource(R.string.home_tab_competition) })
+                        // Weighted + ellipsised: a long name used to squeeze the badge into a sliver
+                        // and wrap it one letter per line ("Re/cor/rid/o").
+                        Text(
+                            name.ifBlank { stringResource(R.string.home_tab_competition) },
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
                         TypeBadge(isLap)
                         // The sport was stored but never shown; it decides which attempts count.
                         competition?.activityType?.let { SportBadge(it) }
@@ -255,6 +266,8 @@ private fun SportBadge(activityTypeId: String) {
         )
         Text(
             activityTypeLabel(activityTypeId, custom),
+            maxLines = 1,
+            softWrap = false,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -265,6 +278,8 @@ private fun SportBadge(activityTypeId: String) {
 private fun TypeBadge(isLap: Boolean) {
     Text(
         stringResource(if (isLap) R.string.competition_type_lap else R.string.competition_type_route),
+        maxLines = 1,
+        softWrap = false,
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onPrimaryContainer,
         modifier = Modifier
