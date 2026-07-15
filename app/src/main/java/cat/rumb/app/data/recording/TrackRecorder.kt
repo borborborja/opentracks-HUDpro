@@ -409,6 +409,9 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
     /** Ends the lap block: closes the current lap; what follows is the return (not a lap). */
     fun endLaps(now: Instant) {
         if (finished || !lapsActive) return
+        // Circuit mode: a lap ends when the meta is crossed, not when the button is pressed. Anchor
+        // END to the last crossing so the stretch from the meta to here becomes RETURN, not a lap.
+        if (config.presetLapLine != null) { endCircuitLapsAtLastCrossing(); return }
         lastLapMs = totalMs(now) - lapStartTotalMs
         lapMarks.add(LapMark(seq, distanceM, totalMs(now), LapMarkType.END))
         lapsActive = false
@@ -416,6 +419,24 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         lapLine = null
         lapLineArmed = false
         DebugLog.i("Motor", "fin de vueltas · $lapCount vueltas")
+    }
+
+    /**
+     * Circuit-only lap finalisation: the open lap was started at the LAST meta crossing (the last
+     * START/SPLIT mark). Placing END on that same seq drops the still-open partial (meta→here) from
+     * the lap count — [Laps.fromMarks] turns it into a RETURN instead. Idempotent via [lapsActive].
+     */
+    private fun endCircuitLapsAtLastCrossing() {
+        if (!lapsActive) return
+        val lastCrossing = lapMarks.lastOrNull { it.type == LapMarkType.START || it.type == LapMarkType.SPLIT }
+        if (lastCrossing != null) {
+            lapMarks.add(LapMark(lastCrossing.seq, lastCrossing.distanceM, lastCrossing.totalMs, LapMarkType.END))
+        }
+        lapsActive = false
+        lapsEnded = true
+        lapLine = null
+        lapLineArmed = false
+        DebugLog.i("Motor", "circuit: fin de vueltas en la meta · última al seq=${lastCrossing?.seq}")
     }
 
     /** Reloads lap state after a crash (marks persisted alongside the points). */
@@ -455,6 +476,9 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
 
     fun stop(time: Instant) {
         if (finished) return
+        // Circuit mode: if the user finishes without pressing "end laps" (or a few seconds after the
+        // last meta), close the lap block at that last crossing so the trailing stretch is a RETURN.
+        if (config.presetLapLine != null && lapsActive) endCircuitLapsAtLastCrossing()
         accumulatedActive += activeDuration(time)
         activeSince = null
         finished = true

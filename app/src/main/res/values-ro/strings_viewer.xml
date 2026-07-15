@@ -86,4 +86,8 @@
     <string name="data_toggle_keep_screen">Menține ecranul aprins</string>
     <string name="data_toggle_barometer">Barometru</string>
     <string name="data_toggle_barometer_hint">Se aplică la următoarea înregistrare</string>
+    <string name="viewer_qs_tab_route_competition">Rute/Competiție</string>
+    <string name="viewer_qs_mode_routes">Rute</string>
+    <string name="viewer_qs_mode_competitions">Competiții</string>
+    <string name="viewer_qs_no_competitions_yet">Încă nicio competiție.</string>
 </resources>

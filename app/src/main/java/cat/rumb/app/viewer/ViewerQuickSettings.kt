@@ -9,13 +9,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Loop
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -34,11 +41,13 @@ import androidx.compose.ui.unit.dp
 import cat.rumb.app.R
 import cat.rumb.app.data.map.MapSource
 import cat.rumb.app.data.map.OfflineMap
+import cat.rumb.app.data.tracks.CompetitionEntity
+import cat.rumb.app.data.tracks.CompetitionType
 import cat.rumb.app.data.tracks.FollowTrackEntity
 
 private val TABS = listOf(
     R.string.viewer_qs_tab_map,
-    R.string.viewer_qs_tab_route,
+    R.string.viewer_qs_tab_route_competition,
     R.string.viewer_qs_tab_options,
 )
 
@@ -50,6 +59,8 @@ fun ViewerQuickSettings(
     offlineMaps: List<OfflineMap>,
     currentFollowId: Long,
     tracks: List<FollowTrackEntity>,
+    competitions: List<CompetitionEntity> = emptyList(),
+    onStartCompetition: (Long) -> Unit = {},
     orientation: String,
     keepScreenOn: Boolean,
     fullscreen: Boolean,
@@ -111,7 +122,7 @@ fun ViewerQuickSettings(
         ) {
             when (tab) {
                 0 -> MapTab(selBase, offlineMaps) { id -> selBase = id; onSelectBaseMap(id) }
-                1 -> FollowTab(selFollow, tracks, turnVoice, onTurnVoice) { id -> selFollow = id; onSelectFollow(id) }
+                1 -> FollowTab(selFollow, tracks, competitions, turnVoice, onTurnVoice, onStartCompetition) { id -> selFollow = id; onSelectFollow(id) }
                 3 -> CompetitionQsTab(
                     ghostCandidates, opponentId, onSelectOpponent,
                     halo, onHalo, showSeconds, onShowSeconds,
@@ -153,34 +164,91 @@ private fun MapTab(current: String?, offlineMaps: List<OfflineMap>, onSelect: (S
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FollowTab(
     current: Long,
     tracks: List<FollowTrackEntity>,
+    competitions: List<CompetitionEntity>,
     turnVoice: Boolean = true,
     onTurnVoice: (Boolean) -> Unit = {},
+    onStartCompetition: (Long) -> Unit = {},
     onSelect: (Long) -> Unit,
 ) {
+    // "Ninguna" stays on top as the follow baseline; a mode switch below lists either catalogue
+    // routes to follow, or competitions to race — so a long track list is never a single flat wall.
     Text(stringResource(R.string.viewer_qs_route_to_follow), style = MaterialTheme.typography.labelLarge)
     RadioRow(
         stringResource(R.string.viewer_qs_route_none),
         stringResource(R.string.viewer_qs_route_none_subtitle),
         current <= 0L,
     ) { onSelect(-1L) }
-    tracks.forEach { t ->
-        RadioRow(
-            t.name,
-            stringResource(R.string.viewer_qs_route_meta, t.distanceMeters / 1000.0, t.pointCount),
-            current == t.id,
-        ) { onSelect(t.id) }
+
+    var mode by remember { mutableIntStateOf(0) }
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        SegmentedButton(
+            selected = mode == 0,
+            onClick = { mode = 0 },
+            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+        ) { Text(stringResource(R.string.viewer_qs_mode_routes)) }
+        SegmentedButton(
+            selected = mode == 1,
+            onClick = { mode = 1 },
+            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+        ) { Text(stringResource(R.string.viewer_qs_mode_competitions)) }
     }
-    if (tracks.isEmpty()) {
-        Text(stringResource(R.string.viewer_qs_no_routes_yet),
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+
+    if (mode == 0) {
+        tracks.forEach { t ->
+            RadioRow(
+                t.name,
+                stringResource(R.string.viewer_qs_route_meta, t.distanceMeters / 1000.0, t.pointCount),
+                current == t.id,
+            ) { onSelect(t.id) }
+        }
+        if (tracks.isEmpty()) {
+            Text(stringResource(R.string.viewer_qs_no_routes_yet),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+        }
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+        var tv by remember { mutableStateOf(turnVoice) }
+        ToggleRow(stringResource(R.string.viewer_qs_turn_voice), tv) { tv = it; onTurnVoice(it) }
+    } else {
+        if (competitions.isEmpty()) {
+            Text(stringResource(R.string.viewer_qs_no_competitions_yet),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+        }
+        competitions.forEach { c ->
+            val isLap = c.type == CompetitionType.LAP
+            CompetitionRow(
+                name = c.name,
+                isLap = isLap,
+            ) { onStartCompetition(c.id) }
+        }
     }
-    HorizontalDivider(Modifier.padding(vertical = 8.dp))
-    var tv by remember { mutableStateOf(turnVoice) }
-    ToggleRow(stringResource(R.string.viewer_qs_turn_voice), tv) { tv = it; onTurnVoice(it) }
+}
+
+/** One competition in the race list: a type icon (lap vs route) + name + tap-to-start. */
+@Composable
+private fun CompetitionRow(name: String, isLap: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().selectable(selected = false, onClick = onClick).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            if (isLap) Icons.Filled.Loop else Icons.Filled.Route,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Column(Modifier.padding(start = 12.dp)) {
+            Text(name, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                stringResource(if (isLap) R.string.competition_type_lap else R.string.competition_type_route),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+            )
+        }
+    }
 }
 
 @Composable

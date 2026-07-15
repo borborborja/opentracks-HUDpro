@@ -86,4 +86,8 @@
     <string name="data_toggle_keep_screen">Pidä näyttö päällä</string>
     <string name="data_toggle_barometer">Barometri</string>
     <string name="data_toggle_barometer_hint">Koskee seuraavaa tallennusta</string>
+    <string name="viewer_qs_tab_route_competition">Reitit/Kilpailu</string>
+    <string name="viewer_qs_mode_routes">Reitit</string>
+    <string name="viewer_qs_mode_competitions">Kilpailut</string>
+    <string name="viewer_qs_no_competitions_yet">Ei vielä kilpailuja.</string>
 </resources>

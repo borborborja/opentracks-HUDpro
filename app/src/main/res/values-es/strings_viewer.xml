@@ -85,4 +85,8 @@
     <string name="data_toggle_keep_screen">Mantener pantalla encendida</string>
     <string name="data_toggle_barometer">Barómetro</string>
     <string name="data_toggle_barometer_hint">Se aplica a la próxima grabación</string>
+    <string name="viewer_qs_tab_route_competition">Rutas/Competición</string>
+    <string name="viewer_qs_mode_routes">Rutas</string>
+    <string name="viewer_qs_mode_competitions">Competiciones</string>
+    <string name="viewer_qs_no_competitions_yet">Aún no hay competiciones.</string>
 </resources>

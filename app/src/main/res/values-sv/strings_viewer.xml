@@ -86,4 +86,8 @@
     <string name="data_toggle_keep_screen">Håll skärmen på</string>
     <string name="data_toggle_barometer">Barometer</string>
     <string name="data_toggle_barometer_hint">Gäller nästa inspelning</string>
+    <string name="viewer_qs_tab_route_competition">Rutter/Tävling</string>
+    <string name="viewer_qs_mode_routes">Rutter</string>
+    <string name="viewer_qs_mode_competitions">Tävlingar</string>
+    <string name="viewer_qs_no_competitions_yet">Inga tävlingar än.</string>
 </resources>

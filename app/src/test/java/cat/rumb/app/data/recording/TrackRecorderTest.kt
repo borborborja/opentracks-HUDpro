@@ -335,4 +335,38 @@ class TrackRecorderTest {
         assertThat(s2.lapCount).isEqualTo(2)
         assertThat(s2.lapMarks.count { it.type == LapMarkType.SPLIT }).isEqualTo(1)
     }
+
+    @Test
+    fun circuitStopAfterMetaEndsLapAtTheMetaNotAtStop() {
+        // Two full laps (START + 2 crossings), then ride PAST the meta and stop a bit later. The lap
+        // count must end at that last meta: the trailing meta→stop stretch is a RETURN, not a phantom lap.
+        val line = cat.rumb.app.data.opentracks.model.GeoPoint(41.0, 2.0)
+        val r = TrackRecorder(RecorderConfig(presetLapLine = line))
+        r.start(t0)
+        r.warmUp()
+        var sec = 0L
+        fun outAndBack() {
+            for (i in 1..15) { r.onLocation(41.0 + i * 0.0002, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+            for (i in 14 downTo 0) { r.onLocation(41.0 + i * 0.0002, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+        }
+        // Approach + first crossing → START (lap 1 opens).
+        for (i in 15 downTo 0) { r.onLocation(41.0 + i * 0.0002, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+        outAndBack() // crossing 2 → lap 1 done, lap 2 opens
+        outAndBack() // crossing 3 → lap 2 done, lap 3 opens
+        // Ride out past the meta without returning, then stop (the "finish a few seconds later" case).
+        for (i in 1..8) { r.onLocation(41.0 + i * 0.0002, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+        r.stop(at(sec))
+
+        val s = r.snapshot(at(sec))
+        assertThat(s.lapsActive).isFalse()
+        // Exactly one END, anchored to the last meta crossing (the last SPLIT), not the stop point.
+        val ends = s.lapMarks.filter { it.type == LapMarkType.END }
+        assertThat(ends).hasSize(1)
+        val lastCrossing = s.lapMarks.last { it.type == LapMarkType.START || it.type == LapMarkType.SPLIT }
+        assertThat(ends.first().seq).isEqualTo(lastCrossing.seq)
+        // Two completed laps + one RETURN; the meta→stop partial is NOT counted as a lap.
+        val ranges = cat.rumb.app.data.tracks.Laps.fromMarks(s.lapMarks, s.points().map { it.id })
+        assertThat(ranges.count { it.kind == cat.rumb.app.data.tracks.LapKind.LAP }).isEqualTo(2)
+        assertThat(ranges.count { it.kind == cat.rumb.app.data.tracks.LapKind.RETURN }).isEqualTo(1)
+    }
 }

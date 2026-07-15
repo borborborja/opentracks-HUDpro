@@ -86,4 +86,8 @@
     <string name="data_toggle_keep_screen">Garder l\'écran allumé</string>
     <string name="data_toggle_barometer">Baromètre</string>
     <string name="data_toggle_barometer_hint">S\'applique au prochain enregistrement</string>
+    <string name="viewer_qs_tab_route_competition">Itinéraires/Compétition</string>
+    <string name="viewer_qs_mode_routes">Itinéraires</string>
+    <string name="viewer_qs_mode_competitions">Compétitions</string>
+    <string name="viewer_qs_no_competitions_yet">Aucune compétition pour l\'instant.</string>
 </resources>

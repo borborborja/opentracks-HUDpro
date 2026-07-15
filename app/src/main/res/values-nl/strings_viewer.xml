@@ -86,4 +86,8 @@
     <string name="data_toggle_keep_screen">Scherm aan houden</string>
     <string name="data_toggle_barometer">Barometer</string>
     <string name="data_toggle_barometer_hint">Geldt voor de volgende opname</string>
+    <string name="viewer_qs_tab_route_competition">Routes/Competitie</string>
+    <string name="viewer_qs_mode_routes">Routes</string>
+    <string name="viewer_qs_mode_competitions">Competities</string>
+    <string name="viewer_qs_no_competitions_yet">Nog geen competities.</string>
 </resources>

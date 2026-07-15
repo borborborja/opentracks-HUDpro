@@ -86,4 +86,8 @@
     <string name="data_toggle_keep_screen">Nie wygaszaj ekranu</string>
     <string name="data_toggle_barometer">Barometr</string>
     <string name="data_toggle_barometer_hint">Dotyczy następnego nagrania</string>
+    <string name="viewer_qs_tab_route_competition">Trasy/Zawody</string>
+    <string name="viewer_qs_mode_routes">Trasy</string>
+    <string name="viewer_qs_mode_competitions">Zawody</string>
+    <string name="viewer_qs_no_competitions_yet">Brak zawodów.</string>
 </resources>

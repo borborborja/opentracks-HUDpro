@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cat.rumb.app.R
 import cat.rumb.app.RumbApplication
@@ -55,6 +56,8 @@ import cat.rumb.app.data.competition.CompetitionAnalysis
 import cat.rumb.app.data.competition.GapSample
 import cat.rumb.app.data.gpx.Gpx
 import cat.rumb.app.data.gpx.GpxPoint
+import cat.rumb.app.data.map.MapSource
+import cat.rumb.app.data.opentracks.model.GeoPoint
 import cat.rumb.app.data.prefs.ViewerPreferences
 import cat.rumb.app.data.tracks.CompetitionAttemptEntity
 import cat.rumb.app.data.tracks.CompetitionType
@@ -91,6 +94,29 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
             attempts.associate { it.id to runCatching { Gpx.read(it.gpx.byteInputStream()).points }.getOrDefault(emptyList()) }
         }
         pointsById = m
+    }
+
+    // Map of the competition's reference: the whole route (ROUTE) or just the lap, meta-to-meta (LAP).
+    val mapView = rememberMapViewWithLifecycle()
+    var mapController by remember { mutableStateOf<RouteEditorController?>(null) }
+    var refPoints by remember { mutableStateOf<List<GpxPoint>>(emptyList()) }
+    var mapFramed by remember(competitionId) { mutableStateOf(false) }
+    LaunchedEffect(competition?.referenceGpx) {
+        val gpx = competition?.referenceGpx
+        refPoints = if (gpx.isNullOrBlank()) emptyList() else withContext(Dispatchers.Default) {
+            runCatching { Gpx.read(gpx.byteInputStream()).points }.getOrDefault(emptyList())
+        }
+    }
+    LaunchedEffect(mapController, refPoints, competition?.lineLat, competition?.lineLng) {
+        val c = mapController ?: return@LaunchedEffect
+        if (refPoints.size >= 2) {
+            c.setRoute(refPoints)
+            if (!mapFramed) { c.frame(refPoints); mapFramed = true }
+        }
+        // LAP: mark the meta (start/finish line) on the lap.
+        val lat = competition?.lineLat
+        val lng = competition?.lineLng
+        c.setWaypoints(if (isLap && lat != null && lng != null) listOf(GeoPoint(lat, lng)) else emptyList())
     }
 
     var menuOpen by remember { mutableStateOf(false) }
@@ -134,6 +160,21 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
             Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            if (refPoints.size >= 2) {
+                Box(Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp))) {
+                    AndroidView(
+                        factory = {
+                            mapView.getMapAsync { map ->
+                                val c = RouteEditorController(map)
+                                mapController = c
+                                c.init(source = MapSource.byId(prefs.statsMapSourceId)) { }
+                            }
+                            mapView
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
             if (attempts.isEmpty()) {
                 Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                     Text(stringResource(R.string.circuit_empty_efforts))

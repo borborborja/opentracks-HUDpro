@@ -86,4 +86,8 @@
     <string name="data_toggle_keep_screen">Не вимикати екран</string>
     <string name="data_toggle_barometer">Барометр</string>
     <string name="data_toggle_barometer_hint">Застосується до наступного запису</string>
+    <string name="viewer_qs_tab_route_competition">Маршрути/Змагання</string>
+    <string name="viewer_qs_mode_routes">Маршрути</string>
+    <string name="viewer_qs_mode_competitions">Змагання</string>
+    <string name="viewer_qs_no_competitions_yet">Ще немає змагань.</string>
 </resources>

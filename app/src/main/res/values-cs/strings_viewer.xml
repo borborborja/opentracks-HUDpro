@@ -86,4 +86,8 @@
     <string name="data_toggle_keep_screen">Nechat obrazovku zapnutou</string>
     <string name="data_toggle_barometer">Barometr</string>
     <string name="data_toggle_barometer_hint">Platí pro další nahrávání</string>
+    <string name="viewer_qs_tab_route_competition">Trasy/Závod</string>
+    <string name="viewer_qs_mode_routes">Trasy</string>
+    <string name="viewer_qs_mode_competitions">Závody</string>
+    <string name="viewer_qs_no_competitions_yet">Zatím žádné závody.</string>
 </resources>

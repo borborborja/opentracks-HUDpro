@@ -130,6 +130,14 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
             if (!framed) { c.frame(line); framed = true }
         }
     }
+    // Mark where each lap begins (red dots), so a track with laps shows its lap starts on the map.
+    LaunchedEffect(controller, points, laps) {
+        val c = controller ?: return@LaunchedEffect
+        val starts = laps.filter { it.kind == cat.rumb.app.data.tracks.LapKind.LAP }
+            .mapNotNull { points.getOrNull(it.startIdx) }
+            .map { GeoPoint(it.latitude, it.longitude) }
+        c.setWaypoints(starts)
+    }
 
     fun nearestSample(fraction: Float): TrackSample? {
         if (samples.isEmpty()) return null

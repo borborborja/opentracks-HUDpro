@@ -86,4 +86,8 @@
     <string name="data_toggle_keep_screen">Mantieni schermo acceso</string>
     <string name="data_toggle_barometer">Barometro</string>
     <string name="data_toggle_barometer_hint">Si applica alla prossima registrazione</string>
+    <string name="viewer_qs_tab_route_competition">Percorsi/Competizione</string>
+    <string name="viewer_qs_mode_routes">Percorsi</string>
+    <string name="viewer_qs_mode_competitions">Competizioni</string>
+    <string name="viewer_qs_no_competitions_yet">Ancora nessuna competizione.</string>
 </resources>

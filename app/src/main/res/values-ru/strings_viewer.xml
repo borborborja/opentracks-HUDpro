@@ -86,4 +86,8 @@
     <string name="data_toggle_keep_screen">Не гасить экран</string>
     <string name="data_toggle_barometer">Барометр</string>
     <string name="data_toggle_barometer_hint">Применяется к следующей записи</string>
+    <string name="viewer_qs_tab_route_competition">Маршруты/Соревнование</string>
+    <string name="viewer_qs_mode_routes">Маршруты</string>
+    <string name="viewer_qs_mode_competitions">Соревнования</string>
+    <string name="viewer_qs_no_competitions_yet">Пока нет соревнований.</string>
 </resources>

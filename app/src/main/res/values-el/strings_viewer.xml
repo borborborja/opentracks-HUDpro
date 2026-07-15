@@ -86,4 +86,8 @@
     <string name="data_toggle_keep_screen">Διατήρηση οθόνης ενεργής</string>
     <string name="data_toggle_barometer">Βαρόμετρο</string>
     <string name="data_toggle_barometer_hint">Ισχύει για την επόμενη καταγραφή</string>
+    <string name="viewer_qs_tab_route_competition">Διαδρομές/Αγώνας</string>
+    <string name="viewer_qs_mode_routes">Διαδρομές</string>
+    <string name="viewer_qs_mode_competitions">Αγώνες</string>
+    <string name="viewer_qs_no_competitions_yet">Δεν υπάρχουν αγώνες ακόμη.</string>
 </resources>

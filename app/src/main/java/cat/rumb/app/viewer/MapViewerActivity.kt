@@ -352,11 +352,25 @@ class MapViewerActivity : ComponentActivity() {
                         }
                         if (settingsOpen) {
                             val tracks by app.trackRepository.observeSummaries().collectAsState(initial = emptyList())
+                            val competitions by app.competitionRepository.observeCompetitions().collectAsState(initial = emptyList())
                             ViewerQuickSettings(
                                 currentBaseMapId = prefs.baseMapId,
                                 offlineMaps = cat.rumb.app.data.map.OfflineMapStore.get(this@MapViewerActivity).list(),
                                 currentFollowId = prefs.activeFollowTrackId,
-                                tracks = tracks.filter { !it.archived },
+                                // Only catalogue ROUTES are followable; the same table also holds
+                                // recorded trainings and competition references, which must not leak.
+                                tracks = tracks.filter { !it.archived && it.kind == cat.rumb.app.data.tracks.TrackKind.ROUTE },
+                                competitions = competitions.filter { !it.archived },
+                                onStartCompetition = { id ->
+                                    DebugLog.i("Competi", "quick-settings · iniciar competició id=$id")
+                                    settingsOpenFlow.value = false
+                                    startActivity(
+                                        android.content.Intent(this@MapViewerActivity, MapViewerActivity::class.java)
+                                            .putExtra(EXTRA_COMPETITION_ID, id)
+                                            .addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                                    )
+                                    finish()
+                                },
                                 orientation = prefs.mapOrientation,
                                 keepScreenOn = prefs.keepScreenOn,
                                 fullscreen = prefs.fullscreen,

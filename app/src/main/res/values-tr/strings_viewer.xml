@@ -86,4 +86,8 @@
     <string name="data_toggle_keep_screen">Ekranı açık tut</string>
     <string name="data_toggle_barometer">Barometre</string>
     <string name="data_toggle_barometer_hint">Sonraki kayda uygulanır</string>
+    <string name="viewer_qs_tab_route_competition">Rotalar/Yarış</string>
+    <string name="viewer_qs_mode_routes">Rotalar</string>
+    <string name="viewer_qs_mode_competitions">Yarışlar</string>
+    <string name="viewer_qs_no_competitions_yet">Henüz yarış yok.</string>
 </resources>
