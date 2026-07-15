@@ -90,4 +90,7 @@
     <string name="viewer_qs_mode_routes">Rute</string>
     <string name="viewer_qs_mode_competitions">Competiții</string>
     <string name="viewer_qs_no_competitions_yet">Încă nicio competiție.</string>
+    <string name="viewer_comp_switch_msg">Ai o înregistrare în curs. Pornirea competiției o va anula.</string>
+    <string name="viewer_comp_switch_confirm">Anulează și concurează</string>
+    <string name="viewer_comp_switch_cancel">Anulează</string>
 </resources>

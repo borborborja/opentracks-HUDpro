@@ -97,7 +97,11 @@ class MapViewerActivity : ComponentActivity() {
     private val locationPermLauncher = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions(),
     ) { result ->
-        if (result.values.any { it }) controller?.enableLocation(this)
+        if (result.values.any { it }) {
+            controller?.enableLocation(this)
+            // Permission just granted: begin warm fixes so the armed initial recenter can fire.
+            startWarmGps()
+        }
     }
 
     private val notifPermLauncher = registerForActivityResult(
@@ -159,6 +163,8 @@ class MapViewerActivity : ComponentActivity() {
     private var warmGps: cat.rumb.app.data.recording.GpsSource? = null
     @Volatile private var lastWarmAccuracyM: Float? = null
     @Volatile private var lastWarmLocation: cat.rumb.app.data.opentracks.model.GeoPoint? = null
+    // Set when the map opened with nothing to frame (no route/recording): recenter on the first fix.
+    @Volatile private var needsInitialRecenter = false
 
     // Competition (ghost race) mode: race a previously recorded reference or one of its attempts.
     private var competing = false
@@ -177,6 +183,8 @@ class MapViewerActivity : ComponentActivity() {
     private var lastSeenLapCount = 0
     private var lapCompetePrompted = false
     private val competePromptFlow = MutableStateFlow(false)
+    // Competition id awaiting confirmation because a recording is in progress (null = no prompt).
+    private val confirmCompetitionFlow = MutableStateFlow<Long?>(null)
 
     // Circuit mode: record an attempt at a saved circuit. The fixed line is preset (auto-lap arms
     // from the start) and the ghost is the circuit's best lap. Efforts are persisted on save.
@@ -364,12 +372,9 @@ class MapViewerActivity : ComponentActivity() {
                                 onStartCompetition = { id ->
                                     DebugLog.i("Competi", "quick-settings · iniciar competició id=$id")
                                     settingsOpenFlow.value = false
-                                    startActivity(
-                                        android.content.Intent(this@MapViewerActivity, MapViewerActivity::class.java)
-                                            .putExtra(EXTRA_COMPETITION_ID, id)
-                                            .addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP),
-                                    )
-                                    finish()
+                                    // A running recording would be abandoned by the relaunch — confirm first.
+                                    if (NativeRecording.isActive) confirmCompetitionFlow.value = id
+                                    else relaunchIntoCompetition(id)
                                 },
                                 orientation = prefs.mapOrientation,
                                 keepScreenOn = prefs.keepScreenOn,
@@ -498,6 +503,26 @@ class MapViewerActivity : ComponentActivity() {
                                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 56.dp),
                             )
                         }
+                        // Confirm before abandoning an in-progress recording to start a competition.
+                        val confirmComp by confirmCompetitionFlow.collectAsState()
+                        confirmComp?.let { id ->
+                            androidx.compose.material3.AlertDialog(
+                                onDismissRequest = { confirmCompetitionFlow.value = null },
+                                title = { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_qs_mode_competitions)) },
+                                text = { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_comp_switch_msg)) },
+                                confirmButton = {
+                                    androidx.compose.material3.TextButton(onClick = {
+                                        confirmCompetitionFlow.value = null
+                                        discardAndCompete(id)
+                                    }) { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_comp_switch_confirm)) }
+                                },
+                                dismissButton = {
+                                    androidx.compose.material3.TextButton(onClick = { confirmCompetitionFlow.value = null }) {
+                                        androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.viewer_comp_switch_cancel))
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -542,10 +567,16 @@ class MapViewerActivity : ComponentActivity() {
                         cat.rumb.app.data.recording.RecordingService.recoverUnsavedFinished(this@MapViewerActivity)
                     if (pending) observeNative(ctrl)
                 }
+                // With no route/recording/competition to frame, open centered on the user instead of
+                // the whole default map. Try now (cached fix); otherwise recenter on the first warm fix.
+                val nothingToFrame = pendingRouteRefPts == null &&
+                    prefs.activeFollowTrackId <= 0 && !NativeRecording.isActive
                 // Show the user's location; request the permission if we don't have it yet.
                 if (hasLocationPermission()) {
                     ctrl.enableLocation(this)
+                    if (nothingToFrame && !ctrl.recenterOnLocation(this)) needsInitialRecenter = true
                 } else {
+                    needsInitialRecenter = nothingToFrame
                     locationPermLauncher.launch(
                         arrayOf(
                             android.Manifest.permission.ACCESS_FINE_LOCATION,
@@ -703,6 +734,37 @@ class MapViewerActivity : ComponentActivity() {
             onLap = { if (NativeRecording.isActive) RecordingService.lap(this) },
             onEndLaps = { if (NativeRecording.isActive) RecordingService.endLaps(this) },
         )
+    }
+
+    /** Relaunches the viewer in competition mode (the proven path used from the manager). */
+    private fun relaunchIntoCompetition(id: Long) {
+        startActivity(
+            android.content.Intent(this, MapViewerActivity::class.java)
+                .putExtra(EXTRA_COMPETITION_ID, id)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP),
+        )
+        finish()
+    }
+
+    /**
+     * Discards the in-progress recording, then relaunches into competition mode. The service writes
+     * state='FINISHED' asynchronously after Stop, so purge in a bounded loop until nothing pending
+     * remains — otherwise the relaunched activity would recover it as an unsaved recording.
+     */
+    private fun discardAndCompete(id: Long) {
+        lifecycleScope.launch {
+            if (NativeRecording.isActive) RecordingService.stop(this@MapViewerActivity)
+            val dao = RumbApplication.from(this@MapViewerActivity).database.recordingDao()
+            kotlinx.coroutines.withTimeoutOrNull(3000) {
+                while (dao.activeRecording() != null || dao.finishedRecording() != null) {
+                    RecordingService.clearFinishedRecordings(this@MapViewerActivity)
+                    kotlinx.coroutines.delay(100)
+                }
+            }
+            NativeRecording.clear()
+            DebugLog.i("Competi", "gravació descartada · iniciant competició id=$id")
+            relaunchIntoCompetition(id)
+        }
     }
 
     /** Starts the native recording engine (permissions → optional countdown → service). */
@@ -1366,6 +1428,10 @@ class MapViewerActivity : ComponentActivity() {
         val ok = gps.start(intervalMs = 1000L) { loc ->
             lastWarmAccuracyM = if (loc.hasAccuracy()) loc.accuracy else null
             lastWarmLocation = cat.rumb.app.data.opentracks.model.GeoPoint(loc.latitude, loc.longitude)
+            if (needsInitialRecenter) {
+                needsInitialRecenter = false
+                runOnUiThread { controller?.centerOn(loc.latitude, loc.longitude) }
+            }
         }
         if (ok) { warmGps = gps; DebugLog.i("Record", "pre-escalfament GPS actiu") } else gps.stop()
     }

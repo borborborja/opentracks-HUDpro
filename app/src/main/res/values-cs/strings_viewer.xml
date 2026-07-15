@@ -90,4 +90,7 @@
     <string name="viewer_qs_mode_routes">Trasy</string>
     <string name="viewer_qs_mode_competitions">Závody</string>
     <string name="viewer_qs_no_competitions_yet">Zatím žádné závody.</string>
+    <string name="viewer_comp_switch_msg">Probíhá záznam. Spuštění závodu jej zahodí.</string>
+    <string name="viewer_comp_switch_confirm">Zahodit a závodit</string>
+    <string name="viewer_comp_switch_cancel">Zrušit</string>
 </resources>

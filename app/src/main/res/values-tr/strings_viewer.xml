@@ -90,4 +90,7 @@
     <string name="viewer_qs_mode_routes">Rotalar</string>
     <string name="viewer_qs_mode_competitions">Yarışlar</string>
     <string name="viewer_qs_no_competitions_yet">Henüz yarış yok.</string>
+    <string name="viewer_comp_switch_msg">Devam eden bir kayıt var. Yarışı başlatmak onu silecek.</string>
+    <string name="viewer_comp_switch_confirm">Sil ve yarış</string>
+    <string name="viewer_comp_switch_cancel">İptal</string>
 </resources>

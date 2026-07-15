@@ -90,4 +90,7 @@
     <string name="viewer_qs_mode_routes">Rutter</string>
     <string name="viewer_qs_mode_competitions">Tävlingar</string>
     <string name="viewer_qs_no_competitions_yet">Inga tävlingar än.</string>
+    <string name="viewer_comp_switch_msg">En inspelning pågår. Att starta tävlingen kasserar den.</string>
+    <string name="viewer_comp_switch_confirm">Kasta och tävla</string>
+    <string name="viewer_comp_switch_cancel">Avbryt</string>
 </resources>

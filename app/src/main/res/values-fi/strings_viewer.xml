@@ -90,4 +90,7 @@
     <string name="viewer_qs_mode_routes">Reitit</string>
     <string name="viewer_qs_mode_competitions">Kilpailut</string>
     <string name="viewer_qs_no_competitions_yet">Ei vielä kilpailuja.</string>
+    <string name="viewer_comp_switch_msg">Tallennus on käynnissä. Kilpailun aloitus hylkää sen.</string>
+    <string name="viewer_comp_switch_confirm">Hylkää ja kilpaile</string>
+    <string name="viewer_comp_switch_cancel">Peruuta</string>
 </resources>

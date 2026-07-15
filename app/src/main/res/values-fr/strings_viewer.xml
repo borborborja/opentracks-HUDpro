@@ -90,4 +90,7 @@
     <string name="viewer_qs_mode_routes">Itinéraires</string>
     <string name="viewer_qs_mode_competitions">Compétitions</string>
     <string name="viewer_qs_no_competitions_yet">Aucune compétition pour l\'instant.</string>
+    <string name="viewer_comp_switch_msg">Un enregistrement est en cours. Lancer la compétition l\'annulera.</string>
+    <string name="viewer_comp_switch_confirm">Annuler et concourir</string>
+    <string name="viewer_comp_switch_cancel">Annuler</string>
 </resources>

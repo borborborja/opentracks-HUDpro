@@ -90,4 +90,7 @@
     <string name="viewer_qs_mode_routes">Routen</string>
     <string name="viewer_qs_mode_competitions">Wettkämpfe</string>
     <string name="viewer_qs_no_competitions_yet">Noch keine Wettkämpfe.</string>
+    <string name="viewer_comp_switch_msg">Eine Aufzeichnung läuft. Der Start des Wettkampfs verwirft sie.</string>
+    <string name="viewer_comp_switch_confirm">Verwerfen und antreten</string>
+    <string name="viewer_comp_switch_cancel">Abbrechen</string>
 </resources>

@@ -90,4 +90,7 @@
     <string name="viewer_qs_mode_routes">Ruter</string>
     <string name="viewer_qs_mode_competitions">Konkurrencer</string>
     <string name="viewer_qs_no_competitions_yet">Ingen konkurrencer endnu.</string>
+    <string name="viewer_comp_switch_msg">En optagelse er i gang. At starte konkurrencen kasserer den.</string>
+    <string name="viewer_comp_switch_confirm">Kassér og deltag</string>
+    <string name="viewer_comp_switch_cancel">Annuller</string>
 </resources>

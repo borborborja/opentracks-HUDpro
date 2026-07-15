@@ -578,6 +578,11 @@ class MapLibreController(private val map: MapLibreMap) {
         return true
     }
 
+    /** Centers the camera on an explicit point at [zoom] (used for the initial "where am I" framing). */
+    fun centerOn(lat: Double, lon: Double, zoom: Double = 15.0) {
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lon), zoom))
+    }
+
     /** Current GPS accuracy (m) from the location component or the OS providers, or null. */
     @android.annotation.SuppressLint("MissingPermission")
     fun currentAccuracyM(context: android.content.Context): Float? {

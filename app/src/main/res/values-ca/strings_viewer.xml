@@ -89,4 +89,7 @@
     <string name="viewer_qs_mode_routes">Rutes</string>
     <string name="viewer_qs_mode_competitions">Competicions</string>
     <string name="viewer_qs_no_competitions_yet">Encara no hi ha competicions.</string>
+    <string name="viewer_comp_switch_msg">Tens una gravació en curs. Iniciar la competició la descartarà.</string>
+    <string name="viewer_comp_switch_confirm">Descarta i competeix</string>
+    <string name="viewer_comp_switch_cancel">Cancel·la</string>
 </resources>

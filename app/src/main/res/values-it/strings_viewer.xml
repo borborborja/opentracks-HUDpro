@@ -90,4 +90,7 @@
     <string name="viewer_qs_mode_routes">Percorsi</string>
     <string name="viewer_qs_mode_competitions">Competizioni</string>
     <string name="viewer_qs_no_competitions_yet">Ancora nessuna competizione.</string>
+    <string name="viewer_comp_switch_msg">Hai una registrazione in corso. Avviare la competizione la annullerà.</string>
+    <string name="viewer_comp_switch_confirm">Annulla e gareggia</string>
+    <string name="viewer_comp_switch_cancel">Annulla</string>
 </resources>

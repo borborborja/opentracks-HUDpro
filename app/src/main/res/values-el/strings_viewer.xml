@@ -90,4 +90,7 @@
     <string name="viewer_qs_mode_routes">Διαδρομές</string>
     <string name="viewer_qs_mode_competitions">Αγώνες</string>
     <string name="viewer_qs_no_competitions_yet">Δεν υπάρχουν αγώνες ακόμη.</string>
+    <string name="viewer_comp_switch_msg">Υπάρχει εγγραφή σε εξέλιξη. Η έναρξη του αγώνα θα την απορρίψει.</string>
+    <string name="viewer_comp_switch_confirm">Απόρριψη και αγώνας</string>
+    <string name="viewer_comp_switch_cancel">Άκυρο</string>
 </resources>

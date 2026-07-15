@@ -90,4 +90,7 @@
     <string name="viewer_qs_mode_routes">Маршрути</string>
     <string name="viewer_qs_mode_competitions">Змагання</string>
     <string name="viewer_qs_no_competitions_yet">Ще немає змагань.</string>
+    <string name="viewer_comp_switch_msg">Триває запис. Запуск змагання скасує його.</string>
+    <string name="viewer_comp_switch_confirm">Скасувати й змагатися</string>
+    <string name="viewer_comp_switch_cancel">Скасувати</string>
 </resources>
