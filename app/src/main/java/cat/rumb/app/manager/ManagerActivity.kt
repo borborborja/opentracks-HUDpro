@@ -43,16 +43,10 @@ class ManagerActivity : ComponentActivity() {
                         startActivity(Intent(this, MapViewerActivity::class.java))
                     },
                     startRoute = intent.getStringExtra(EXTRA_ROUTE),
-                    onStartCompetition = { refId ->
+                    onStartCompetition = { competitionId ->
                         startActivity(
                             Intent(this, MapViewerActivity::class.java)
-                                .putExtra(MapViewerActivity.EXTRA_COMPETITION_REF_ID, refId),
-                        )
-                    },
-                    onStartCircuit = { circuitId ->
-                        startActivity(
-                            Intent(this, MapViewerActivity::class.java)
-                                .putExtra(MapViewerActivity.EXTRA_CIRCUIT_ID, circuitId),
+                                .putExtra(MapViewerActivity.EXTRA_COMPETITION_ID, competitionId),
                         )
                     },
                     importUri = uri,

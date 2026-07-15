@@ -18,6 +18,10 @@
     <string name="competition_gap_behind">Slower than best</string>
     <string name="competition_hr_zones_title">Heart-rate zones</string>
     <string name="competition_hr_no_data">No heart-rate data in any attempt</string>
+    <string name="competition_attempts_count">%1$d attempts</string>
+    <string name="competition_type_route">Route</string>
+    <string name="competition_type_lap">Laps</string>
+    <string name="competition_empty">No competitions yet. Open a training and «Send to competition», or use a lapped training to create a lap circuit.</string>
     <string name="competition_zone_fmt">Z%1$d</string>
     <string name="competition_archived_section">Archived</string>
     <string name="competition_archive">Archive competition</string>

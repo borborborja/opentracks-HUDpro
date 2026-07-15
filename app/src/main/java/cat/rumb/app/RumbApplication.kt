@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.room.Room
 import cat.rumb.app.data.endurain.EndurainRepository
 import cat.rumb.app.data.prefs.EndurainPreferences
-import cat.rumb.app.data.tracks.CircuitRepository
+import cat.rumb.app.data.tracks.CompetitionRepository
 import cat.rumb.app.data.tracks.RumbDatabase
 import cat.rumb.app.data.tracks.TrackRepository
 import okhttp3.OkHttpClient
@@ -20,14 +20,14 @@ class RumbApplication : Application() {
 
     val database: RumbDatabase by lazy {
         Room.databaseBuilder(this, RumbDatabase::class.java, "rumb.db")
-            .addMigrations(RumbDatabase.MIGRATION_1_2, RumbDatabase.MIGRATION_2_3, RumbDatabase.MIGRATION_3_4, RumbDatabase.MIGRATION_4_5, RumbDatabase.MIGRATION_5_6, RumbDatabase.MIGRATION_6_7, RumbDatabase.MIGRATION_7_8, RumbDatabase.MIGRATION_8_9, RumbDatabase.MIGRATION_9_10)
+            .addMigrations(RumbDatabase.MIGRATION_1_2, RumbDatabase.MIGRATION_2_3, RumbDatabase.MIGRATION_3_4, RumbDatabase.MIGRATION_4_5, RumbDatabase.MIGRATION_5_6, RumbDatabase.MIGRATION_6_7, RumbDatabase.MIGRATION_7_8, RumbDatabase.MIGRATION_8_9, RumbDatabase.MIGRATION_9_10, RumbDatabase.MIGRATION_10_11)
             .build()
     }
     val trackRepository: TrackRepository by lazy {
         TrackRepository(database.followTrackDao(), contentResolver)
     }
-    val circuitRepository: CircuitRepository by lazy {
-        CircuitRepository(database.circuitDao(), trackRepository)
+    val competitionRepository: CompetitionRepository by lazy {
+        CompetitionRepository(database.competitionDao(), trackRepository)
     }
     val endurainRepository: EndurainRepository by lazy {
         EndurainRepository(EndurainPreferences.get(this))

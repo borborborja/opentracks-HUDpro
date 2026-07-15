@@ -181,7 +181,9 @@ class MapViewerActivity : ComponentActivity() {
     // Circuit mode: record an attempt at a saved circuit. The fixed line is preset (auto-lap arms
     // from the start) and the ghost is the circuit's best lap. Efforts are persisted on save.
     private var circuitMode = false
-    private var circuitId = -1L
+    private var competitionId = -1L
+    // ROUTE competition: the inline reference route to draw once the map controller is ready.
+    private var pendingRouteRefPts: List<cat.rumb.app.data.gpx.GpxPoint>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -197,40 +199,42 @@ class MapViewerActivity : ComponentActivity() {
         weightKg = prefs.userWeightKg
         setupAnnouncements(prefs)
 
-        // Competition (ghost) mode: the intent carries the reference track; follow it and load a ghost.
-        val compRef = intent.getLongExtra(EXTRA_COMPETITION_REF_ID, -1L)
-        if (compRef > 0) {
-            competing = true
-            competitionRefId = compRef
-            prefs.activeFollowTrackId = compRef
+        // Unified competition mode. Clear any stale circuit prefs first so a normal launch never
+        // inherits circuit mode. ROUTE = follow the reference route + whole-track ghost; LAP = preset
+        // auto-lap at the fixed line + best-lap ghost. Reference/ghost come from the competition's
+        // inline GPX (no live track id).
+        prefs.circuitActive = false
+        val compId = intent.getLongExtra(EXTRA_COMPETITION_ID, -1L)
+        if (compId > 0) {
+            competitionId = compId
             ghostHaloOn = prefs.competitionHalo
             ghostSecondsOn = prefs.competitionShowSeconds
-            DebugLog.i("Competi", "mode competició · ref=$compRef")
-            loadGhostCandidates()
-        }
-
-        // Circuit mode: fixed start/finish line preset for auto-lap; ghost = the circuit's best lap.
-        // Clear any stale circuit prefs first so a normal launch never inherits circuit mode.
-        prefs.circuitActive = false
-        val circId = intent.getLongExtra(EXTRA_CIRCUIT_ID, -1L)
-        if (circId > 0) {
-            circuitMode = true
-            circuitId = circId
             lifecycleScope.launch {
-                val c = RumbApplication.from(this@MapViewerActivity).circuitRepository.getCircuit(circId) ?: return@launch
-                val refPts = runCatching { cat.rumb.app.data.gpx.Gpx.read(c.referenceGpx.byteInputStream()).points }.getOrDefault(emptyList())
-                if (cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
-                    lapGhost = cat.rumb.app.data.competition.GhostEngine(refPts)
-                    lapCompeting = true
+                val app = RumbApplication.from(this@MapViewerActivity)
+                val comp = app.competitionRepository.getCompetition(compId) ?: return@launch
+                val refPts = runCatching { cat.rumb.app.data.gpx.Gpx.read(comp.referenceGpx.byteInputStream()).points }.getOrDefault(emptyList())
+                if (comp.type == cat.rumb.app.data.tracks.CompetitionType.LAP) {
+                    circuitMode = true
+                    if (cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
+                        lapGhost = cat.rumb.app.data.competition.GhostEngine(refPts)
+                        lapCompeting = true
+                    }
+                    prefs.circuitLineLat = comp.lineLat ?: 0.0
+                    prefs.circuitLineLng = comp.lineLng ?: 0.0
+                    prefs.circuitRadiusM = comp.radiusM ?: 25.0
+                    prefs.circuitMinLapMs = comp.minLapMs ?: 20_000
+                    prefs.circuitMinLapM = comp.minLapM ?: 100.0
+                    prefs.circuitActive = true
+                    DebugLog.i("Competi", "mode competició LAP · id=$compId")
+                } else {
+                    competing = true
+                    if (cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
+                        ghostEngine = cat.rumb.app.data.competition.GhostEngine(refPts)
+                    }
+                    pendingRouteRefPts = refPts
+                    controller?.let { drawFollowRouteFromPoints(prefs, it, refPts, frame = true) }
+                    DebugLog.i("Competi", "mode competició ROUTE · id=$compId · ${refPts.size} punts")
                 }
-                // Stash the frozen line + gate params for RecordingService.configFrom (arms auto-lap).
-                prefs.circuitLineLat = c.lineLat
-                prefs.circuitLineLng = c.lineLng
-                prefs.circuitRadiusM = c.radiusM
-                prefs.circuitMinLapMs = c.minLapMs
-                prefs.circuitMinLapM = c.minLapM
-                prefs.circuitActive = true
-                DebugLog.i("Circuit", "mode circuit · id=$circId · línia ${c.lineLat},${c.lineLng}")
             }
         }
 
@@ -499,7 +503,12 @@ class MapViewerActivity : ComponentActivity() {
             startTrackingMarkerTicker(ctrl)
             val onReady: () -> Unit = {
                 // Frame the active route when not recording (no live track to follow yet) so it's visible.
-                loadFollowRoute(prefs, ctrl, frame = !NativeRecording.isActive)
+                val refPts = pendingRouteRefPts
+                if (refPts != null) {
+                    drawFollowRouteFromPoints(prefs, ctrl, refPts, frame = !NativeRecording.isActive)
+                } else {
+                    loadFollowRoute(prefs, ctrl, frame = !NativeRecording.isActive)
+                }
                 // Reconnect to an ongoing (or just-finished, unsaved) native recording — recovering
                 // a finished-but-unsaved one from Room if the process was killed before the save.
                 lifecycleScope.launch {
@@ -831,7 +840,7 @@ class MapViewerActivity : ComponentActivity() {
                     name, pts, cat.rumb.app.data.tracks.TrackSource.RECORDED, remoteId = null,
                     kind = cat.rumb.app.data.tracks.TrackKind.TRAINING,
                     collection = folder, activityType = activityType,
-                    competitionRefId = competitionRefId.takeIf { competing },
+                    competitionRefId = null,
                     followedRouteId = cat.rumb.app.data.prefs.ViewerPreferences.get(this@MapViewerActivity)
                         .activeFollowTrackId.takeIf { it > 0 },
                 )
@@ -841,10 +850,10 @@ class MapViewerActivity : ComponentActivity() {
                     RumbApplication.from(this@MapViewerActivity).trackRepository
                         .setLaps(newId, cat.rumb.app.data.tracks.Laps.encode(ranges))
                 }
-                // Circuit attempt: file every completed lap as an effort of this circuit.
-                if (circuitMode && circuitId > 0 && ranges.isNotEmpty()) {
-                    RumbApplication.from(this@MapViewerActivity).circuitRepository
-                        .addEffortsFromTrack(circuitId, newId, name, System.currentTimeMillis())
+                // Competition attempt: file the whole track (ROUTE) or each completed lap (LAP).
+                if (competitionId > 0) {
+                    RumbApplication.from(this@MapViewerActivity).competitionRepository
+                        .addAttemptsFromTrack(competitionId, newId, name, System.currentTimeMillis())
                 }
                 if (folder != "General") {
                     val p = cat.rumb.app.data.prefs.ViewerPreferences.get(this@MapViewerActivity)
@@ -949,6 +958,27 @@ class MapViewerActivity : ComponentActivity() {
                 DebugLog.w("Follow", "ruta buida (id=$id): loadGpxRoute ha tornat 0 punts")
             }
         }
+    }
+
+    /** Draws a follow route directly from inline points (ROUTE competition reference; no track id). */
+    private fun drawFollowRouteFromPoints(
+        prefs: ViewerPreferences,
+        ctrl: MapLibreController,
+        gpx: List<cat.rumb.app.data.gpx.GpxPoint>,
+        frame: Boolean = false,
+    ) {
+        announcedTurns.clear()
+        if (gpx.isEmpty()) return
+        val geo = gpx.map { it.toGeoPoint() }
+        followEngine = FollowRouteEngine(geo, gpx.map { it.elevation })
+        ctrl.setFollowRoute(geo)
+        ctrl.setFollowRouteStyle(prefs.followColor, prefs.followWidth, prefs.followArrows, prefs.followProgress)
+        offRouteThreshold = prefs.offRouteThresholdM
+        offRouteSound = prefs.offRouteSound
+        offRouteVibrate = prefs.offRouteVibrate
+        following = true
+        if (frame) ctrl.frameFollowRoute()
+        DebugLog.i("Follow", "ruta inline dibuixada · ${geo.size} punts")
     }
 
     private var prefetchedRouteKey: String? = null
@@ -1323,11 +1353,8 @@ class MapViewerActivity : ComponentActivity() {
     companion object {
         private const val TAG = "MapViewerActivity"
 
-        /** Long extra: competition reference track id — launches the viewer in ghost-race mode. */
-        const val EXTRA_COMPETITION_REF_ID = "competition_ref_id"
-
-        /** Long extra: circuit id — launches the viewer in circuit mode (fixed line + best-lap ghost). */
-        const val EXTRA_CIRCUIT_ID = "circuit_id"
+        /** Long extra: competition id — launches the viewer in competition mode (ROUTE or LAP). */
+        const val EXTRA_COMPETITION_ID = "competition_id"
 
         /** Countdown GPS gate: same threshold as the engine warm-up (RecorderConfig.startAccuracyM). */
         private const val COUNTDOWN_ACCURACY_M = 12f

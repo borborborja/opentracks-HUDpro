@@ -96,6 +96,7 @@ import cat.rumb.app.data.map.MapStyleFactory
 import cat.rumb.app.data.opentracks.model.GeoPoint
 import cat.rumb.app.data.prefs.ViewerPreferences
 import cat.rumb.app.data.tracks.FollowTrackEntity
+import cat.rumb.app.data.tracks.CompetitionType
 import cat.rumb.app.data.tracks.LapKind
 import cat.rumb.app.data.tracks.Laps
 import cat.rumb.app.data.tracks.PolylineSimplifier
@@ -126,7 +127,6 @@ fun HomeScreen(
     onOpenRoute: (Long) -> Unit = {},
     onOpenTraining: (Long) -> Unit = {},
     onOpenCompare: (Long) -> Unit = {},
-    onOpenCircuit: (Long) -> Unit = {},
     onEditRoute: (Long) -> Unit = {},
     onCreateRoute: () -> Unit = {},
     onDownloadRouteMap: (cat.rumb.app.data.map.BoundingBox) -> Unit = {},
@@ -144,7 +144,7 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     val all by remember { app.trackRepository.observeSummaries() }.collectAsStateWithLifecycle(initialValue = emptyList())
-    val circuits by remember { app.circuitRepository.observeCircuits() }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val competitions by remember { app.competitionRepository.observeCompetitions() }.collectAsStateWithLifecycle(initialValue = emptyList())
     var tab by remember { mutableIntStateOf(0) }
     val kind = if (tab == 0) TrackKind.TRAINING else TrackKind.ROUTE
 
@@ -164,10 +164,9 @@ fun HomeScreen(
     val tracks = cat.rumb.app.data.tracks.TrackSortFilter.apply(all.filter { it.kind == kind && !it.archived }, sort, filterType)
     val archivedTracks = all.filter { it.kind == kind && it.archived }.sortedByDescending { it.createdAt }
     // Tracks belonging to an ACTIVE competition (reference or attempt) show the trophy icon.
-    val activeCompIds = all.filter { it.isCompetition && !it.competitionArchived }.map { it.id }.toSet()
-    val compMemberIds = all.filter {
-        it.id in activeCompIds || (it.competitionRefId != null && it.competitionRefId in activeCompIds)
-    }.map { it.id }.toSet()
+    // Library trophy badge: a track appears in some competition (as a source of an attempt).
+    val compSourceIds by remember { app.competitionRepository.observeSourceTrackIds() }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val compMemberIds = compSourceIds.toSet()
     val expanded = remember { mutableStateMapOf<String, Boolean>() }
     // Per-row expansion of the lap dropdown (keyed by track id), independent of the folder expand.
     val expandedLaps = remember { mutableStateMapOf<Long, Boolean>() }
@@ -189,7 +188,6 @@ fun HomeScreen(
     var newFolder by remember { mutableStateOf(false) }
     var folderRename by remember { mutableStateOf<String?>(null) }
     var folderDelete by remember { mutableStateOf<String?>(null) }
-    var archivedCompFor by remember { mutableStateOf<Pair<FollowTrackEntity, FollowTrackEntity>?>(null) }
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -233,14 +231,7 @@ fun HomeScreen(
     val routeActions = RouteActions(
         onOpen = { if (it.kind == TrackKind.TRAINING) onOpenTraining(it.id) else onOpenRoute(it.id) },
         onOpenCompare = { onOpenCompare(it.id) },
-        onCreateCircuit = { t ->
-            scope.launch {
-                val id = app.circuitRepository.createCircuitFromTrack(t.id, t.name, t.activityType, System.currentTimeMillis())
-                val msg = if (id != null) R.string.circuit_created else R.string.home_competition_untimed
-                android.widget.Toast.makeText(context, context.getString(msg), android.widget.Toast.LENGTH_LONG).show()
-                if (id != null) onOpenCircuit(id)
-            }
-        },
+        onCreateCircuit = { t -> createCompetition(scope, context, app, t, CompetitionType.LAP, onOpenCompetition) },
         onExport = ::exportTrack,
         onEdit = { t -> if (kind == TrackKind.ROUTE) onEditRoute(t.id) else renameFor = t },
         onMove = { moveFor = it },
@@ -248,22 +239,7 @@ fun HomeScreen(
             scope.launch { app.trackRepository.routeBoundingBox(t.id)?.let(onDownloadRouteMap) }
         },
         onDelete = { deleteFor = it },
-        onCompetition = { t ->
-            val archivedRef = t.competitionRefId?.let { rid ->
-                all.firstOrNull { a -> a.id == rid && a.isCompetition && a.competitionArchived }
-            }
-            when {
-                // The archived reference itself: re-sending simply revives its competition.
-                t.isCompetition && t.competitionArchived -> scope.launch {
-                    app.trackRepository.setCompetitionArchived(t.id, false)
-                    android.widget.Toast.makeText(context, context.getString(R.string.home_competition_created), android.widget.Toast.LENGTH_SHORT).show()
-                }
-                t.isCompetition -> scope.launch { app.trackRepository.setCompetition(t.id, false) }
-                // Attempt of an archived competition: ask unarchive-vs-new.
-                archivedRef != null -> archivedCompFor = t to archivedRef
-                else -> scope.launch { createCompetitionFrom(context, app, t.id) }
-            }
-        },
+        onCompetition = { t -> createCompetition(scope, context, app, t, CompetitionType.ROUTE, onOpenCompetition) },
         onArchive = { t -> scope.launch { app.trackRepository.setArchived(t.id, !t.archived) } },
     )
 
@@ -305,7 +281,6 @@ fun HomeScreen(
                 val homeTabs = listOf(
                     0 to R.string.home_tab_recorded,
                     2 to R.string.home_tab_competition,
-                    4 to R.string.home_tab_circuits,
                     3 to R.string.home_tab_progress,
                 )
                 TabRow(
@@ -397,38 +372,7 @@ fun HomeScreen(
                     )
                 }
             } else if (tab == 2) {
-                // Minimal toolbar for the competition tab: just the shared view-mode toggle.
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = {
-                        viewMode = when (viewMode) {
-                            "LIST" -> "DETAILED"; "DETAILED" -> "TILES"; else -> "LIST"
-                        }
-                        prefs.routeViewMode = viewMode
-                    }) {
-                        Icon(
-                            when (viewMode) {
-                                "LIST" -> Icons.AutoMirrored.Filled.ViewList
-                                "DETAILED" -> Icons.AutoMirrored.Filled.ViewQuilt
-                                else -> Icons.Filled.GridView
-                            },
-                            contentDescription = stringResource(R.string.home_cd_view_mode),
-                        )
-                    }
-                }
-                CompetitionTab(
-                    viewMode = viewMode,
-                    all = all,
-                    onOpen = onOpenCompetition,
-                    onPlay = onStartCompetition,
-                    onArchive = { refId, flag -> scope.launch { app.trackRepository.setCompetitionArchived(refId, flag) } },
-                    onDeleteCompetition = { refId -> scope.launch { app.trackRepository.dissolveCompetition(refId) } },
-                    onRemoveAttempt = { id -> scope.launch { app.trackRepository.removeFromCompetition(id) } },
-                )
-            } else if (tab == 4) {
-                CircuitTab(circuits = circuits, onOpen = onOpenCircuit)
+                CompetitionTab(competitions = competitions, onOpen = onOpenCompetition, onPlay = onStartCompetition)
             } else {
                 ProgressTab(
                     all = all,
@@ -479,29 +423,6 @@ fun HomeScreen(
                 pendingTrainingImport = null
             },
             onDismiss = { pendingTrainingImport = null },
-        )
-    }
-
-    archivedCompFor?.let { (track, ref) ->
-        AlertDialog(
-            onDismissRequest = { archivedCompFor = null },
-            title = { Text(stringResource(R.string.home_archived_comp_title)) },
-            text = { Text(stringResource(R.string.home_archived_comp_msg) + "\n· " + ref.name) },
-            confirmButton = {
-                TextButton(onClick = {
-                    scope.launch { app.trackRepository.setCompetitionArchived(ref.id, false) }
-                    archivedCompFor = null
-                }) { Text(stringResource(R.string.home_archived_comp_unarchive)) }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    scope.launch {
-                        app.trackRepository.removeFromCompetition(track.id)
-                        createCompetitionFrom(context, app, track.id)
-                    }
-                    archivedCompFor = null
-                }) { Text(stringResource(R.string.home_archived_comp_new)) }
-            },
         )
     }
 
@@ -681,14 +602,25 @@ private fun FilterMenuButton(current: String?, options: List<ActivityTypeOption>
     }
 }
 
-/** Validates timestamps and flags [id] as a competition reference (with user feedback). */
-private suspend fun createCompetitionFrom(context: android.content.Context, app: RumbApplication, id: Long) {
-    val pts = app.trackRepository.loadGpxRoute(id)
-    if (cat.rumb.app.data.competition.GhostEngine.isTimed(pts)) {
-        app.trackRepository.setCompetition(id, true)
-        android.widget.Toast.makeText(context, context.getString(R.string.home_competition_created), android.widget.Toast.LENGTH_SHORT).show()
-    } else {
-        android.widget.Toast.makeText(context, context.getString(R.string.home_competition_untimed), android.widget.Toast.LENGTH_LONG).show()
+/**
+ * Creates a competition from [t]: ROUTE (whole-track reference) or LAP (fastest-lap reference + fixed
+ * line). Opens the new competition on success; a track without usable timing/laps gives feedback.
+ */
+private fun createCompetition(
+    scope: kotlinx.coroutines.CoroutineScope,
+    context: android.content.Context,
+    app: RumbApplication,
+    t: FollowTrackEntity,
+    type: String,
+    onOpenCompetition: (Long) -> Unit,
+) {
+    scope.launch {
+        val id = app.competitionRepository.createFromTrack(t.id, t.name, t.activityType, type, System.currentTimeMillis())
+        if (id != null) {
+            onOpenCompetition(id)
+        } else {
+            android.widget.Toast.makeText(context, context.getString(R.string.home_competition_untimed), android.widget.Toast.LENGTH_LONG).show()
+        }
     }
 }
 
@@ -982,7 +914,7 @@ private fun RouteMenu(t: FollowTrackEntity, kind: String, actions: RouteActions)
                 DropdownMenuItem(text = { Text(stringResource(R.string.home_move_to_folder_ellipsis)) }, onClick = { open = false; actions.onMove(t) })
                 if (kind == TrackKind.TRAINING) {
                     DropdownMenuItem(
-                        text = { Text(stringResource(if (t.isCompetition && !t.competitionArchived) R.string.home_remove_from_competition else R.string.home_send_to_competition)) },
+                        text = { Text(stringResource(R.string.home_send_to_competition)) },
                         onClick = { open = false; actions.onCompetition(t) },
                     )
                 }
@@ -1173,7 +1105,7 @@ private fun RouteMenuTinted(t: FollowTrackEntity, kind: String, actions: RouteAc
                 DropdownMenuItem(text = { Text(stringResource(R.string.home_move_to_folder_ellipsis)) }, onClick = { open = false; actions.onMove(t) })
                 if (kind == TrackKind.TRAINING) {
                     DropdownMenuItem(
-                        text = { Text(stringResource(if (t.isCompetition && !t.competitionArchived) R.string.home_remove_from_competition else R.string.home_send_to_competition)) },
+                        text = { Text(stringResource(R.string.home_send_to_competition)) },
                         onClick = { open = false; actions.onCompetition(t) },
                     )
                 }

@@ -166,10 +166,10 @@ interface FollowTrackDao {
         SyncStatusEntity::class,
         cat.rumb.app.data.recording.RecordingEntity::class,
         cat.rumb.app.data.recording.RecordingPointEntity::class,
-        CircuitEntity::class,
-        CircuitEffortEntity::class,
+        CompetitionEntity::class,
+        CompetitionAttemptEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -177,9 +177,89 @@ abstract class RumbDatabase : RoomDatabase() {
     abstract fun followTrackDao(): FollowTrackDao
     abstract fun syncStatusDao(): SyncStatusDao
     abstract fun recordingDao(): cat.rumb.app.data.recording.RecordingDao
-    abstract fun circuitDao(): CircuitDao
+    abstract fun competitionDao(): CompetitionDao
 
     companion object {
+        // Circuit ids are shifted into a high range when merged so they never collide with ROUTE
+        // competition ids (which reuse the small follow_tracks id).
+        private const val CIRCUIT_ID_OFFSET = 1_000_000_000L
+
+        /**
+         * v11: unify competitions (ROUTE) and circuits (LAP) into one model. Creates competitions +
+         * competition_attempts, drains circuits→LAP and track competitions→ROUTE (GPX inline), then
+         * drops the circuit tables. follow_tracks competition columns are left orphaned.
+         */
+        val MIGRATION_10_11 = object : androidx.room.migration.Migration(10, 11) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `competitions` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`name` TEXT NOT NULL, `type` TEXT NOT NULL, `activity_type` TEXT, " +
+                        "`created_at` INTEGER NOT NULL, `archived` INTEGER NOT NULL, " +
+                        "`reference_gpx` TEXT NOT NULL, `best_attempt_id` INTEGER, " +
+                        "`line_lat` REAL, `line_lng` REAL, `radius_m` REAL, `min_lap_ms` INTEGER, `min_lap_m` REAL)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `competition_attempts` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`competition_id` INTEGER NOT NULL, `source_track_id` INTEGER, `lap_index` INTEGER NOT NULL, " +
+                        "`time_ms` INTEGER NOT NULL, `distance_m` REAL NOT NULL, `avg_hr` REAL, " +
+                        "`created_at` INTEGER NOT NULL, `gpx` TEXT NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                        "`index_competition_attempts_competition_id_source_track_id_lap_index` " +
+                        "ON `competition_attempts` (`competition_id`, `source_track_id`, `lap_index`)",
+                )
+
+                // Circuits → LAP competitions (ids offset to avoid colliding with ROUTE ids).
+                db.execSQL(
+                    "INSERT INTO `competitions` (id, name, type, activity_type, created_at, archived, " +
+                        "reference_gpx, line_lat, line_lng, radius_m, min_lap_ms, min_lap_m) " +
+                        "SELECT id + $CIRCUIT_ID_OFFSET, name, 'LAP', activity_type, created_at, archived, " +
+                        "reference_gpx, line_lat, line_lng, radius_m, min_lap_ms, min_lap_m FROM `circuits`",
+                )
+                db.execSQL(
+                    "INSERT INTO `competition_attempts` (competition_id, source_track_id, lap_index, " +
+                        "time_ms, distance_m, avg_hr, created_at, gpx) " +
+                        "SELECT circuit_id + $CIRCUIT_ID_OFFSET, source_track_id, lap_index, " +
+                        "time_ms, distance_m, avg_hr, created_at, gpx FROM `circuit_efforts`",
+                )
+
+                // Track competitions → ROUTE. The competition id reuses the reference track's id.
+                db.execSQL(
+                    "INSERT INTO `competitions` (id, name, type, activity_type, created_at, archived, reference_gpx) " +
+                        "SELECT id, name, 'ROUTE', activity_type, created_at, competition_archived, gpx " +
+                        "FROM `follow_tracks` WHERE is_competition = 1",
+                )
+                // The reference itself is a leaderboard row.
+                db.execSQL(
+                    "INSERT INTO `competition_attempts` (competition_id, source_track_id, lap_index, " +
+                        "time_ms, distance_m, avg_hr, created_at, gpx) " +
+                        "SELECT id, id, -1, COALESCE(duration_ms, 0), distance_meters, NULL, created_at, gpx " +
+                        "FROM `follow_tracks` WHERE is_competition = 1",
+                )
+                // Each linked attempt.
+                db.execSQL(
+                    "INSERT INTO `competition_attempts` (competition_id, source_track_id, lap_index, " +
+                        "time_ms, distance_m, avg_hr, created_at, gpx) " +
+                        "SELECT competition_ref_id, id, -1, COALESCE(duration_ms, 0), distance_meters, NULL, created_at, gpx " +
+                        "FROM `follow_tracks` WHERE competition_ref_id IS NOT NULL " +
+                        "AND competition_ref_id IN (SELECT id FROM `follow_tracks` WHERE is_competition = 1)",
+                )
+                // Best attempt = fastest positive-time attempt (works for both types).
+                db.execSQL(
+                    "UPDATE `competitions` SET best_attempt_id = (" +
+                        "SELECT a.id FROM `competition_attempts` a " +
+                        "WHERE a.competition_id = competitions.id AND a.time_ms > 0 " +
+                        "ORDER BY a.time_ms ASC LIMIT 1)",
+                )
+
+                db.execSQL("DROP TABLE IF EXISTS `circuit_efforts`")
+                db.execSQL("DROP TABLE IF EXISTS `circuits`")
+            }
+        }
+
         /** v10: circuits — a fixed start/finish line + a lap-effort leaderboard. */
         val MIGRATION_9_10 = object : androidx.room.migration.Migration(9, 10) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {

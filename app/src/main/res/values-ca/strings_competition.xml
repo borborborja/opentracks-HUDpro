@@ -18,6 +18,10 @@
     <string name="competition_gap_behind">Més lent que la millor</string>
     <string name="competition_hr_zones_title">Zones de freqüència cardíaca</string>
     <string name="competition_hr_no_data">Cap intent té dades de FC</string>
+    <string name="competition_attempts_count">%1$d intents</string>
+    <string name="competition_type_route">Recorregut</string>
+    <string name="competition_type_lap">Voltes</string>
+    <string name="competition_empty">Encara no hi ha competicions. Obre un entrenament i «Enviar a competició», o fes-ne servir un amb voltes per crear un circuit.</string>
     <string name="competition_zone_fmt">Z%1$d</string>
     <string name="competition_archived_section">Arxivades</string>
     <string name="competition_archive">Arxiva la competició</string>

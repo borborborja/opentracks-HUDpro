@@ -7,7 +7,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cat.rumb.app.data.map.BoundingBox
-import cat.rumb.app.manager.screens.CircuitDetailScreen
 import cat.rumb.app.manager.screens.CompareScreen
 import cat.rumb.app.manager.screens.CompetitionDetailScreen
 import cat.rumb.app.manager.screens.DataDesignerScreen
@@ -40,7 +39,6 @@ object Routes {
     const val TRAINING_DETAIL = "training_detail"
     const val COMPETITION_DETAIL = "competition_detail"
     const val COMPARE = "compare"
-    const val CIRCUIT_DETAIL = "circuit_detail"
     const val EDIT_ROUTE = "edit_route"
     const val DOWNLOAD_AREA = "download_area"
     const val RECORDS = "records"
@@ -53,7 +51,6 @@ fun ManagerApp(
     onOpenViewer: () -> Unit,
     startRoute: String? = null,
     onStartCompetition: (Long) -> Unit = {},
-    onStartCircuit: (Long) -> Unit = {},
     importUri: android.net.Uri? = null,
     onImportHandled: () -> Unit = {},
     navigateTo: String? = null,
@@ -89,7 +86,6 @@ fun ManagerApp(
                 onOpenRoute = { id -> nav.navigate("${Routes.ROUTE_DETAIL}/$id") },
                 onOpenTraining = { id -> nav.navigate("${Routes.TRAINING_DETAIL}/$id") },
                 onOpenCompare = { id -> nav.navigate("${Routes.COMPARE}/$id") },
-                onOpenCircuit = { id -> nav.navigate("${Routes.CIRCUIT_DETAIL}/$id") },
                 onEditRoute = { id -> nav.navigate("${Routes.EDIT_ROUTE}/$id") },
                 onCreateRoute = { nav.navigate(Routes.CREATE_ROUTE) },
                 onDownloadRouteMap = { bbox ->
@@ -203,19 +199,12 @@ fun ManagerApp(
             CompareScreen(trackId = id, onBack = { nav.popBackStack() })
         }
         composable(
-            route = "${Routes.CIRCUIT_DETAIL}/{circuitId}",
-            arguments = listOf(navArgument("circuitId") { type = NavType.LongType }),
+            route = "${Routes.COMPETITION_DETAIL}/{competitionId}",
+            arguments = listOf(navArgument("competitionId") { type = NavType.LongType }),
         ) { entry ->
-            val id = entry.arguments?.getLong("circuitId") ?: 0L
-            CircuitDetailScreen(circuitId = id, onBack = { nav.popBackStack() }, onStartCircuit = onStartCircuit)
-        }
-        composable(
-            route = "${Routes.COMPETITION_DETAIL}/{refId}",
-            arguments = listOf(navArgument("refId") { type = NavType.LongType }),
-        ) { entry ->
-            val id = entry.arguments?.getLong("refId") ?: 0L
+            val id = entry.arguments?.getLong("competitionId") ?: 0L
             CompetitionDetailScreen(
-                refId = id,
+                competitionId = id,
                 onBack = { nav.popBackStack() },
                 onStartCompetition = onStartCompetition,
             )

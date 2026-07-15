@@ -18,6 +18,10 @@
     <string name="competition_gap_behind">Más lento que la mejor</string>
     <string name="competition_hr_zones_title">Zonas de frecuencia cardíaca</string>
     <string name="competition_hr_no_data">Ningún intento tiene datos de FC</string>
+    <string name="competition_attempts_count">%1$d intentos</string>
+    <string name="competition_type_route">Recorrido</string>
+    <string name="competition_type_lap">Vueltas</string>
+    <string name="competition_empty">Aún no hay competiciones. Abre un entrenamiento y «Enviar a competición», o usa uno con vueltas para crear un circuito.</string>
     <string name="competition_zone_fmt">Z%1$d</string>
     <string name="competition_archived_section">Archivadas</string>
     <string name="competition_archive">Archivar la competición</string>
