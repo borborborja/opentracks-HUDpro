@@ -129,10 +129,10 @@ function actIcon(t) {
   }
   return icon(name, "act-icon");
 }
-const DIFF_LABEL = { EASY: "Fàcil", MODERATE: "Moderat", HARD: "Difícil", VERY_HARD: "Molt difícil" };
+const DIFF_KEY = { EASY: "diff_easy", MODERATE: "diff_moderate", HARD: "diff_hard", VERY_HARD: "diff_very_hard" };
 function diffBadge(d) {
   if (!d) return "";
-  return '<span class="badge diff-' + esc(d) + '">' + (DIFF_LABEL[d] || esc(d)) + "</span>";
+  return '<span class="badge diff-' + esc(d) + '">' + (DIFF_KEY[d] ? t(DIFF_KEY[d]) : esc(d)) + "</span>";
 }
 
 /* ============================================================= *
@@ -149,7 +149,7 @@ function toast(msg, isErr) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.remove(), 3200);
 }
-function loadingHtml() { return '<div class="loading">Carregant…</div>'; }
+function loadingHtml() { return '<div class="loading">' + t("loading") + "</div>"; }
 function emptyHtml(msg) { return '<div class="empty">' + esc(msg) + "</div>"; }
 
 /* ============================================================= *
@@ -190,7 +190,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       errEl.classList.remove("hidden");
     }
   } catch (_) {
-    errEl.textContent = "Error de connexió";
+    errEl.textContent = t("err_conn");
     errEl.classList.remove("hidden");
   }
 });
@@ -222,7 +222,7 @@ function lineChart(cv, xs, ys, opts) {
   for (let i = 0; i < ys.length; i++) if (ys[i] != null && !isNaN(ys[i])) pts.push([xs[i], ys[i]]);
   if (pts.length < 2) {
     ctx.fillStyle = "#8b96a5"; ctx.font = "12px sans-serif";
-    ctx.fillText("Sense dades", pad.l, pad.t + ih / 2);
+    ctx.fillText(t("chart_no_data"), pad.l, pad.t + ih / 2);
     return;
   }
   const xmin = xs[0], xmax = xs[xs.length - 1] || 1;
@@ -307,7 +307,7 @@ function gapChart(cv, gaps) {
   const iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
   if (!gaps || gaps.length < 2) {
     ctx.fillStyle = "#8b96a5"; ctx.font = "12px sans-serif";
-    ctx.fillText("Sense dades de diferència", pad.l, pad.t + ih / 2);
+    ctx.fillText(t("gap_no_data"), pad.l, pad.t + ih / 2);
     return;
   }
   const xmax = gaps[gaps.length - 1].distM || 1;
@@ -370,13 +370,13 @@ const maps = {}; // id -> L.Map (so we can tear down)
 const ICGC_ATTR = '© <a href="https://www.icgc.cat">ICGC</a>';
 const ICGC = (layer) => `https://geoserveis.icgc.cat/servei/catalunya/mapa-base/wmts/${layer}/MON3857NW/{z}/{x}/{y}.png`;
 const BASE_MAPS = [
-  { id: "icgc_topografic", name: "ICGC Topogràfic", url: ICGC("topografic"), attr: ICGC_ATTR, maxZoom: 20 },
-  { id: "icgc_topografic_gris", name: "ICGC Topogràfic gris", url: ICGC("topografic-gris"), attr: ICGC_ATTR, maxZoom: 20 },
-  { id: "icgc_orto", name: "ICGC Ortofoto", url: ICGC("orto"), attr: ICGC_ATTR, maxZoom: 20 },
-  { id: "icgc_orto_hibrida", name: "ICGC Ortofoto híbrida", url: ICGC("orto-hibrida"), attr: ICGC_ATTR, maxZoom: 20 },
-  { id: "icgc_geologic", name: "ICGC Geològic", url: ICGC("geologic"), attr: ICGC_ATTR, maxZoom: 20 },
-  { id: "ign_mtn", name: "IGN Topogràfic (Espanya)", url: "https://www.ign.es/wmts/mapa-raster?service=WMTS&request=GetTile&version=1.0.0&layer=MTN&style=default&tilematrixset=GoogleMapsCompatible&format=image/jpeg&TileMatrix={z}&TileRow={y}&TileCol={x}", attr: "© Instituto Geográfico Nacional (IGN España)", maxZoom: 19 },
-  { id: "esri_imagery", name: "Esri Satèl·lit", url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", attr: "© Esri, Maxar, Earthstar Geographics", maxZoom: 19 },
+  { id: "icgc_topografic", name: t("map_icgc_topografic"), url: ICGC("topografic"), attr: ICGC_ATTR, maxZoom: 20 },
+  { id: "icgc_topografic_gris", name: t("map_icgc_topografic_gris"), url: ICGC("topografic-gris"), attr: ICGC_ATTR, maxZoom: 20 },
+  { id: "icgc_orto", name: t("map_icgc_orto"), url: ICGC("orto"), attr: ICGC_ATTR, maxZoom: 20 },
+  { id: "icgc_orto_hibrida", name: t("map_icgc_orto_hibrida"), url: ICGC("orto-hibrida"), attr: ICGC_ATTR, maxZoom: 20 },
+  { id: "icgc_geologic", name: t("map_icgc_geologic"), url: ICGC("geologic"), attr: ICGC_ATTR, maxZoom: 20 },
+  { id: "ign_mtn", name: t("map_ign_mtn"), url: "https://www.ign.es/wmts/mapa-raster?service=WMTS&request=GetTile&version=1.0.0&layer=MTN&style=default&tilematrixset=GoogleMapsCompatible&format=image/jpeg&TileMatrix={z}&TileRow={y}&TileCol={x}", attr: "© Instituto Geográfico Nacional (IGN España)", maxZoom: 19 },
+  { id: "esri_imagery", name: t("map_esri_imagery"), url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", attr: "© Esri, Maxar, Earthstar Geographics", maxZoom: 19 },
   { id: "opentopomap", name: "OpenTopoMap", url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", attr: "© OpenTopoMap (CC-BY-SA) · © OpenStreetMap", maxZoom: 17, subdomains: "abc" },
   { id: "cyclosm", name: "CyclOSM", url: "https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png", attr: "© CyclOSM · © OpenStreetMap", maxZoom: 20, subdomains: "abc" },
   { id: "osm", name: "OpenStreetMap", url: TILE_URL, attr: TILE_ATTR, maxZoom: 19 },
@@ -421,9 +421,9 @@ function drawTrackMap(el, key, samples) {
   map.fitBounds(line.getBounds(), { padding: [24, 24] });
   // start / end markers
   L.circleMarker(pts[0], { radius: 6, color: "#fff", fillColor: "#2ECC71", fillOpacity: 1, weight: 2 })
-    .addTo(map).bindTooltip("Inici");
+    .addTo(map).bindTooltip(t("map_start"));
   L.circleMarker(pts[pts.length - 1], { radius: 6, color: "#fff", fillColor: "#E63946", fillOpacity: 1, weight: 2 })
-    .addTo(map).bindTooltip("Final");
+    .addTo(map).bindTooltip(t("map_end"));
   setTimeout(() => map.invalidateSize(), 60);
   return map;
 }
@@ -461,25 +461,26 @@ function renderTab(tab) {
 /* ============================================================= *
  *  Shared track list + detail (used by Library & Routes)        *
  * ============================================================= */
-function trackRow(t) {
-  return '<tr data-id="' + t.id + '">' +
-    '<td class="act-cell">' + actIcon(t.activityType) + "</td>" +
-    "<td><b>" + esc(t.name) + "</b>" +
-    (t.isCompetition ? '<span class="badge badge-comp">Competició</span>' : "") +
-    (t.archived ? '<span class="badge badge-arch">Arxivat</span>' : "") + "</td>" +
-    "<td>" + kmFromKm(t.distanceKm) + "</td>" +
-    "<td>" + num(t.ascentM, 0, " m") + "</td>" +
-    "<td>" + diffBadge(t.difficulty) + "</td>" +
-    "<td>" + esc(t.municipality || "—") + "</td>" +
-    "<td>" + date(t.createdAt) + "</td>" +
+function trackRow(tk) {
+  return '<tr data-id="' + tk.id + '">' +
+    '<td class="act-cell">' + actIcon(tk.activityType) + "</td>" +
+    "<td><b>" + esc(tk.name) + "</b>" +
+    (tk.isCompetition ? '<span class="badge badge-comp">' + t("badge_competition") + "</span>" : "") +
+    (tk.archived ? '<span class="badge badge-arch">' + t("badge_archived") + "</span>" : "") + "</td>" +
+    "<td>" + kmFromKm(tk.distanceKm) + "</td>" +
+    "<td>" + num(tk.ascentM, 0, " m") + "</td>" +
+    "<td>" + diffBadge(tk.difficulty) + "</td>" +
+    "<td>" + esc(tk.municipality || "—") + "</td>" +
+    "<td>" + date(tk.createdAt) + "</td>" +
     "</tr>";
 }
 
 function trackTable(tracks, onClick) {
-  if (!tracks.length) return emptyHtml("Cap activitat encara.");
+  if (!tracks.length) return emptyHtml(t("tbl_empty"));
   const html =
     '<div class="tbl-wrap"><table><thead><tr>' +
-    "<th></th><th>Nom</th><th>Distància</th><th>Desnivell</th><th>Dificultat</th><th>Municipi</th><th>Data</th>" +
+    "<th></th><th>" + t("tbl_name") + "</th><th>" + t("tbl_distance") + "</th><th>" + t("tbl_ascent") +
+    "</th><th>" + t("tbl_difficulty") + "</th><th>" + t("tbl_municipality") + "</th><th>" + t("tbl_date") + "</th>" +
     "</tr></thead><tbody>" + tracks.map(trackRow).join("") + "</tbody></table></div>";
   const wrap = document.createElement("div");
   wrap.innerHTML = html;
@@ -492,18 +493,18 @@ function trackTable(tracks, onClick) {
 function statsGrid(s) {
   const rows = [];
   const add = (k, v) => { if (v !== "—" && v != null) rows.push([k, v]); };
-  add("Distància", kmFromKm(s.distanceKm));
-  add("Temps total", hmsSec(s.totalTimeS));
-  add("Temps en moviment", hmsSec(s.movingTimeS));
-  add("Vel. mitjana", num(s.avgSpeedKmh, 1, " km/h"));
-  add("Vel. màxima", num(s.maxSpeedKmh, 1, " km/h"));
-  add("Ascens", num(s.ascentM, 0, " m"));
-  add("Descens", num(s.descentM, 0, " m"));
-  add("FC mitjana", num(s.avgHr, 0, " bpm"));
-  add("FC màxima", num(s.maxHr, 0, " bpm"));
-  add("Cadència", num(s.avgCadence, 0, " rpm"));
-  add("Potència", num(s.avgPower, 0, " W"));
-  add("Calories", num(s.kcal, 0, " kcal"));
+  add(t("stat_distance"), kmFromKm(s.distanceKm));
+  add(t("stat_total_time"), hmsSec(s.totalTimeS));
+  add(t("stat_moving_time"), hmsSec(s.movingTimeS));
+  add(t("stat_avg_speed"), num(s.avgSpeedKmh, 1, " km/h"));
+  add(t("stat_max_speed"), num(s.maxSpeedKmh, 1, " km/h"));
+  add(t("stat_ascent"), num(s.ascentM, 0, " m"));
+  add(t("stat_descent"), num(s.descentM, 0, " m"));
+  add(t("stat_avg_hr"), num(s.avgHr, 0, " bpm"));
+  add(t("stat_max_hr"), num(s.maxHr, 0, " bpm"));
+  add(t("stat_cadence"), num(s.avgCadence, 0, " rpm"));
+  add(t("stat_power"), num(s.avgPower, 0, " W"));
+  add(t("stat_calories"), num(s.kcal, 0, " kcal"));
   return '<div class="stats-grid">' + rows.map(r =>
     '<div class="stat"><div class="k">' + r[0] + '</div><div class="v">' + r[1] + "</div></div>").join("") + "</div>";
 }
@@ -513,35 +514,35 @@ async function renderTrackDetail(container, id, backFn) {
   container.innerHTML = loadingHtml();
   let d;
   try { d = await apiJson("/api/track/" + id); }
-  catch (e) { if (!e.auth) container.innerHTML = emptyHtml("No s'ha pogut carregar."); return; }
-  const t = d.track, s = d.stats, samples = d.samples || [];
+  catch (e) { if (!e.auth) container.innerHTML = emptyHtml(t("err_load")); return; }
+  const tk = d.track, s = d.stats, samples = d.samples || [];
   const hasHr = samples.some(x => x.hr != null);
   const hasEle = samples.some(x => x.ele != null);
   const hasSpeed = samples.some(x => x.speedKmh != null);
 
   container.innerHTML =
-    '<span class="back-link">← Tornar</span>' +
+    '<span class="back-link">' + t("common_back") + "</span>" +
     '<div class="detail-head">' +
-    "<div><h2 class=\"title\">" + actIcon(t.activityType) + " " + esc(t.name) +
-    (t.isCompetition ? '<span class="badge badge-comp">Competició</span>' : "") + "</h2>" +
-    '<p class="subtitle">' + esc(t.municipality || "") + (t.municipality ? " · " : "") +
-    date(t.createdAt) + " · " + diffBadge(t.difficulty) + "</p></div>" +
+    "<div><h2 class=\"title\">" + actIcon(tk.activityType) + " " + esc(tk.name) +
+    (tk.isCompetition ? '<span class="badge badge-comp">' + t("badge_competition") + "</span>" : "") + "</h2>" +
+    '<p class="subtitle">' + esc(tk.municipality || "") + (tk.municipality ? t("sep") : "") +
+    date(tk.createdAt) + t("sep") + diffBadge(tk.difficulty) + "</p></div>" +
     '<div class="detail-actions">' +
-    '<a class="btn" href="/api/track/' + t.id + '/gpx">' + icon("download") + " Baixa GPX</a>" +
-    '<button class="btn" data-act="rename">' + icon("edit") + " Reanomenar</button>" +
-    '<button class="btn btn-danger" data-act="delete">' + icon("trash") + " Eliminar</button>" +
+    '<a class="btn" href="/api/track/' + tk.id + '/gpx">' + icon("download") + " " + t("detail_download_gpx") + "</a>" +
+    '<button class="btn" data-act="rename">' + icon("edit") + " " + t("common_rename") + "</button>" +
+    '<button class="btn btn-danger" data-act="delete">' + icon("trash") + " " + t("common_delete") + "</button>" +
     "</div></div>" +
     statsGrid(s) +
     '<div class="map" id="detailMap"></div>' +
     '<div class="charts">' +
-    (hasEle ? '<div class="chart-box"><h4>Altitud (m) / distància</h4><canvas class="chart" id="cEle"></canvas></div>' : "") +
-    (hasSpeed ? '<div class="chart-box"><h4>Velocitat (km/h) / distància</h4><canvas class="chart" id="cSpd"></canvas></div>' : "") +
-    (hasHr ? '<div class="chart-box"><h4>Freqüència cardíaca (bpm) / distància</h4><canvas class="chart" id="cHr"></canvas></div>' : "") +
+    (hasEle ? '<div class="chart-box"><h4>' + t("detail_chart_ele") + '</h4><canvas class="chart" id="cEle"></canvas></div>' : "") +
+    (hasSpeed ? '<div class="chart-box"><h4>' + t("detail_chart_speed") + '</h4><canvas class="chart" id="cSpd"></canvas></div>' : "") +
+    (hasHr ? '<div class="chart-box"><h4>' + t("detail_chart_hr") + '</h4><canvas class="chart" id="cHr"></canvas></div>' : "") +
     "</div>";
 
   container.querySelector(".back-link").addEventListener("click", backFn);
-  container.querySelector('[data-act="rename"]').addEventListener("click", () => renameTrack(t, backFn));
-  container.querySelector('[data-act="delete"]').addEventListener("click", () => deleteTrack(t, backFn));
+  container.querySelector('[data-act="rename"]').addEventListener("click", () => renameTrack(tk, backFn));
+  container.querySelector('[data-act="delete"]').addEventListener("click", () => deleteTrack(tk, backFn));
 
   drawTrackMap(container.querySelector("#detailMap"), "detail", samples);
 
@@ -551,25 +552,25 @@ async function renderTrackDetail(container, id, backFn) {
   if (hasHr) lineChart(container.querySelector("#cHr"), xs, samples.map(x => x.hr), { color: "#E63946", fill: "rgba(230,57,70,.3)" });
 }
 
-async function renameTrack(t, done) {
-  const name = prompt("Nou nom:", t.name);
+async function renameTrack(tk, done) {
+  const name = prompt(t("rename_prompt"), tk.name);
   if (name == null || !name.trim()) return;
   try {
-    const res = await api("/api/track/" + t.id + "/rename", {
+    const res = await api("/api/track/" + tk.id + "/rename", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: name.trim() })
     });
-    if (res.ok) { toast("Reanomenat"); done(); }
-    else toast("Error en reanomenar", true);
-  } catch (e) { if (!e.auth) toast("Error de connexió", true); }
+    if (res.ok) { toast(t("renamed")); done(); }
+    else toast(t("rename_err"), true);
+  } catch (e) { if (!e.auth) toast(t("err_conn"), true); }
 }
-async function deleteTrack(t, done) {
-  if (!confirm("Eliminar «" + t.name + "»?")) return;
+async function deleteTrack(tk, done) {
+  if (!confirm(t("del_confirm_prefix") + tk.name + t("del_confirm_suffix"))) return;
   try {
-    const res = await api("/api/track/" + t.id, { method: "DELETE" });
-    if (res.ok) { toast("Eliminat"); done(); }
-    else toast("Error en eliminar", true);
-  } catch (e) { if (!e.auth) toast("Error de connexió", true); }
+    const res = await api("/api/track/" + tk.id, { method: "DELETE" });
+    if (res.ok) { toast(t("del_done")); done(); }
+    else toast(t("delete_err"), true);
+  } catch (e) { if (!e.auth) toast(t("err_conn"), true); }
 }
 
 /* ============================================================= *
@@ -577,14 +578,14 @@ async function deleteTrack(t, done) {
  * ============================================================= */
 async function renderLibrary() {
   const v = document.getElementById("view-library");
-  v.innerHTML = '<h2 class="title">Biblioteca</h2><p class="subtitle">Els teus entrenaments</p>' + loadingHtml();
+  v.innerHTML = '<h2 class="title">' + t("lib_title") + '</h2><p class="subtitle">' + t("lib_subtitle") + "</p>" + loadingHtml();
   destroyMap("detail");
   let tracks;
   try { tracks = await apiJson("/api/tracks?kind=TRAINING"); }
-  catch (e) { if (!e.auth) v.innerHTML = emptyHtml("No s'ha pogut carregar."); return; }
+  catch (e) { if (!e.auth) v.innerHTML = emptyHtml(t("err_load")); return; }
   const list = document.createElement("div");
   list.appendChild(trackTable(tracks, (id) => openLibraryDetail(id)));
-  v.innerHTML = '<h2 class="title">Biblioteca</h2><p class="subtitle">' + tracks.length + " entrenaments</p>";
+  v.innerHTML = '<h2 class="title">' + t("lib_title") + '</h2><p class="subtitle">' + tracks.length + t("lib_count_suffix") + "</p>";
   v.appendChild(list);
 }
 function openLibraryDetail(id) {
@@ -599,10 +600,10 @@ async function renderRoutes() {
   const v = document.getElementById("view-routes");
   destroyMap("detail");
   v.innerHTML =
-    '<h2 class="title">Per seguir</h2><p class="subtitle">Rutes importades i creades</p>' +
+    '<h2 class="title">' + t("routes_title") + '</h2><p class="subtitle">' + t("routes_subtitle") + "</p>" +
     '<div class="toolbar">' +
-    '<label class="btn">' + icon("upload") + ' Importar<input id="importFile" type="file" accept=".gpx,.kml,.tcx" hidden></label>' +
-    '<button class="btn btn-primary" id="btnCreate">' + icon("add") + " Crear ruta</button>" +
+    '<label class="btn">' + icon("upload") + " " + t("routes_import") + '<input id="importFile" type="file" accept=".gpx,.kml,.tcx" hidden></label>' +
+    '<button class="btn btn-primary" id="btnCreate">' + icon("add") + " " + t("routes_create") + "</button>" +
     "</div>" +
     '<div id="routesList">' + loadingHtml() + "</div>" +
     '<div id="routeEditor"></div>';
@@ -612,7 +613,7 @@ async function renderRoutes() {
 
   let tracks;
   try { tracks = await apiJson("/api/tracks?kind=ROUTE"); }
-  catch (e) { if (!e.auth) v.querySelector("#routesList").innerHTML = emptyHtml("No s'ha pogut carregar."); return; }
+  catch (e) { if (!e.auth) v.querySelector("#routesList").innerHTML = emptyHtml(t("err_load")); return; }
   const listEl = v.querySelector("#routesList");
   listEl.innerHTML = "";
   listEl.appendChild(trackTable(tracks, (id) => openRouteDetail(id)));
@@ -633,9 +634,9 @@ async function handleImport(e) {
       "&kind=ROUTE&filename=" + encodeURIComponent(file.name);
     const res = await api(url, { method: "POST", body: text });
     const data = await res.json().catch(() => ({}));
-    if (res.ok && data.ok) { toast("Importat correctament"); renderRoutes(); }
-    else toast("Error en importar" + (data.error ? ": " + data.error : ""), true);
-  } catch (err) { if (!err.auth) toast("No s'ha pogut llegir el fitxer", true); }
+    if (res.ok && data.ok) { toast(t("import_ok")); renderRoutes(); }
+    else toast(t("import_err") + (data.error ? ": " + data.error : ""), true);
+  } catch (err) { if (!err.auth) toast(t("import_read_err"), true); }
   e.target.value = "";
 }
 
@@ -652,31 +653,31 @@ async function openRouteEditor() {
   catch (e) { if (e && e.auth) return; }
   if (!Array.isArray(profiles) || !profiles.length) {
     profiles = [
-      { id: "HIKING", label: "Senderisme" },
-      { id: "TREKKING", label: "Bici-trekking" },
-      { id: "MTB", label: "BTT" },
-      { id: "SHORTEST", label: "Més curt" }
+      { id: "HIKING", label: t("profile_hiking") },
+      { id: "TREKKING", label: t("profile_trekking") },
+      { id: "MTB", label: t("profile_mtb") },
+      { id: "SHORTEST", label: t("profile_shortest") }
     ];
   }
   const profileOpts = profiles.map((p, i) =>
     '<option value="' + esc(p.id) + '"' + (i === 0 ? " selected" : "") + ">" + esc(p.label) + "</option>").join("");
 
   ed.innerHTML =
-    '<span class="back-link">← Tornar a la llista</span>' +
-    '<h3 class="section-title">Crear ruta</h3>' +
-    '<p class="hint">Clica al mapa per afegir punts de pas. La ruta es magnetitza a camins i carreteres. Calen com a mínim 2 punts.</p>' +
+    '<span class="back-link">' + t("route_back_list") + "</span>" +
+    '<h3 class="section-title">' + t("route_create_title") + "</h3>" +
+    '<p class="hint">' + t("route_hint") + "</p>" +
     '<div class="route-editor">' +
     '<div class="route-form">' +
-    '<input id="rName" type="text" placeholder="Nom de la ruta" style="min-width:220px">' +
+    '<input id="rName" type="text" placeholder="' + esc(t("route_name_ph")) + '" style="min-width:220px">' +
     '<select id="rProfile">' + profileOpts + "</select>" +
-    '<span class="wp-count" id="wpCount">0 punts</span>' +
-    '<button class="btn" id="rUndo">' + icon("undo") + " Desfés</button>" +
-    '<button class="btn btn-ghost" id="rClear">Buidar</button>' +
-    '<button class="btn btn-primary" id="rSave">' + icon("check") + " Desar</button>" +
+    '<span class="wp-count" id="wpCount">0' + t("wp_many") + "</span>" +
+    '<button class="btn" id="rUndo">' + icon("undo") + " " + t("route_undo") + "</button>" +
+    '<button class="btn btn-ghost" id="rClear">' + t("route_clear") + "</button>" +
+    '<button class="btn btn-primary" id="rSave">' + icon("check") + " " + t("route_save") + "</button>" +
     "</div>" +
     '<div class="route-readout">' +
-    '<div class="route-stat"><span class="k">Distància</span><span class="v" id="rDist">—</span></div>' +
-    '<div class="route-stat"><span class="k">Ascens</span><span class="v" id="rAsc">—</span></div>' +
+    '<div class="route-stat"><span class="k">' + t("route_dist") + '</span><span class="v" id="rDist">—</span></div>' +
+    '<div class="route-stat"><span class="k">' + t("route_ascent") + '</span><span class="v" id="rAsc">—</span></div>' +
     '<div class="route-status" id="rStatus"></div>' +
     "</div>" +
     '<div class="map map-lg" id="routeMap"></div>' +
@@ -698,7 +699,7 @@ async function openRouteEditor() {
         map.setView([loc.lat, loc.lng], 15);
         L.circleMarker([loc.lat, loc.lng], {
           radius: 7, color: "#2ECC71", weight: 2, fillColor: "#2ECC71", fillOpacity: .35
-        }).addTo(map).bindTooltip("Ubicació actual");
+        }).addTo(map).bindTooltip(t("map_current_loc"));
       }
     } catch (e) { /* ignore: leave default view */ }
   })();
@@ -726,7 +727,7 @@ async function openRouteEditor() {
   }
   function setStatus(kind, text) {
     statusEl.className = "route-status" + (kind ? " " + kind : "");
-    if (kind === "busy") statusEl.innerHTML = '<span class="spinner"></span> Calculant…';
+    if (kind === "busy") statusEl.innerHTML = '<span class="spinner"></span> ' + t("route_calculating");
     else statusEl.textContent = text || "";
   }
 
@@ -759,7 +760,7 @@ async function openRouteEditor() {
       // Graceful fallback: show the straight line and a subtle note; never block.
       drawStraight();
       setStats(null, null);
-      setStatus("warn", "No s'ha pogut calcular la ruta");
+      setStatus("warn", t("route_calc_err"));
     }
   }
   function schedulePreview() {
@@ -768,7 +769,7 @@ async function openRouteEditor() {
   }
 
   function refresh() {
-    countEl.textContent = waypoints.length + (waypoints.length === 1 ? " punt" : " punts");
+    countEl.textContent = waypoints.length + t(waypoints.length === 1 ? "wp_one" : "wp_many");
     if (waypoints.length < 2) { drawStraight(); setStats(null, null); setStatus(); }
     else schedulePreview();
   }
@@ -800,17 +801,17 @@ async function openRouteEditor() {
   ed.querySelector("#rSave").addEventListener("click", async () => {
     const name = ed.querySelector("#rName").value.trim();
     const profile = profileEl.value;
-    if (!name) { toast("Posa un nom a la ruta", true); return; }
-    if (waypoints.length < 2) { toast("Calen com a mínim 2 punts", true); return; }
+    if (!name) { toast(t("route_need_name"), true); return; }
+    if (waypoints.length < 2) { toast(t("route_need_points"), true); return; }
     try {
       const res = await api("/api/route", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, profile, waypoints })
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok && data.ok) { toast("Ruta desada"); closeRouteEditor(); renderRoutes(); }
-      else toast("Error en desar" + (data.error ? ": " + data.error : ""), true);
-    } catch (err) { if (!err.auth) toast("Error de connexió", true); }
+      if (res.ok && data.ok) { toast(t("route_saved")); closeRouteEditor(); renderRoutes(); }
+      else toast(t("save_err") + (data.error ? ": " + data.error : ""), true);
+    } catch (err) { if (!err.auth) toast(t("err_conn"), true); }
   });
 }
 function closeRouteEditor() {
@@ -823,7 +824,7 @@ function closeRouteEditor() {
 /* ============================================================= *
  *  View: Competició                                             *
  * ============================================================= */
-function compTypeLabel(t) { return t === "LAP" ? "Voltes" : "Recorregut"; }
+function compTypeLabel(ty) { return ty === "LAP" ? t("comp_type_lap") : t("comp_type_route"); }
 
 async function renderCompetitions() {
   const v = document.getElementById("view-competition");
@@ -831,19 +832,19 @@ async function renderCompetitions() {
   v.innerHTML = loadingHtml();
   let comps;
   try { comps = await apiJson("/api/competitions"); }
-  catch (e) { if (!e.auth) v.innerHTML = emptyHtml("No s'ha pogut carregar."); return; }
-  const head = '<div class="row-between"><div><h2 class="title">Competició</h2>' +
-    '<p class="subtitle">' + comps.length + (comps.length === 1 ? " repte" : " reptes") + '</p></div>' +
-    '<button class="btn btn-primary" id="newComp">+ Nova competició</button></div>';
+  catch (e) { if (!e.auth) v.innerHTML = emptyHtml(t("err_load")); return; }
+  const head = '<div class="row-between"><div><h2 class="title">' + t("comp_title") + "</h2>" +
+    '<p class="subtitle">' + comps.length + t(comps.length === 1 ? "comp_count_one" : "comp_count_many") + "</p></div>" +
+    '<button class="btn btn-primary" id="newComp">' + t("comp_new") + "</button></div>";
   const cards = comps.map(c =>
     '<div class="card" data-id="' + c.id + '">' +
     '<div class="card-head"><div><div class="card-title">' + actIcon(c.activityType) + " " + esc(c.name) +
     '<span class="pill">' + compTypeLabel(c.type) + '</span></div>' +
-    '<div class="card-meta">' + c.attemptCount + (c.attemptCount === 1 ? " intent" : " intents") + "</div></div></div>" +
+    '<div class="card-meta">' + c.attemptCount + t(c.attemptCount === 1 ? "comp_attempts_one" : "comp_attempts_many") + "</div></div></div>" +
     '<div class="card-big">' + (c.bestMs != null ? hms(c.bestMs) : "—") + "</div>" +
-    '<div class="card-meta">Millor temps</div></div>').join("");
+    '<div class="card-meta">' + t("comp_best_time") + "</div></div>").join("");
   v.innerHTML = head + (comps.length ? '<div class="grid">' + cards + "</div>"
-    : emptyHtml("Cap competició encara. Crea'n una des d'un entrenament."));
+    : emptyHtml(t("comp_empty")));
   v.querySelector("#newComp").addEventListener("click", () => newCompetitionForm());
   v.querySelectorAll(".card[data-id]").forEach(c =>
     c.addEventListener("click", () => openCompetition(Number(c.dataset.id))));
@@ -854,13 +855,13 @@ async function newCompetitionForm() {
   v.innerHTML = loadingHtml();
   let tracks;
   try { tracks = await apiJson("/api/tracks?kind=TRAINING"); }
-  catch (e) { if (!e.auth) v.innerHTML = emptyHtml("No s'ha pogut carregar."); return; }
-  if (!tracks.length) { v.innerHTML = '<span class="back-link">← Tornar</span>' + emptyHtml("Cap entrenament per competir."); v.querySelector(".back-link").addEventListener("click", () => renderCompetitions()); return; }
-  const opts = tracks.map(t => '<option value="' + t.id + '">' + esc(t.name) + "</option>").join("");
-  v.innerHTML = '<span class="back-link">← Tornar</span><h2 class="title">Nova competició</h2>' +
-    '<div class="form-block"><label>Entrenament<select id="ncTrack">' + opts + "</select></label>" +
-    '<label>Tipus<select id="ncType"><option value="ROUTE">Recorregut (track sencer)</option><option value="LAP">Voltes (circuit)</option></select></label>' +
-    '<button class="btn btn-primary" id="ncCreate">Crear</button></div>';
+  catch (e) { if (!e.auth) v.innerHTML = emptyHtml(t("err_load")); return; }
+  if (!tracks.length) { v.innerHTML = '<span class="back-link">' + t("common_back") + "</span>" + emptyHtml(t("comp_no_training")); v.querySelector(".back-link").addEventListener("click", () => renderCompetitions()); return; }
+  const opts = tracks.map(tk => '<option value="' + tk.id + '">' + esc(tk.name) + "</option>").join("");
+  v.innerHTML = '<span class="back-link">' + t("common_back") + '</span><h2 class="title">' + t("comp_new_title") + "</h2>" +
+    '<div class="form-block"><label>' + t("comp_field_training") + '<select id="ncTrack">' + opts + "</select></label>" +
+    "<label>" + t("comp_field_type") + '<select id="ncType"><option value="ROUTE">' + t("comp_type_route_full") + '</option><option value="LAP">' + t("comp_type_lap_full") + "</option></select></label>" +
+    '<button class="btn btn-primary" id="ncCreate">' + t("comp_create") + "</button></div>";
   v.querySelector(".back-link").addEventListener("click", () => renderCompetitions());
   v.querySelector("#ncCreate").addEventListener("click", async () => {
     const trackId = v.querySelector("#ncTrack").value, type = v.querySelector("#ncType").value;
@@ -870,9 +871,9 @@ async function newCompetitionForm() {
         body: JSON.stringify({ trackId: trackId, type: type })
       });
       const j = await res.json();
-      if (j.ok) { toast("Competició creada"); openCompetition(Number(j.id)); }
-      else toast(j.error === "untimed" ? "L'entrenament no té temps/voltes" : "Error en crear", true);
-    } catch (e) { if (!e.auth) toast("Error de connexió", true); }
+      if (j.ok) { toast(t("comp_created")); openCompetition(Number(j.id)); }
+      else toast(j.error === "untimed" ? t("comp_untimed") : t("comp_create_err"), true);
+    } catch (e) { if (!e.auth) toast(t("err_conn"), true); }
   });
 }
 
@@ -881,7 +882,7 @@ async function openCompetition(id) {
   v.innerHTML = loadingHtml();
   let d;
   try { d = await apiJson("/api/competition/" + id); }
-  catch (e) { if (!e.auth) v.innerHTML = emptyHtml("No s'ha pogut carregar."); return; }
+  catch (e) { if (!e.auth) v.innerHTML = emptyHtml(t("err_load")); return; }
   const rows = (d.attempts || []).map(a =>
     '<tr class="norow' + (a.isBest ? " best" : "") + '">' +
     "<td>" + dateTime(a.dateMs) + (a.isBest ? " " + icon("star", "star-best") : "") + "</td>" +
@@ -890,30 +891,30 @@ async function openCompetition(id) {
     "<td>" + num((a.distanceM || 0) / 1000, 2, " km") + "</td>" +
     "<td>" + num(a.avgHr, 0, " bpm") + "</td></tr>").join("");
   v.innerHTML =
-    '<span class="back-link">← Tornar</span>' +
+    '<span class="back-link">' + t("common_back") + "</span>" +
     '<div class="row-between"><h2 class="title">' + esc(d.name) + '<span class="pill">' + compTypeLabel(d.type) + "</span></h2>" +
-    '<div class="row-actions"><button class="btn btn-ghost" id="cRename">Reanomenar</button><button class="btn btn-danger" id="cDelete">Eliminar</button></div></div>' +
-    '<p class="subtitle">' + (d.attempts ? d.attempts.length : 0) + " intents</p>" +
-    '<div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Temps</th><th>Dif.</th><th>Distància</th><th>FC</th></tr></thead><tbody>' +
-    (rows || '<tr class="norow"><td colspan="5">Sense intents</td></tr>') + "</tbody></table></div>" +
-    '<div class="chart-box" style="margin-top:20px"><h4>Diferència de l\'últim intent vs. millor (verd = més ràpid, vermell = més lent)</h4>' +
+    '<div class="row-actions"><button class="btn btn-ghost" id="cRename">' + t("common_rename") + '</button><button class="btn btn-danger" id="cDelete">' + t("common_delete") + "</button></div></div>" +
+    '<p class="subtitle">' + (d.attempts ? d.attempts.length : 0) + t("comp_attempts_many") + "</p>" +
+    '<div class="tbl-wrap"><table><thead><tr><th>' + t("comp_th_date") + "</th><th>" + t("comp_th_time") + "</th><th>" + t("comp_th_gap") + "</th><th>" + t("comp_th_distance") + "</th><th>" + t("comp_th_hr") + "</th></tr></thead><tbody>" +
+    (rows || '<tr class="norow"><td colspan="5">' + t("comp_no_attempts") + "</td></tr>") + "</tbody></table></div>" +
+    '<div class="chart-box" style="margin-top:20px"><h4>' + t("comp_gap_title") + "</h4>" +
     '<canvas class="chart tall" id="cGap"></canvas></div>';
   v.querySelector(".back-link").addEventListener("click", () => renderCompetitions());
   v.querySelector("#cRename").addEventListener("click", async () => {
-    const name = prompt("Nou nom:", d.name); if (name == null || !name.trim()) return;
+    const name = prompt(t("rename_prompt"), d.name); if (name == null || !name.trim()) return;
     try {
       const res = await api("/api/competition/" + id + "/rename", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name.trim() })
       });
-      if ((await res.json()).ok) { toast("Reanomenat"); openCompetition(id); } else toast("Error", true);
-    } catch (e) { if (!e.auth) toast("Error de connexió", true); }
+      if ((await res.json()).ok) { toast(t("renamed")); openCompetition(id); } else toast(t("err_generic"), true);
+    } catch (e) { if (!e.auth) toast(t("err_conn"), true); }
   });
   v.querySelector("#cDelete").addEventListener("click", async () => {
-    if (!confirm("Eliminar «" + d.name + "»?")) return;
+    if (!confirm(t("del_confirm_prefix") + d.name + t("del_confirm_suffix"))) return;
     try {
       const res = await api("/api/competition/" + id, { method: "DELETE" });
-      if ((await res.json()).ok) { toast("Eliminada"); renderCompetitions(); } else toast("Error", true);
-    } catch (e) { if (!e.auth) toast("Error de connexió", true); }
+      if ((await res.json()).ok) { toast(t("comp_deleted")); renderCompetitions(); } else toast(t("err_generic"), true);
+    } catch (e) { if (!e.auth) toast(t("err_conn"), true); }
   });
   gapChart(v.querySelector("#cGap"), d.gap || []);
 }
@@ -921,10 +922,10 @@ async function openCompetition(id) {
 /* ============================================================= *
  *  View: Rècords                                                *
  * ============================================================= */
-const REC_LABEL = {
-  FASTEST_1K: "1 km més ràpid", FASTEST_5K: "5 km més ràpid", FASTEST_10K: "10 km més ràpid",
-  FASTEST_HALF: "Mitja marató més ràpida", LONGEST_DISTANCE: "Distància més llarga",
-  MAX_ASCENT: "Ascens màxim", MAX_SPEED: "Velocitat màxima", LONGEST_TIME: "Durada més llarga"
+const REC_KEY = {
+  FASTEST_1K: "rec_fastest_1k", FASTEST_5K: "rec_fastest_5k", FASTEST_10K: "rec_fastest_10k",
+  FASTEST_HALF: "rec_fastest_half", LONGEST_DISTANCE: "rec_longest_distance",
+  MAX_ASCENT: "rec_max_ascent", MAX_SPEED: "rec_max_speed", LONGEST_TIME: "rec_longest_time"
 };
 function recordValue(r) {
   switch (r.kind) {
@@ -944,19 +945,19 @@ const TROPHY_SVG =
 async function renderRecords() {
   const v = document.getElementById("view-records");
   destroyMap("detail");
-  v.innerHTML = '<h2 class="title">Rècords</h2><p class="subtitle">Les teves millors marques</p>' + loadingHtml();
+  v.innerHTML = '<h2 class="title">' + t("records_title") + '</h2><p class="subtitle">' + t("records_subtitle") + "</p>" + loadingHtml();
   let recs;
   try { recs = await apiJson("/api/records"); }
-  catch (e) { if (!e.auth) v.innerHTML = emptyHtml("No s'ha pogut carregar."); return; }
-  if (!recs.length) { v.innerHTML = '<h2 class="title">Rècords</h2>' + emptyHtml("Cap rècord encara."); return; }
+  catch (e) { if (!e.auth) v.innerHTML = emptyHtml(t("err_load")); return; }
+  if (!recs.length) { v.innerHTML = '<h2 class="title">' + t("records_title") + "</h2>" + emptyHtml(t("records_empty")); return; }
   const cards = recs.map(r =>
     '<div class="card static">' +
     '<div class="card-head"><div class="rec-badge">' + TROPHY_SVG + "</div>" +
     '<div class="card-meta" style="text-align:right">' + date(r.dateMs) + "</div></div>" +
-    '<div class="card-title" style="margin-top:6px">' + (REC_LABEL[r.kind] || esc(r.kind)) + "</div>" +
+    '<div class="card-title" style="margin-top:6px">' + (REC_KEY[r.kind] ? t(REC_KEY[r.kind]) : esc(r.kind)) + "</div>" +
     '<div class="card-big">' + recordValue(r) + "</div>" +
     '<div class="card-meta">' + esc(r.trackName || "—") + "</div></div>").join("");
-  v.innerHTML = '<h2 class="title">Rècords</h2><p class="subtitle">' + recs.length + " marques</p>" +
+  v.innerHTML = '<h2 class="title">' + t("records_title") + '</h2><p class="subtitle">' + recs.length + t("records_count_suffix") + "</p>" +
     '<div class="grid">' + cards + "</div>";
 }
 
@@ -965,7 +966,7 @@ async function renderRecords() {
  * ============================================================= */
 function deltaHtml(cur, prev) {
   if (prev == null || prev === 0) {
-    if (cur > 0) return '<span class="delta up">nou</span>';
+    if (cur > 0) return '<span class="delta up">' + t("delta_new") + "</span>";
     return '<span class="delta flat">—</span>';
   }
   const pct = Math.round((cur - prev) / prev * 100);
@@ -977,10 +978,10 @@ function deltaHtml(cur, prev) {
 async function renderProgress() {
   const v = document.getElementById("view-progress");
   destroyMap("detail");
-  v.innerHTML = '<h2 class="title">Progrés</h2><p class="subtitle">Últimes 12 setmanes</p>' + loadingHtml();
+  v.innerHTML = '<h2 class="title">' + t("prog_title") + '</h2><p class="subtitle">' + t("prog_subtitle") + "</p>" + loadingHtml();
   let p;
   try { p = await apiJson("/api/progress"); }
-  catch (e) { if (!e.auth) v.innerHTML = emptyHtml("No s'ha pogut carregar."); return; }
+  catch (e) { if (!e.auth) v.innerHTML = emptyHtml(t("err_load")); return; }
   const weeks = p.weeks || [];
   const cur = weeks[weeks.length - 1] || { km: 0, hours: 0, ascentM: 0, count: 0 };
   const prev = weeks[weeks.length - 2] || { km: 0, hours: 0, ascentM: 0, count: 0 };
@@ -989,23 +990,23 @@ async function renderProgress() {
     '<div class="tile"><div class="k">' + k + '</div><div class="v">' + v2 + "</div>" + d + "</div>";
 
   v.innerHTML =
-    '<h2 class="title">Progrés</h2><p class="subtitle">Aquesta setmana vs. l\'anterior</p>' +
+    '<h2 class="title">' + t("prog_title") + '</h2><p class="subtitle">' + t("prog_subtitle2") + "</p>" +
     '<div class="tiles">' +
-    tile("Distància", cur.km.toFixed(1) + " km", deltaHtml(cur.km, prev.km)) +
-    tile("Temps", cur.hours.toFixed(1) + " h", deltaHtml(cur.hours, prev.hours)) +
-    tile("Ascens", cur.ascentM + " m", deltaHtml(cur.ascentM, prev.ascentM)) +
-    tile("Activitats", cur.count, deltaHtml(cur.count, prev.count)) +
+    tile(t("prog_distance"), cur.km.toFixed(1) + " km", deltaHtml(cur.km, prev.km)) +
+    tile(t("prog_time"), cur.hours.toFixed(1) + " h", deltaHtml(cur.hours, prev.hours)) +
+    tile(t("prog_ascent"), cur.ascentM + " m", deltaHtml(cur.ascentM, prev.ascentM)) +
+    tile(t("prog_activities"), cur.count, deltaHtml(cur.count, prev.count)) +
     "</div>" +
-    '<div class="streak">Ratxa: <b>' + p.streakWeeks + "</b> " +
-    (p.streakWeeks === 1 ? "setmana seguida" : "setmanes seguides") + "</div>" +
-    '<div class="chart-box"><h4>Distància per setmana (km) — 12 setmanes</h4>' +
+    '<div class="streak">' + t("prog_streak_label") + "<b>" + p.streakWeeks + "</b> " +
+    t(p.streakWeeks === 1 ? "prog_streak_one" : "prog_streak_many") + "</div>" +
+    '<div class="chart-box"><h4>' + t("prog_weeks_chart") + "</h4>" +
     '<canvas class="chart tall" id="cWeeks"></canvas></div>' +
-    '<h3 class="section-title">Totals històrics</h3>' +
+    '<h3 class="section-title">' + t("prog_hist_title") + "</h3>" +
     '<div class="tiles">' +
-    tile("Distància total", p.totalKm.toFixed(0) + " km", "") +
-    tile("Temps total", p.totalHours.toFixed(0) + " h", "") +
-    tile("Ascens total", p.totalAscentM + " m", "") +
-    tile("Activitats totals", p.totalCount, "") +
+    tile(t("prog_total_distance"), p.totalKm.toFixed(0) + " km", "") +
+    tile(t("prog_total_time"), p.totalHours.toFixed(0) + " h", "") +
+    tile(t("prog_total_ascent"), p.totalAscentM + " m", "") +
+    tile(t("prog_total_activities"), p.totalCount, "") +
     "</div>";
 
   const labels = weeks.map(w => {
@@ -1028,56 +1029,56 @@ async function renderMaps() {
   v.innerHTML = loadingHtml();
   let m;
   try { m = await apiJson("/api/maps"); }
-  catch (e) { if (!e.auth) v.innerHTML = emptyHtml("No s'ha pogut carregar."); return; }
+  catch (e) { if (!e.auth) v.innerHTML = emptyHtml(t("err_load")); return; }
   const base = m.sources.map(s =>
     '<label class="set-row"><span>' + esc(s.displayName) + '</span><input type="radio" name="baseMap" value="' + s.id + '"' + (s.id === m.activeBaseMapId ? " checked" : "") + "></label>").join("");
   const offline = m.offline.length ? m.offline.map(o =>
     '<div class="off-map"><div class="row-between"><b>' + esc(o.name) + '</b><span>' + fmtBytes(o.sizeBytes) +
-    ' <button class="btn btn-danger sm" data-del-map="' + esc(o.path) + '">Borrar</button></span></div>' +
+    ' <button class="btn btn-danger sm" data-del-map="' + esc(o.path) + '">' + t("maps_del") + "</button></span></div>" +
     (o.sectors && o.sectors.length ? '<ul class="sectors">' + o.sectors.map(sec =>
-      "<li><span>zoom " + sec.minZoom + "–" + sec.maxZoom + " · " + sec.tileCount + ' tiles</span><button class="btn btn-ghost sm" data-del-sector="' + esc(o.path) + "|" + esc(sec.id) + '">×</button></li>').join("") + "</ul>" : "") +
-    "</div>").join("") : '<p class="set-status">Cap mapa offline.</p>';
+      "<li><span>" + t("maps_zoom_prefix") + sec.minZoom + "–" + sec.maxZoom + t("sep") + sec.tileCount + t("maps_tiles_suffix") + '</span><button class="btn btn-ghost sm" data-del-sector="' + esc(o.path) + "|" + esc(sec.id) + '">×</button></li>').join("") + "</ul>" : "") +
+    "</div>").join("") : '<p class="set-status">' + t("maps_no_offline") + "</p>";
   const dlSources = m.sources.filter(s => s.offlineAllowed).map(s => '<option value="' + s.id + '">' + esc(s.displayName) + "</option>").join("");
-  const regionOpts = '<option value="">— comarca —</option>' + m.regions.map((r, i) => '<option value="' + i + '">' + esc(r.name) + "</option>").join("");
+  const regionOpts = '<option value="">' + t("maps_region_none") + "</option>" + m.regions.map((r, i) => '<option value="' + i + '">' + esc(r.name) + "</option>").join("");
   v.innerHTML =
-    '<h2 class="title">Mapes</h2><p class="subtitle">Mapa base, offline i descàrregues</p>' +
+    '<h2 class="title">' + t("maps_title") + '</h2><p class="subtitle">' + t("maps_subtitle") + "</p>" +
     '<div class="set-grid">' +
-    '<div class="card static set-card"><h3>Mapa base</h3>' + base + "</div>" +
-    '<div class="card static set-card"><h3>Memòria cau</h3>' + sNum("mapCacheSizeMb", "Mida (MB)", m.cacheSizeMb, 100, 2000, 50) + '<button class="btn" id="clearCache">Buidar la memòria cau</button></div>' +
-    '<div class="card static set-card"><h3>Mapes offline</h3>' + offline + "</div>" +
+    '<div class="card static set-card"><h3>' + t("maps_base") + "</h3>" + base + "</div>" +
+    '<div class="card static set-card"><h3>' + t("maps_cache") + "</h3>" + sNum("mapCacheSizeMb", t("maps_cache_size"), m.cacheSizeMb, 100, 2000, 50) + '<button class="btn" id="clearCache">' + t("maps_cache_clear") + "</button></div>" +
+    '<div class="card static set-card"><h3>' + t("maps_offline") + "</h3>" + offline + "</div>" +
     "</div>" +
-    '<div class="card static set-card" style="margin-top:14px"><h3>Descarregar una àrea</h3>' +
+    '<div class="card static set-card" style="margin-top:14px"><h3>' + t("maps_download_area") + "</h3>" +
     '<div class="dl-grid">' +
-    "<label>Font<select id=\"dlSource\">" + dlSources + "</select></label>" +
-    "<label>Comarca<select id=\"dlRegion\">" + regionOpts + "</select></label>" +
-    '<label>Oest<input type="number" id="dlW" step="0.01"></label>' +
-    '<label>Sud<input type="number" id="dlS" step="0.01"></label>' +
-    '<label>Est<input type="number" id="dlE" step="0.01"></label>' +
-    '<label>Nord<input type="number" id="dlN" step="0.01"></label>' +
-    '<label>Zoom mín<input type="number" id="dlMin" value="10" min="6" max="19"></label>' +
-    '<label>Zoom màx<input type="number" id="dlMax" value="15" min="6" max="19"></label>' +
+    "<label>" + t("maps_source") + "<select id=\"dlSource\">" + dlSources + "</select></label>" +
+    "<label>" + t("maps_region") + "<select id=\"dlRegion\">" + regionOpts + "</select></label>" +
+    "<label>" + t("maps_west") + '<input type="number" id="dlW" step="0.01"></label>' +
+    "<label>" + t("maps_south") + '<input type="number" id="dlS" step="0.01"></label>' +
+    "<label>" + t("maps_east") + '<input type="number" id="dlE" step="0.01"></label>' +
+    "<label>" + t("maps_north") + '<input type="number" id="dlN" step="0.01"></label>' +
+    "<label>" + t("maps_zoom_min") + '<input type="number" id="dlMin" value="10" min="6" max="19"></label>' +
+    "<label>" + t("maps_zoom_max") + '<input type="number" id="dlMax" value="15" min="6" max="19"></label>' +
     "</div>" +
     '<div id="dlMap" class="dl-map"></div>' +
-    '<div class="row-actions" style="margin-top:10px"><button class="btn" id="useView">Usar vista actual</button><button class="btn" id="estimate">Estimar</button><button class="btn btn-primary" id="download">Descarregar</button></div>' +
+    '<div class="row-actions" style="margin-top:10px"><button class="btn" id="useView">' + t("maps_use_view") + '</button><button class="btn" id="estimate">' + t("maps_estimate") + '</button><button class="btn btn-primary" id="download">' + t("maps_download") + "</button></div>" +
     '<p class="set-status" id="dlEstimate"></p><p class="set-status" id="dlProgress"></p></div>';
 
   v.querySelectorAll('input[name="baseMap"]').forEach(r => r.addEventListener("change", async () => {
-    try { await api("/api/maps/base", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: r.value }) }); toast("Mapa base canviat"); }
-    catch (e) { if (!e.auth) toast("Error", true); }
+    try { await api("/api/maps/base", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: r.value }) }); toast(t("maps_base_changed")); }
+    catch (e) { if (!e.auth) toast(t("err_generic"), true); }
   }));
   v.querySelector('[data-key="mapCacheSizeMb"]').addEventListener("change", (e) => setSetting("mapCacheSizeMb", e.target.value));
   v.querySelector("#clearCache").addEventListener("click", async () => {
-    try { await api("/api/maps/cache/clear", { method: "POST" }); toast("Memòria cau buidada"); } catch (e) { if (!e.auth) toast("Error", true); }
+    try { await api("/api/maps/cache/clear", { method: "POST" }); toast(t("maps_cache_cleared")); } catch (e) { if (!e.auth) toast(t("err_generic"), true); }
   });
   v.querySelectorAll("[data-del-map]").forEach(b => b.addEventListener("click", async () => {
-    if (!confirm("Borrar aquest mapa offline?")) return;
-    try { await api("/api/maps/offline/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: b.dataset.delMap }) }); toast("Esborrat"); renderMaps(); }
-    catch (e) { if (!e.auth) toast("Error", true); }
+    if (!confirm(t("maps_del_confirm"))) return;
+    try { await api("/api/maps/offline/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: b.dataset.delMap }) }); toast(t("maps_deleted")); renderMaps(); }
+    catch (e) { if (!e.auth) toast(t("err_generic"), true); }
   }));
   v.querySelectorAll("[data-del-sector]").forEach(b => b.addEventListener("click", async () => {
     const parts = b.dataset.delSector.split("|");
-    try { await api("/api/maps/sector/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: parts[0], sectorId: parts[1] }) }); toast("Sector esborrat"); renderMaps(); }
-    catch (e) { if (!e.auth) toast("Error", true); }
+    try { await api("/api/maps/sector/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: parts[0], sectorId: parts[1] }) }); toast(t("maps_sector_deleted")); renderMaps(); }
+    catch (e) { if (!e.auth) toast(t("err_generic"), true); }
   }));
 
   const dlMap = newMap(v.querySelector("#dlMap"), "mapsPick");
@@ -1104,17 +1105,17 @@ async function renderMaps() {
     try {
       const res = await api("/api/maps/download/estimate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(readReq()) });
       const j = await res.json();
-      if (j.tiles == null) { v.querySelector("#dlEstimate").textContent = "Àrea no vàlida"; return; }
-      v.querySelector("#dlEstimate").textContent = j.tiles + " tiles · ~" + j.mb + " MB" + (j.overLimit ? " (supera el límit de 60.000)" : "");
-    } catch (e) { if (!e.auth) toast("Error", true); }
+      if (j.tiles == null) { v.querySelector("#dlEstimate").textContent = t("maps_area_invalid"); return; }
+      v.querySelector("#dlEstimate").textContent = j.tiles + t("maps_tiles_suffix") + t("sep") + "~" + j.mb + " MB" + (j.overLimit ? t("maps_over_limit_suffix") : "");
+    } catch (e) { if (!e.auth) toast(t("err_generic"), true); }
   });
   v.querySelector("#download").addEventListener("click", async () => {
     try {
       const res = await api("/api/maps/download", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(readReq()) });
       const j = await res.json();
-      if (!j.ok) { toast(j.error === "over limit" ? "Massa tiles (límit 60.000)" : "Àrea no vàlida", true); return; }
-      toast("Descàrrega iniciada"); pollMapProgress(v);
-    } catch (e) { if (!e.auth) toast("Error", true); }
+      if (!j.ok) { toast(j.error === "over limit" ? t("maps_too_many") : t("maps_area_invalid"), true); return; }
+      toast(t("maps_dl_started")); pollMapProgress(v);
+    } catch (e) { if (!e.auth) toast(t("err_generic"), true); }
   });
 }
 
@@ -1125,10 +1126,10 @@ function pollMapProgress(v) {
     if (currentTab !== "maps") { clearInterval(mapsProgTimer); return; }
     try {
       const p = await apiJson("/api/maps/download/progress");
-      if (p.state === "RUNNING") el.textContent = "Descarregant… " + p.done + "/" + p.total + (p.failed ? " (" + p.failed + " fallits)" : "");
-      else if (p.state === "SUCCEEDED") { el.textContent = "Completat ✓"; clearInterval(mapsProgTimer); renderMaps(); }
-      else if (p.state === "FAILED") { el.textContent = "Ha fallat"; clearInterval(mapsProgTimer); }
-      else if (p.state === "ENQUEUED") el.textContent = "A la cua…";
+      if (p.state === "RUNNING") el.textContent = t("maps_downloading") + p.done + "/" + p.total + (p.failed ? " (" + p.failed + t("maps_failed_suffix") : "");
+      else if (p.state === "SUCCEEDED") { el.textContent = t("maps_completed"); clearInterval(mapsProgTimer); renderMaps(); }
+      else if (p.state === "FAILED") { el.textContent = t("maps_dl_failed"); clearInterval(mapsProgTimer); }
+      else if (p.state === "ENQUEUED") el.textContent = t("maps_queued");
     } catch (e) { clearInterval(mapsProgTimer); }
   }, 1500);
 }
@@ -1142,8 +1143,8 @@ async function setSetting(key, value) {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key: key, value: String(value) })
     });
-    if (!(await res.json()).ok) toast("Error en desar", true);
-  } catch (e) { if (!e.auth) toast("Error de connexió", true); }
+    if (!(await res.json()).ok) toast(t("save_err"), true);
+  } catch (e) { if (!e.auth) toast(t("err_conn"), true); }
 }
 function sToggle(k, label, val) { return '<label class="set-row"><span>' + label + '</span><input type="checkbox" data-key="' + k + '"' + (val ? " checked" : "") + "></label>"; }
 function sNum(k, label, val, min, max, step) { return '<label class="set-row"><span>' + label + '</span><input type="number" data-key="' + k + '" value="' + val + '" min="' + min + '" max="' + max + '" step="' + (step || 1) + '"></label>'; }
@@ -1156,100 +1157,100 @@ async function renderSettings() {
   v.innerHTML = loadingHtml();
   let s;
   try { s = await apiJson("/api/settings"); }
-  catch (e) { if (!e.auth) v.innerHTML = emptyHtml("No s'ha pogut carregar."); return; }
+  catch (e) { if (!e.auth) v.innerHTML = emptyHtml(t("err_load")); return; }
   const g = (title, body) => '<div class="card static set-card"><h3>' + title + "</h3>" + body + "</div>";
-  const prof = g("Perfil",
-    sNum("userMaxHr", "FC máx (bpm)", s.profile.userMaxHr, 120, 220) +
-    sNum("userWeightKg", "Peso (kg)", s.profile.userWeightKg, 40, 150) +
-    sNum("userAge", "Edad (0=—)", s.profile.userAge, 0, 99) +
-    sSel("userSex", "Sexo", s.profile.userSex, [["", "—"], ["M", "Hombre"], ["F", "Mujer"]]));
-  const units = g("Unidades",
-    sSel("distanceUnit", "Distancia", s.units.distanceUnit, [["KM", "Kilómetros"], ["MILE", "Millas"]]) +
-    sSel("elevationUnit", "Altitud", s.units.elevationUnit, [["METER", "Metros"], ["FOOT", "Pies"]]) +
-    sSel("speedUnit", "Velocidad", s.units.speedUnit, [["KMH", "km/h"], ["MPH", "mph"]]));
-  const rec = g("Grabación",
-    sSel("recGpsIntervalSec", "Intervalo GPS (s)", String(s.recording.recGpsIntervalSec), [["1", "1"], ["2", "2"], ["5", "5"]]) +
-    sNum("recMinDistanceM", "Distancia mínima (m)", s.recording.recMinDistanceM, 1, 15) +
-    sNum("recMaxAccuracyM", "Precisión máx (m)", s.recording.recMaxAccuracyM, 10, 100) +
-    sToggle("recAutoPause", "Auto-pausa", s.recording.recAutoPause) +
-    sNum("recAutoPauseSec", "Segundos auto-pausa", s.recording.recAutoPauseSec, 5, 60) +
-    sToggle("recBarometer", "Barómetro", s.recording.recBarometer) +
-    sToggle("lapManagementEnabled", "Gestión de vueltas", s.recording.lapManagementEnabled) +
-    sToggle("autoLapByPosition", "Auto-vuelta por posición", s.recording.autoLapByPosition));
-  const map = g("Mapa y rutas",
-    sNum("mapCacheSizeMb", "Caché (MB)", s.map.mapCacheSizeMb, 100, 2000, 50) +
-    sToggle("prefetchOnFollow", "Precargar al seguir", s.map.prefetchOnFollow) +
-    sColor("trackColor", "Color traza", s.map.trackColor) +
-    sColor("followColor", "Color ruta", s.map.followColor) +
-    sNum("followWidth", "Grosor ruta", s.map.followWidth, 3, 12) +
-    sToggle("followArrows", "Flechas de dirección", s.map.followArrows) +
-    sToggle("followProgress", "Progreso", s.map.followProgress) +
-    sSel("trackingPointStyle", "Punto de seguimiento", s.map.trackingPointStyle, [["DOT", "Punto"], ["ARROW", "Flecha"]]) +
-    sNum("offRouteThresholdM", "Umbral fuera de ruta (m)", s.map.offRouteThresholdM, 10, 100) +
-    sToggle("offRouteSound", "Sonido fuera de ruta", s.map.offRouteSound) +
-    sToggle("offRouteVibrate", "Vibración fuera de ruta", s.map.offRouteVibrate) +
-    sToggle("offRouteSpoken", "Voz «fuera de ruta»", s.map.offRouteSpoken));
-  const audio = g("Audio",
-    sToggle("announceEnabled", "Anuncios activados", s.audio.announceEnabled) +
-    sSel("announceMode", "Modo", s.audio.announceMode, [["VOICE", "Voz"], ["BEEP", "Pitido"]]) +
-    sToggle("turnHeadsUp", "Aviso previo de giro", s.audio.turnHeadsUp) +
-    sToggle("announceByDistance", "Cada X km", s.audio.announceByDistance) +
-    sNum("announceDistanceKm", "km", s.audio.announceDistanceKm, 1, 10) +
-    sToggle("announceByTime", "Cada X min", s.audio.announceByTime) +
-    sNum("announceTimeMin", "min", s.audio.announceTimeMin, 1, 30) +
-    sToggle("annDistanceTime", "Anunciar distancia/tiempo", s.audio.annDistanceTime) +
-    sToggle("annPace", "Anunciar ritmo", s.audio.annPace) +
-    sToggle("annSplitPace", "Anunciar ritmo último km", s.audio.annSplitPace) +
-    sToggle("annElevation", "Anunciar desnivel", s.audio.annElevation) +
-    sToggle("annHeartRate", "Anunciar FC", s.audio.annHeartRate));
-  const gen = g("General",
-    sToggle("keepScreenOn", "Mantener pantalla encendida", s.general.keepScreenOn) +
-    sToggle("fullscreen", "Pantalla completa", s.general.fullscreen) +
-    sToggle("adaptiveZoom", "Zoom adaptativo", s.general.adaptiveZoom) +
-    sToggle("recCountdown", "Cuenta atrás al grabar", s.general.recCountdown) +
-    sNum("desktopServerPort", "Puerto modo escritorio", s.general.desktopServerPort, 1024, 65535));
-  const sync = g("Sincronización",
-    '<p class="set-status">' + s.sync.pending + " pendientes · " + s.sync.failed + " fallidos" +
-    (s.sync.lastUploadedMs ? " · última " + date(s.sync.lastUploadedMs) : "") + "</p>" +
-    '<button class="btn" id="syncRetry">Reintentar fallidos</button>');
-  const endurain = g("Endurain",
-    '<label class="set-row"><span>Servidor</span><input type="text" id="enHost" value="' + esc(s.endurain.host || "") + '" placeholder="https://…"></label>' +
-    '<label class="set-row"><span>API key' + (s.endurain.apiKeySet ? " (configurada)" : "") + '</span><input type="text" id="enKey" placeholder="' + (s.endurain.apiKeySet ? "·····" : "") + '"></label>' +
-    '<button class="btn" id="enSave">Guardar y probar</button>');
-  const webdav = g("WebDAV",
-    '<label class="set-row"><span>URL</span><input type="text" id="wdUrl" value="' + esc(s.webdav.url || "") + '"></label>' +
-    '<label class="set-row"><span>Usuario' + (s.webdav.userSet ? " (configurado)" : "") + '</span><input type="text" id="wdUser"></label>' +
-    '<label class="set-row"><span>Contraseña</span><input type="password" id="wdPass"></label>' +
-    '<button class="btn" id="wdSave">Guardar</button>');
-  const folder = g("Carpeta",
-    '<label class="set-row"><span>Guardar cada actividad en la carpeta' + (s.folder.folderSet ? "" : " (elige la carpeta en el móvil)") +
+  const prof = g(t("set_profile"),
+    sNum("userMaxHr", t("set_maxhr"), s.profile.userMaxHr, 120, 220) +
+    sNum("userWeightKg", t("set_weight"), s.profile.userWeightKg, 40, 150) +
+    sNum("userAge", t("set_age"), s.profile.userAge, 0, 99) +
+    sSel("userSex", t("set_sex"), s.profile.userSex, [["", t("set_sex_none")], ["M", t("set_sex_male")], ["F", t("set_sex_female")]]));
+  const units = g(t("set_units"),
+    sSel("distanceUnit", t("set_distance"), s.units.distanceUnit, [["KM", t("set_km")], ["MILE", t("set_miles")]]) +
+    sSel("elevationUnit", t("set_altitude"), s.units.elevationUnit, [["METER", t("set_meters")], ["FOOT", t("set_feet")]]) +
+    sSel("speedUnit", t("set_speed"), s.units.speedUnit, [["KMH", "km/h"], ["MPH", "mph"]]));
+  const rec = g(t("set_recording"),
+    sSel("recGpsIntervalSec", t("set_gps_interval"), String(s.recording.recGpsIntervalSec), [["1", "1"], ["2", "2"], ["5", "5"]]) +
+    sNum("recMinDistanceM", t("set_min_distance"), s.recording.recMinDistanceM, 1, 15) +
+    sNum("recMaxAccuracyM", t("set_max_accuracy"), s.recording.recMaxAccuracyM, 10, 100) +
+    sToggle("recAutoPause", t("set_autopause"), s.recording.recAutoPause) +
+    sNum("recAutoPauseSec", t("set_autopause_sec"), s.recording.recAutoPauseSec, 5, 60) +
+    sToggle("recBarometer", t("set_barometer"), s.recording.recBarometer) +
+    sToggle("lapManagementEnabled", t("set_lap_mgmt"), s.recording.lapManagementEnabled) +
+    sToggle("autoLapByPosition", t("set_autolap_pos"), s.recording.autoLapByPosition));
+  const map = g(t("set_map_routes"),
+    sNum("mapCacheSizeMb", t("set_cache_mb"), s.map.mapCacheSizeMb, 100, 2000, 50) +
+    sToggle("prefetchOnFollow", t("set_prefetch"), s.map.prefetchOnFollow) +
+    sColor("trackColor", t("set_track_color"), s.map.trackColor) +
+    sColor("followColor", t("set_follow_color"), s.map.followColor) +
+    sNum("followWidth", t("set_follow_width"), s.map.followWidth, 3, 12) +
+    sToggle("followArrows", t("set_follow_arrows"), s.map.followArrows) +
+    sToggle("followProgress", t("set_follow_progress"), s.map.followProgress) +
+    sSel("trackingPointStyle", t("set_tracking_point"), s.map.trackingPointStyle, [["DOT", t("set_point_dot")], ["ARROW", t("set_point_arrow")]]) +
+    sNum("offRouteThresholdM", t("set_offroute_threshold"), s.map.offRouteThresholdM, 10, 100) +
+    sToggle("offRouteSound", t("set_offroute_sound"), s.map.offRouteSound) +
+    sToggle("offRouteVibrate", t("set_offroute_vibrate"), s.map.offRouteVibrate) +
+    sToggle("offRouteSpoken", t("set_offroute_spoken"), s.map.offRouteSpoken));
+  const audio = g(t("set_audio"),
+    sToggle("announceEnabled", t("set_announce_enabled"), s.audio.announceEnabled) +
+    sSel("announceMode", t("set_mode"), s.audio.announceMode, [["VOICE", t("set_mode_voice")], ["BEEP", t("set_mode_beep")]]) +
+    sToggle("turnHeadsUp", t("set_turn_headsup"), s.audio.turnHeadsUp) +
+    sToggle("announceByDistance", t("set_announce_km"), s.audio.announceByDistance) +
+    sNum("announceDistanceKm", t("set_km_label"), s.audio.announceDistanceKm, 1, 10) +
+    sToggle("announceByTime", t("set_announce_min"), s.audio.announceByTime) +
+    sNum("announceTimeMin", t("set_min_label"), s.audio.announceTimeMin, 1, 30) +
+    sToggle("annDistanceTime", t("set_ann_dist_time"), s.audio.annDistanceTime) +
+    sToggle("annPace", t("set_ann_pace"), s.audio.annPace) +
+    sToggle("annSplitPace", t("set_ann_split_pace"), s.audio.annSplitPace) +
+    sToggle("annElevation", t("set_ann_elevation"), s.audio.annElevation) +
+    sToggle("annHeartRate", t("set_ann_hr"), s.audio.annHeartRate));
+  const gen = g(t("set_general"),
+    sToggle("keepScreenOn", t("set_keep_screen"), s.general.keepScreenOn) +
+    sToggle("fullscreen", t("set_fullscreen"), s.general.fullscreen) +
+    sToggle("adaptiveZoom", t("set_adaptive_zoom"), s.general.adaptiveZoom) +
+    sToggle("recCountdown", t("set_countdown"), s.general.recCountdown) +
+    sNum("desktopServerPort", t("set_server_port"), s.general.desktopServerPort, 1024, 65535));
+  const sync = g(t("set_sync"),
+    '<p class="set-status">' + s.sync.pending + t("set_sync_pending") + t("sep") + s.sync.failed + t("set_sync_failed") +
+    (s.sync.lastUploadedMs ? t("sep") + t("set_sync_last") + date(s.sync.lastUploadedMs) : "") + "</p>" +
+    '<button class="btn" id="syncRetry">' + t("set_sync_retry") + "</button>");
+  const endurain = g(t("set_endurain"),
+    '<label class="set-row"><span>' + t("set_server") + '</span><input type="text" id="enHost" value="' + esc(s.endurain.host || "") + '" placeholder="https://…"></label>' +
+    '<label class="set-row"><span>' + t("set_apikey") + (s.endurain.apiKeySet ? t("set_configured") : "") + '</span><input type="text" id="enKey" placeholder="' + (s.endurain.apiKeySet ? "·····" : "") + '"></label>' +
+    '<button class="btn" id="enSave">' + t("set_save_test") + "</button>");
+  const webdav = g(t("set_webdav"),
+    '<label class="set-row"><span>' + t("set_url") + '</span><input type="text" id="wdUrl" value="' + esc(s.webdav.url || "") + '"></label>' +
+    '<label class="set-row"><span>' + t("set_user") + (s.webdav.userSet ? t("set_configured_m") : "") + '</span><input type="text" id="wdUser"></label>' +
+    '<label class="set-row"><span>' + t("set_password") + '</span><input type="password" id="wdPass"></label>' +
+    '<button class="btn" id="wdSave">' + t("set_save") + "</button>");
+  const folder = g(t("set_folder"),
+    '<label class="set-row"><span>' + t("set_folder_label") + (s.folder.folderSet ? "" : t("set_folder_pick")) +
     '</span><input type="checkbox" id="folderToggle"' + (s.folder.enabled ? " checked" : "") + "></label>");
-  v.innerHTML = '<h2 class="title">Ajustes</h2><p class="subtitle">Configuración de la app</p>' +
+  v.innerHTML = '<h2 class="title">' + t("set_title") + '</h2><p class="subtitle">' + t("set_subtitle") + "</p>" +
     '<div class="set-grid">' + prof + units + rec + map + audio + gen + sync + endurain + webdav + folder + "</div>";
 
   v.querySelectorAll("[data-key]").forEach(el =>
     el.addEventListener("change", () => setSetting(el.dataset.key, el.type === "checkbox" ? el.checked : el.value)));
   v.querySelector("#syncRetry").addEventListener("click", async () => {
-    try { await api("/api/settings/sync/retry", { method: "POST" }); toast("Reintentando…"); } catch (e) { if (!e.auth) toast("Error", true); }
+    try { await api("/api/settings/sync/retry", { method: "POST" }); toast(t("set_retrying")); } catch (e) { if (!e.auth) toast(t("err_generic"), true); }
   });
   v.querySelector("#enSave").addEventListener("click", async () => {
     const b = { host: document.getElementById("enHost").value };
     const key = document.getElementById("enKey").value; if (key) b.apiKey = key;
     try {
       const res = await api("/api/settings/endurain", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) });
-      const j = await res.json(); toast(j.ok ? "Conectado ✓" : ("Error: " + (j.error || "")), !j.ok);
-    } catch (e) { if (!e.auth) toast("Error de connexió", true); }
+      const j = await res.json(); toast(j.ok ? t("set_connected") : (t("set_error_prefix") + (j.error || "")), !j.ok);
+    } catch (e) { if (!e.auth) toast(t("err_conn"), true); }
   });
   v.querySelector("#wdSave").addEventListener("click", async () => {
     const b = { url: document.getElementById("wdUrl").value };
     const u = document.getElementById("wdUser").value, pw = document.getElementById("wdPass").value;
     if (u) b.user = u; if (pw) b.pass = pw;
-    try { await api("/api/settings/webdav", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }); toast("Guardado"); }
-    catch (e) { if (!e.auth) toast("Error", true); }
+    try { await api("/api/settings/webdav", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }); toast(t("set_saved")); }
+    catch (e) { if (!e.auth) toast(t("err_generic"), true); }
   });
   v.querySelector("#folderToggle").addEventListener("change", async (ev) => {
     try { await api("/api/settings/folder", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled: String(ev.target.checked) }) }); }
-    catch (e) { if (!e.auth) toast("Error", true); }
+    catch (e) { if (!e.auth) toast(t("err_generic"), true); }
   });
 }
 
@@ -1269,6 +1270,20 @@ window.addEventListener("resize", () => {
     if (!$app.classList.contains("hidden")) renderTab(currentTab);
   }, 250);
 });
+
+// Localize static shell strings (tab labels, login gate, document title).
+function applyStaticI18n() {
+  document.querySelectorAll(".tab[data-tab]").forEach(btn => {
+    const sp = btn.querySelector("span");
+    if (sp) sp.textContent = t("tab_" + btn.dataset.tab);
+  });
+  const bs = document.querySelector(".brand-sub"); if (bs) bs.textContent = t("brand_sub");
+  const lh = document.querySelector(".login-hint"); if (lh) lh.textContent = t("login_hint");
+  const le = document.querySelector("#loginForm button[type=submit]"); if (le) le.textContent = t("login_enter");
+  const err = document.getElementById("loginError"); if (err) err.textContent = t("login_error");
+  document.title = t("doc_title");
+}
+applyStaticI18n();
 
 // Populate tab icons from the icon system (single source of truth).
 document.querySelectorAll(".tab[data-icon]").forEach(btn =>
