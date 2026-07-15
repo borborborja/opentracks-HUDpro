@@ -1110,7 +1110,7 @@ class MapViewerActivity : ComponentActivity() {
                 val geo = gpx.map { it.toGeoPoint() }
                 followEngine = FollowRouteEngine(geo, gpx.map { it.elevation })
                 ctrl.setFollowRoute(geo)
-                ctrl.setFollowRouteStyle(prefs.followColor, prefs.followWidth, prefs.followArrows, prefs.followProgress)
+                ctrl.setFollowRouteStyle(prefs.followColor, prefs.followWidth, showFollowArrows(prefs), prefs.followProgress)
                 offRouteThreshold = prefs.offRouteThresholdM
                 offRouteSound = prefs.offRouteSound
                 offRouteVibrate = prefs.offRouteVibrate
@@ -1127,6 +1127,13 @@ class MapViewerActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Direction chevrons on the followed route. Just following a track, the way round is the user's
+     * business (their setting decides); racing a competition it is NOT — a ROUTE or lap only counts
+     * ridden the right way, so the arrows are forced on.
+     */
+    private fun showFollowArrows(prefs: ViewerPreferences) = prefs.followArrows || competing || circuitMode
+
     /** Draws a follow route directly from inline points (ROUTE competition reference; no track id). */
     private fun drawFollowRouteFromPoints(
         prefs: ViewerPreferences,
@@ -1139,7 +1146,7 @@ class MapViewerActivity : ComponentActivity() {
         val geo = gpx.map { it.toGeoPoint() }
         followEngine = FollowRouteEngine(geo, gpx.map { it.elevation })
         ctrl.setFollowRoute(geo)
-        ctrl.setFollowRouteStyle(prefs.followColor, prefs.followWidth, prefs.followArrows, prefs.followProgress)
+        ctrl.setFollowRouteStyle(prefs.followColor, prefs.followWidth, showFollowArrows(prefs), prefs.followProgress)
         offRouteThreshold = prefs.offRouteThresholdM
         offRouteSound = prefs.offRouteSound
         offRouteVibrate = prefs.offRouteVibrate

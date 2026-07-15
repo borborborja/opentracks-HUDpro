@@ -35,6 +35,7 @@ class MapLibreController(private val map: MapLibreMap) {
     private var waypointSource: GeoJsonSource? = null
     private var followSource: GeoJsonSource? = null
     private var followDoneSource: GeoJsonSource? = null
+    private var followArrowSource: GeoJsonSource? = null
     private var followLayer: LineLayer? = null
     private var followDoneLayer: LineLayer? = null
     private var followPoints: List<GeoPoint> = emptyList()
@@ -58,6 +59,11 @@ class MapLibreController(private val map: MapLibreMap) {
         const val FOLLOW_DONE_SOURCE = "follow-done-source"
         const val FOLLOW_DONE_LAYER = "follow-done-layer"
         const val FOLLOW_ARROW_LAYER = "follow-arrow-layer"
+        const val FOLLOW_ARROW_SOURCE = "follow-arrow-source"
+        const val FOLLOW_ARROW_ICON = "follow-arrow-icon"
+        /** Cap the chevrons on long routes; spacing widens instead of the count growing. */
+        const val MAX_FOLLOW_ARROWS = 200
+        const val MIN_FOLLOW_ARROW_SPACING_M = 80.0
         const val GHOST_SOURCE = "ghost-source"
         const val GHOST_LAYER = "ghost-layer"
         const val TRACKING_SOURCE = "tracking-source"
@@ -121,7 +127,27 @@ class MapLibreController(private val map: MapLibreMap) {
         followSource = follow
         followLayer = flLayer
 
-        // NOTE: no text/symbol layers here. A raster style has no `glyphs`, and a symbol layer that
+        // Direction chevrons along the followed route (which way to ride it — it matters when racing).
+        // ICON symbol layer only: the icon is a code-drawn bitmap registered via addImage, so this
+        // needs NO glyphs and is safe on a raster style (same proven recipe as the tracking arrow).
+        val followArrow = GeoJsonSource(FOLLOW_ARROW_SOURCE, FeatureCollection.fromFeatures(emptyList()))
+        style.addSource(followArrow)
+        style.addImage(FOLLOW_ARROW_ICON, arrowBitmap(followColorHex))
+        style.addLayer(
+            SymbolLayer(FOLLOW_ARROW_LAYER, FOLLOW_ARROW_SOURCE).withProperties(
+                PropertyFactory.iconImage(FOLLOW_ARROW_ICON),
+                PropertyFactory.iconSize(0.45f),
+                PropertyFactory.iconRotate(Expression.get("bearing")),
+                PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
+                // Let MapLibre cull colliding chevrons: dense when zoomed in, sparse when zoomed out.
+                PropertyFactory.iconAllowOverlap(false),
+                PropertyFactory.iconIgnorePlacement(false),
+                PropertyFactory.visibility(if (followArrows) Property.VISIBLE else Property.NONE),
+            ),
+        )
+        followArrowSource = followArrow
+
+        // NOTE: no TEXT symbol layers here. A raster style has no `glyphs`, and a symbol layer that
         // needs glyphs makes MapLibre fail to render the GeoJSON layers (the route line vanished).
         val track = GeoJsonSource(TRACK_SOURCE, FeatureCollection.fromFeatures(emptyList()))
         style.addSource(track)
@@ -396,6 +422,13 @@ class MapLibreController(private val map: MapLibreMap) {
             PropertyFactory.visibility(org.maplibre.android.style.layers.Property.VISIBLE),
         )
         followDoneLayer?.setProperties(PropertyFactory.lineWidth((width - 2f).coerceAtLeast(2f)))
+        // Re-register the chevron icon in the route colour, then show/hide the layer.
+        map.style?.let { s ->
+            runCatching { s.addImage(FOLLOW_ARROW_ICON, arrowBitmap(followColorHex)) }
+            (s.getLayer(FOLLOW_ARROW_LAYER) as? SymbolLayer)?.setProperties(
+                PropertyFactory.visibility(if (arrows) Property.VISIBLE else Property.NONE),
+            )
+        }
         if (followPoints.isNotEmpty()) drawFollow(followPoints.size) // refresh remaining/done split
     }
 
@@ -475,6 +508,53 @@ class MapLibreController(private val map: MapLibreMap) {
             doneSrc?.setGeoJson(FeatureCollection.fromFeatures(emptyList<Feature>()))
             followSrc?.setGeoJson(FeatureCollection.fromFeatures(line(points)))
         }
+        drawFollowArrows()
+    }
+
+    /**
+     * Direction chevrons spaced evenly ALONG the route (by distance, not by point index — GPX point
+     * density varies wildly), each carrying the bearing of the leg it sits on so the icon rotates to
+     * point the way the route runs.
+     */
+    private fun drawFollowArrows() {
+        val src = map.style?.getSourceAs<GeoJsonSource>(FOLLOW_ARROW_SOURCE) ?: followArrowSource
+        val pts = followPoints
+        if (!followArrows || pts.size < 2) {
+            src?.setGeoJson(FeatureCollection.fromFeatures(emptyList<Feature>()))
+            return
+        }
+        val legs = (1 until pts.size).map { cat.rumb.app.viewer.hud.MetricsCalculator.distanceMeters(pts[it - 1], pts[it]) }
+        val totalM = legs.sum()
+        if (totalM <= 0.0) {
+            src?.setGeoJson(FeatureCollection.fromFeatures(emptyList<Feature>()))
+            return
+        }
+        val spacing = maxOf(MIN_FOLLOW_ARROW_SPACING_M, totalM / MAX_FOLLOW_ARROWS)
+        val features = mutableListOf<Feature>()
+        var travelled = 0.0
+        var next = spacing / 2 // half a step in, so the first chevron isn't buried under the start
+        for (i in 1 until pts.size) {
+            val legM = legs[i - 1]
+            if (legM <= 0.0) continue
+            val a = pts[i - 1]
+            val b = pts[i]
+            val bearing = cat.rumb.app.viewer.hud.MetricsCalculator.bearing(a, b)
+            while (next <= travelled + legM) {
+                val t = (next - travelled) / legM
+                features.add(
+                    Feature.fromGeometry(
+                        Point.fromLngLat(
+                            a.longitude + (b.longitude - a.longitude) * t,
+                            a.latitude + (b.latitude - a.latitude) * t,
+                        ),
+                    ).also { it.addNumberProperty("bearing", bearing) },
+                )
+                next += spacing
+            }
+            travelled += legM
+        }
+        src?.setGeoJson(FeatureCollection.fromFeatures(features))
+        cat.rumb.app.data.debug.DebugLog.d("Map", "fletxes de sentit · ${features.size} cada ${"%.0f".format(spacing)} m")
     }
 
     fun updateWaypoints(waypoints: List<Waypoint>) {
