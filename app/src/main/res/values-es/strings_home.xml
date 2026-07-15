@@ -66,6 +66,13 @@
     <string name="home_sort_type">Por tipo</string>
     <string name="home_filter_all_types">Todos los tipos</string>
     <string name="home_tab_competition">Competición</string>
+    <string name="home_tab_circuits">Circuitos</string>
+    <string name="circuit_empty">Aún no hay circuitos. Abre un entrenamiento con vueltas y pulsa «Crear circuito».</string>
+    <string name="circuit_empty_efforts">Aún no hay vueltas.</string>
+    <string name="circuit_efforts_count">%1$d vueltas</string>
+    <string name="circuit_subtitle">Línea de meta fija · ranking de vueltas</string>
+    <string name="circuit_created">Circuito creado</string>
+    <string name="circuit_create_from_laps">Crear circuito con estas vueltas</string>
     <string name="home_send_to_competition">Enviar a competición</string>
     <string name="home_remove_from_competition">Quitar de competición</string>
     <string name="home_competition_created">Añadido a competición</string>

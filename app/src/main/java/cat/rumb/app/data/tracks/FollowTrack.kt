@@ -166,8 +166,10 @@ interface FollowTrackDao {
         SyncStatusEntity::class,
         cat.rumb.app.data.recording.RecordingEntity::class,
         cat.rumb.app.data.recording.RecordingPointEntity::class,
+        CircuitEntity::class,
+        CircuitEffortEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -175,8 +177,34 @@ abstract class RumbDatabase : RoomDatabase() {
     abstract fun followTrackDao(): FollowTrackDao
     abstract fun syncStatusDao(): SyncStatusDao
     abstract fun recordingDao(): cat.rumb.app.data.recording.RecordingDao
+    abstract fun circuitDao(): CircuitDao
 
     companion object {
+        /** v10: circuits — a fixed start/finish line + a lap-effort leaderboard. */
+        val MIGRATION_9_10 = object : androidx.room.migration.Migration(9, 10) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `circuits` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`name` TEXT NOT NULL, `activity_type` TEXT, `created_at` INTEGER NOT NULL, " +
+                        "`archived` INTEGER NOT NULL, `line_lat` REAL NOT NULL, `line_lng` REAL NOT NULL, " +
+                        "`radius_m` REAL NOT NULL, `min_lap_ms` INTEGER NOT NULL, `min_lap_m` REAL NOT NULL, " +
+                        "`reference_gpx` TEXT NOT NULL, `best_effort_id` INTEGER)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `circuit_efforts` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`circuit_id` INTEGER NOT NULL, `source_track_id` INTEGER, `lap_index` INTEGER NOT NULL, " +
+                        "`time_ms` INTEGER NOT NULL, `distance_m` REAL NOT NULL, `avg_hr` REAL, " +
+                        "`created_at` INTEGER NOT NULL, `gpx` TEXT NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_circuit_efforts_circuit_id_source_track_id_lap_index` " +
+                        "ON `circuit_efforts` (`circuit_id`, `source_track_id`, `lap_index`)",
+                )
+            }
+        }
+
         /** v9: sync outbox — per-(track, service) upload status. */
         val MIGRATION_8_9 = object : androidx.room.migration.Migration(8, 9) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {

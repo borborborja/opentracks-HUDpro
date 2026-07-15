@@ -126,6 +126,7 @@ fun HomeScreen(
     onOpenRoute: (Long) -> Unit = {},
     onOpenTraining: (Long) -> Unit = {},
     onOpenCompare: (Long) -> Unit = {},
+    onOpenCircuit: (Long) -> Unit = {},
     onEditRoute: (Long) -> Unit = {},
     onCreateRoute: () -> Unit = {},
     onDownloadRouteMap: (cat.rumb.app.data.map.BoundingBox) -> Unit = {},
@@ -143,6 +144,7 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     val all by remember { app.trackRepository.observeSummaries() }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val circuits by remember { app.circuitRepository.observeCircuits() }.collectAsStateWithLifecycle(initialValue = emptyList())
     var tab by remember { mutableIntStateOf(0) }
     val kind = if (tab == 0) TrackKind.TRAINING else TrackKind.ROUTE
 
@@ -231,6 +233,14 @@ fun HomeScreen(
     val routeActions = RouteActions(
         onOpen = { if (it.kind == TrackKind.TRAINING) onOpenTraining(it.id) else onOpenRoute(it.id) },
         onOpenCompare = { onOpenCompare(it.id) },
+        onCreateCircuit = { t ->
+            scope.launch {
+                val id = app.circuitRepository.createCircuitFromTrack(t.id, t.name, t.activityType, System.currentTimeMillis())
+                val msg = if (id != null) R.string.circuit_created else R.string.home_competition_untimed
+                android.widget.Toast.makeText(context, context.getString(msg), android.widget.Toast.LENGTH_LONG).show()
+                if (id != null) onOpenCircuit(id)
+            }
+        },
         onExport = ::exportTrack,
         onEdit = { t -> if (kind == TrackKind.ROUTE) onEditRoute(t.id) else renameFor = t },
         onMove = { moveFor = it },
@@ -295,6 +305,7 @@ fun HomeScreen(
                 val homeTabs = listOf(
                     0 to R.string.home_tab_recorded,
                     2 to R.string.home_tab_competition,
+                    4 to R.string.home_tab_circuits,
                     3 to R.string.home_tab_progress,
                 )
                 TabRow(
@@ -416,6 +427,8 @@ fun HomeScreen(
                     onDeleteCompetition = { refId -> scope.launch { app.trackRepository.dissolveCompetition(refId) } },
                     onRemoveAttempt = { id -> scope.launch { app.trackRepository.removeFromCompetition(id) } },
                 )
+            } else if (tab == 4) {
+                CircuitTab(circuits = circuits, onOpen = onOpenCircuit)
             } else {
                 ProgressTab(
                     all = all,
@@ -683,6 +696,7 @@ private suspend fun createCompetitionFrom(context: android.content.Context, app:
 private data class RouteActions(
     val onOpen: (FollowTrackEntity) -> Unit,
     val onOpenCompare: (FollowTrackEntity) -> Unit,
+    val onCreateCircuit: (FollowTrackEntity) -> Unit,
     val onExport: (FollowTrackEntity) -> Unit,
     val onEdit: (FollowTrackEntity) -> Unit,
     val onMove: (FollowTrackEntity) -> Unit,
@@ -870,7 +884,11 @@ private fun RouteRow(
                 RouteMenu(t, kind, actions)
             }
             if (hasLaps && expanded) {
-                LapsDropdown(t, onOpenCompare = { actions.onOpenCompare(t) })
+                LapsDropdown(
+                    t,
+                    onOpenCompare = { actions.onOpenCompare(t) },
+                    onCreateCircuit = { actions.onCreateCircuit(t) },
+                )
             }
         }
     }
@@ -882,7 +900,7 @@ private fun RouteRow(
  * opens the shared lap comparison (CompareScreen LAPS mode).
  */
 @Composable
-private fun LapsDropdown(t: FollowTrackEntity, onOpenCompare: () -> Unit) {
+private fun LapsDropdown(t: FollowTrackEntity, onOpenCompare: () -> Unit, onCreateCircuit: () -> Unit) {
     val context = LocalContext.current
     val app = remember { RumbApplication.from(context) }
     val laps = remember(t.laps) { Laps.decode(t.laps).filter { it.kind == LapKind.LAP } }
@@ -925,6 +943,7 @@ private fun LapsDropdown(t: FollowTrackEntity, onOpenCompare: () -> Unit) {
                 )
             }
         }
+        TextButton(onClick = onCreateCircuit) { Text(stringResource(R.string.circuit_create_from_laps)) }
         }
     }
 }

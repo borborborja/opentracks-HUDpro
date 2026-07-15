@@ -66,6 +66,13 @@
     <string name="home_sort_type">Per tipus</string>
     <string name="home_filter_all_types">Tots els tipus</string>
     <string name="home_tab_competition">Competició</string>
+    <string name="home_tab_circuits">Circuits</string>
+    <string name="circuit_empty">Encara no hi ha circuits. Obre un entrenament amb voltes i prem «Crear circuit».</string>
+    <string name="circuit_empty_efforts">Encara no hi ha voltes.</string>
+    <string name="circuit_efforts_count">%1$d voltes</string>
+    <string name="circuit_subtitle">Línia de meta fixa · rànquing de voltes</string>
+    <string name="circuit_created">Circuit creat</string>
+    <string name="circuit_create_from_laps">Crear circuit amb aquestes voltes</string>
     <string name="home_send_to_competition">Envia a competició</string>
     <string name="home_remove_from_competition">Treu de competició</string>
     <string name="home_competition_created">Afegit a competició</string>
