@@ -375,13 +375,8 @@ class MapViewerActivity : ComponentActivity() {
                                 // recorded trainings and competition references, which must not leak.
                                 tracks = tracks.filter { !it.archived && it.kind == cat.rumb.app.data.tracks.TrackKind.ROUTE },
                                 competitions = competitions.filter { !it.archived },
-                                onStartCompetition = { id ->
-                                    DebugLog.i("Competi", "quick-settings · iniciar competició id=$id")
-                                    settingsOpenFlow.value = false
-                                    // A running recording would be abandoned by the relaunch — confirm first.
-                                    if (NativeRecording.isActive) confirmCompetitionFlow.value = id
-                                    else relaunchIntoCompetition(id)
-                                },
+                                currentCompetitionId = competitionId,
+                                onStartCompetition = { id -> switchCompetition(id) },
                                 orientation = prefs.mapOrientation,
                                 keepScreenOn = prefs.keepScreenOn,
                                 fullscreen = prefs.fullscreen,
@@ -394,7 +389,11 @@ class MapViewerActivity : ComponentActivity() {
                                 onSelectFollow = { id ->
                                     DebugLog.i("UI", "quick-settings · ruta a seguir → id=$id")
                                     prefs.activeFollowTrackId = id
-                                    controller?.let { reloadFollow(it, frame = true) }
+                                    // While racing, the competition owns the follow layer (reloadFollow
+                                    // always redraws its reference), so a manual route choice — "None"
+                                    // included — can only be honoured by leaving the competition.
+                                    if (competing || circuitMode) switchCompetition(-1L)
+                                    else controller?.let { reloadFollow(it, frame = true) }
                                 },
                                 onOrientation = { m ->
                                     DebugLog.i("UI", "quick-settings · orientació → $m")
@@ -752,13 +751,27 @@ class MapViewerActivity : ComponentActivity() {
     }
 
     /**
-     * Enters competition mode from within the live viewer. The activity is `singleTask`, so
-     * `startActivity` on itself would NOT create a new instance — it reuses this one via onNewIntent
-     * and our finish() would pop back to the manager (home). Instead, swap the intent and recreate:
-     * onCreate re-runs with the new competition id and reinitialises everything cleanly.
+     * Enters competition [id] — or leaves competition mode when [id] is not positive. Both are the
+     * same relaunch, so they share the "this discards your recording" confirmation.
+     */
+    private fun switchCompetition(id: Long) {
+        DebugLog.i("Competi", "quick-settings · competició → ${if (id > 0) "id=$id" else "cap"}")
+        settingsOpenFlow.value = false
+        if (NativeRecording.isActive) confirmCompetitionFlow.value = id
+        else relaunchIntoCompetition(id)
+    }
+
+    /**
+     * Enters competition mode from within the live viewer — or LEAVES it when [id] is not positive,
+     * by relaunching with no competition extra (onCreate then clears circuit prefs and draws nothing).
+     * The activity is `singleTask`, so `startActivity` on itself would NOT create a new instance — it
+     * reuses this one via onNewIntent and our finish() would pop back to the manager (home). Instead,
+     * swap the intent and recreate: onCreate re-runs and reinitialises everything cleanly.
      */
     private fun relaunchIntoCompetition(id: Long) {
-        setIntent(android.content.Intent(this, MapViewerActivity::class.java).putExtra(EXTRA_COMPETITION_ID, id))
+        val intent = android.content.Intent(this, MapViewerActivity::class.java)
+        if (id > 0) intent.putExtra(EXTRA_COMPETITION_ID, id)
+        setIntent(intent)
         recreate()
     }
 

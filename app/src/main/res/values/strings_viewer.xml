@@ -90,9 +90,11 @@
     <string name="viewer_qs_mode_routes">Routes</string>
     <string name="viewer_qs_mode_competitions">Competitions</string>
     <string name="viewer_qs_no_competitions_yet">No competitions yet.</string>
-    <string name="viewer_comp_switch_msg">You have a recording in progress. Starting the competition will discard it.</string>
-    <string name="viewer_comp_switch_confirm">Discard and compete</string>
+    <string name="viewer_comp_switch_msg">You have a recording in progress. This change will discard it.</string>
+    <string name="viewer_comp_switch_confirm">Discard and continue</string>
     <string name="viewer_comp_switch_cancel">Cancel</string>
     <string name="viewer_qs_lap_countdown">3-2-1 countdown into the lap</string>
     <string name="viewer_qs_lap_countdown_help">While racing a circuit, counts down as you close in on the finish line so 0 lands on the new lap.</string>
+    <string name="viewer_qs_competition_none">None</string>
+    <string name="viewer_qs_competition_none_subtitle">Don\'t compete</string>
 </resources>

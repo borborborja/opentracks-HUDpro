@@ -90,9 +90,11 @@
     <string name="viewer_qs_mode_routes">Trasy</string>
     <string name="viewer_qs_mode_competitions">Zawody</string>
     <string name="viewer_qs_no_competitions_yet">Brak zawodów.</string>
-    <string name="viewer_comp_switch_msg">Trwa nagrywanie. Rozpoczęcie zawodów je odrzuci.</string>
-    <string name="viewer_comp_switch_confirm">Odrzuć i rywalizuj</string>
+    <string name="viewer_comp_switch_msg">Trwa nagrywanie. Ta zmiana je odrzuci.</string>
+    <string name="viewer_comp_switch_confirm">Odrzuć i kontynuuj</string>
     <string name="viewer_comp_switch_cancel">Anuluj</string>
     <string name="viewer_qs_lap_countdown">Odliczanie 3-2-1 przy wejściu na okrążenie</string>
     <string name="viewer_qs_lap_countdown_help">Podczas zawodów na torze odlicza przy zbliżaniu się do mety, tak aby 0 wypadło na nowym okrążeniu.</string>
+    <string name="viewer_qs_competition_none">Brak</string>
+    <string name="viewer_qs_competition_none_subtitle">Nie rywalizuj</string>
 </resources>

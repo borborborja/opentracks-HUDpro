@@ -90,9 +90,11 @@
     <string name="viewer_qs_mode_routes">Rutter</string>
     <string name="viewer_qs_mode_competitions">Tävlingar</string>
     <string name="viewer_qs_no_competitions_yet">Inga tävlingar än.</string>
-    <string name="viewer_comp_switch_msg">En inspelning pågår. Att starta tävlingen kasserar den.</string>
-    <string name="viewer_comp_switch_confirm">Kasta och tävla</string>
+    <string name="viewer_comp_switch_msg">En inspelning pågår. Den här ändringen kasserar den.</string>
+    <string name="viewer_comp_switch_confirm">Kasta och fortsätt</string>
     <string name="viewer_comp_switch_cancel">Avbryt</string>
     <string name="viewer_qs_lap_countdown">Nedräkning 3-2-1 in i varvet</string>
     <string name="viewer_qs_lap_countdown_help">Vid tävling på bana räknar den ned när du närmar dig mållinjen så att 0 hamnar på det nya varvet.</string>
+    <string name="viewer_qs_competition_none">Ingen</string>
+    <string name="viewer_qs_competition_none_subtitle">Tävla inte</string>
 </resources>

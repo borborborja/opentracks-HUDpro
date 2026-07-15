@@ -90,9 +90,11 @@
     <string name="viewer_qs_mode_routes">Routen</string>
     <string name="viewer_qs_mode_competitions">Wettkämpfe</string>
     <string name="viewer_qs_no_competitions_yet">Noch keine Wettkämpfe.</string>
-    <string name="viewer_comp_switch_msg">Eine Aufzeichnung läuft. Der Start des Wettkampfs verwirft sie.</string>
-    <string name="viewer_comp_switch_confirm">Verwerfen und antreten</string>
+    <string name="viewer_comp_switch_msg">Eine Aufzeichnung läuft. Diese Änderung verwirft sie.</string>
+    <string name="viewer_comp_switch_confirm">Verwerfen und fortfahren</string>
     <string name="viewer_comp_switch_cancel">Abbrechen</string>
     <string name="viewer_qs_lap_countdown">3-2-1-Countdown beim Rundenstart</string>
     <string name="viewer_qs_lap_countdown_help">Beim Wettkampf auf einem Rundkurs zählt es bei Annäherung an die Ziellinie herunter, sodass 0 auf die neue Runde fällt.</string>
+    <string name="viewer_qs_competition_none">Keiner</string>
+    <string name="viewer_qs_competition_none_subtitle">Nicht antreten</string>
 </resources>

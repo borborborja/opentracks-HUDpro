@@ -90,9 +90,11 @@
     <string name="viewer_qs_mode_routes">Routes</string>
     <string name="viewer_qs_mode_competitions">Competities</string>
     <string name="viewer_qs_no_competitions_yet">Nog geen competities.</string>
-    <string name="viewer_comp_switch_msg">Er is een opname bezig. De competitie starten verwijdert deze.</string>
-    <string name="viewer_comp_switch_confirm">Verwijderen en meedoen</string>
+    <string name="viewer_comp_switch_msg">Er is een opname bezig. Deze wijziging verwijdert die.</string>
+    <string name="viewer_comp_switch_confirm">Verwijderen en doorgaan</string>
     <string name="viewer_comp_switch_cancel">Annuleren</string>
     <string name="viewer_qs_lap_countdown">Aftellen 3-2-1 bij het ingaan van de ronde</string>
     <string name="viewer_qs_lap_countdown_help">Bij een circuitwedstrijd telt het af als je de finish nadert, zodat 0 samenvalt met de nieuwe ronde.</string>
+    <string name="viewer_qs_competition_none">Geen</string>
+    <string name="viewer_qs_competition_none_subtitle">Niet meedoen</string>
 </resources>

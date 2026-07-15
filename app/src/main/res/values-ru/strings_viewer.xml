@@ -90,9 +90,11 @@
     <string name="viewer_qs_mode_routes">Маршруты</string>
     <string name="viewer_qs_mode_competitions">Соревнования</string>
     <string name="viewer_qs_no_competitions_yet">Пока нет соревнований.</string>
-    <string name="viewer_comp_switch_msg">Идёт запись. Запуск соревнования отменит её.</string>
-    <string name="viewer_comp_switch_confirm">Отменить и участвовать</string>
+    <string name="viewer_comp_switch_msg">Идёт запись. Это изменение отменит её.</string>
+    <string name="viewer_comp_switch_confirm">Отменить и продолжить</string>
     <string name="viewer_comp_switch_cancel">Отмена</string>
     <string name="viewer_qs_lap_countdown">Обратный отсчёт 3-2-1 при входе в круг</string>
     <string name="viewer_qs_lap_countdown_help">В соревновании на круге отсчитывает при приближении к финишу, чтобы 0 совпал с новым кругом.</string>
+    <string name="viewer_qs_competition_none">Нет</string>
+    <string name="viewer_qs_competition_none_subtitle">Не соревноваться</string>
 </resources>

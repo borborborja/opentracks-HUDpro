@@ -60,6 +60,7 @@ fun ViewerQuickSettings(
     currentFollowId: Long,
     tracks: List<FollowTrackEntity>,
     competitions: List<CompetitionEntity> = emptyList(),
+    currentCompetitionId: Long = -1L,
     onStartCompetition: (Long) -> Unit = {},
     orientation: String,
     keepScreenOn: Boolean,
@@ -125,7 +126,7 @@ fun ViewerQuickSettings(
             when (tab) {
                 0 -> MapTab(selBase, offlineMaps) { id -> selBase = id; onSelectBaseMap(id) }
                 1 -> FollowTab(
-                    selFollow, tracks, competitions, turnVoice, onTurnVoice,
+                    selFollow, tracks, competitions, currentCompetitionId, turnVoice, onTurnVoice,
                     lapCountdown, onLapCountdown, onStartCompetition,
                 ) { id -> selFollow = id; onSelectFollow(id) }
                 3 -> CompetitionQsTab(
@@ -175,6 +176,7 @@ private fun FollowTab(
     current: Long,
     tracks: List<FollowTrackEntity>,
     competitions: List<CompetitionEntity>,
+    currentCompetitionId: Long = -1L,
     turnVoice: Boolean = true,
     onTurnVoice: (Boolean) -> Unit = {},
     lapCountdown: Boolean = false,
@@ -221,6 +223,13 @@ private fun FollowTab(
         var tv by remember { mutableStateOf(turnVoice) }
         ToggleRow(stringResource(R.string.viewer_qs_turn_voice), tv) { tv = it; onTurnVoice(it) }
     } else {
+        // "None" is what gets you OUT of a competition (and leaves the map clean); the rows show
+        // which one is being raced, so the list reflects state instead of being a blind launcher.
+        RadioRow(
+            stringResource(R.string.viewer_qs_competition_none),
+            stringResource(R.string.viewer_qs_competition_none_subtitle),
+            currentCompetitionId <= 0L,
+        ) { onStartCompetition(-1L) }
         if (competitions.isEmpty()) {
             Text(stringResource(R.string.viewer_qs_no_competitions_yet),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
@@ -230,6 +239,7 @@ private fun FollowTab(
             CompetitionRow(
                 name = c.name,
                 isLap = isLap,
+                selected = c.id == currentCompetitionId,
             ) { onStartCompetition(c.id) }
         }
         // Lap-only setting: it counts you into a circuit's finish line, so it belongs here.
@@ -244,17 +254,19 @@ private fun FollowTab(
     }
 }
 
-/** One competition in the race list: a type icon (lap vs route) + name + tap-to-start. */
+/** One competition in the race list: selection dot + type icon (lap vs route) + name + tap-to-race. */
 @Composable
-private fun CompetitionRow(name: String, isLap: Boolean, onClick: () -> Unit) {
+private fun CompetitionRow(name: String, isLap: Boolean, selected: Boolean, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().selectable(selected = false, onClick = onClick).padding(vertical = 8.dp),
+        Modifier.fillMaxWidth().selectable(selected = selected, onClick = onClick).padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        RadioButton(selected = selected, onClick = null)
         Icon(
             if (isLap) Icons.Filled.Loop else Icons.Filled.Route,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 8.dp),
         )
         Column(Modifier.padding(start = 12.dp)) {
             Text(name, style = MaterialTheme.typography.bodyLarge)

@@ -90,9 +90,11 @@
     <string name="viewer_qs_mode_routes">Percorsi</string>
     <string name="viewer_qs_mode_competitions">Competizioni</string>
     <string name="viewer_qs_no_competitions_yet">Ancora nessuna competizione.</string>
-    <string name="viewer_comp_switch_msg">Hai una registrazione in corso. Avviare la competizione la annullerà.</string>
-    <string name="viewer_comp_switch_confirm">Annulla e gareggia</string>
+    <string name="viewer_comp_switch_msg">Hai una registrazione in corso. Questa modifica la annullerà.</string>
+    <string name="viewer_comp_switch_confirm">Annulla e continua</string>
     <string name="viewer_comp_switch_cancel">Annulla</string>
     <string name="viewer_qs_lap_countdown">Conto alla rovescia 3-2-1 all\'inizio del giro</string>
     <string name="viewer_qs_lap_countdown_help">In gara su circuito, conta alla rovescia avvicinandoti al traguardo così lo 0 coincide con il nuovo giro.</string>
+    <string name="viewer_qs_competition_none">Nessuna</string>
+    <string name="viewer_qs_competition_none_subtitle">Non gareggiare</string>
 </resources>

@@ -90,9 +90,11 @@
     <string name="viewer_qs_mode_routes">Itinéraires</string>
     <string name="viewer_qs_mode_competitions">Compétitions</string>
     <string name="viewer_qs_no_competitions_yet">Aucune compétition pour l\'instant.</string>
-    <string name="viewer_comp_switch_msg">Un enregistrement est en cours. Lancer la compétition l\'annulera.</string>
-    <string name="viewer_comp_switch_confirm">Annuler et concourir</string>
+    <string name="viewer_comp_switch_msg">Un enregistrement est en cours. Ce changement l\'annulera.</string>
+    <string name="viewer_comp_switch_confirm">Annuler et continuer</string>
     <string name="viewer_comp_switch_cancel">Annuler</string>
     <string name="viewer_qs_lap_countdown">Compte à rebours 3-2-1 à l\'entrée du tour</string>
     <string name="viewer_qs_lap_countdown_help">En compétition sur circuit, décompte à l\'approche de la ligne pour que 0 coïncide avec le nouveau tour.</string>
+    <string name="viewer_qs_competition_none">Aucune</string>
+    <string name="viewer_qs_competition_none_subtitle">Ne pas concourir</string>
 </resources>

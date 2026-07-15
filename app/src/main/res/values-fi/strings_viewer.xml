@@ -90,9 +90,11 @@
     <string name="viewer_qs_mode_routes">Reitit</string>
     <string name="viewer_qs_mode_competitions">Kilpailut</string>
     <string name="viewer_qs_no_competitions_yet">Ei vielä kilpailuja.</string>
-    <string name="viewer_comp_switch_msg">Tallennus on käynnissä. Kilpailun aloitus hylkää sen.</string>
-    <string name="viewer_comp_switch_confirm">Hylkää ja kilpaile</string>
+    <string name="viewer_comp_switch_msg">Tallennus on käynnissä. Tämä muutos hylkää sen.</string>
+    <string name="viewer_comp_switch_confirm">Hylkää ja jatka</string>
     <string name="viewer_comp_switch_cancel">Peruuta</string>
     <string name="viewer_qs_lap_countdown">Lähtölaskenta 3-2-1 kierrokselle</string>
     <string name="viewer_qs_lap_countdown_help">Kilpaillessasi radalla laskee alas, kun lähestyt maaliviivaa, jotta 0 osuu uuteen kierrokseen.</string>
+    <string name="viewer_qs_competition_none">Ei mitään</string>
+    <string name="viewer_qs_competition_none_subtitle">Älä kilpaile</string>
 </resources>
