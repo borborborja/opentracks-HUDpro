@@ -53,11 +53,21 @@ fun ManagerApp(
     onStartCompetition: (Long) -> Unit = {},
     importUri: android.net.Uri? = null,
     onImportHandled: () -> Unit = {},
+    navigateTo: String? = null,
+    onNavigated: () -> Unit = {},
 ) {
     val nav = rememberNavController()
     androidx.compose.runtime.LaunchedEffect(nav) {
         nav.currentBackStackEntryFlow.collect { entry ->
             cat.rumb.app.data.debug.DebugLog.d("UI", "pantalla → ${entry.destination.route}")
+        }
+    }
+    // Editor route delivered via onNewIntent on the singleTask activity (pencil in the viewer):
+    // startDestination is already fixed, so navigate imperatively when a new route arrives.
+    androidx.compose.runtime.LaunchedEffect(navigateTo) {
+        navigateTo?.let {
+            nav.navigate(it)
+            onNavigated()
         }
     }
     // Launched directly on an editor (pencil in the viewer): back closes the activity, not Home.

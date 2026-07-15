@@ -25,6 +25,11 @@ class ManagerActivity : ComponentActivity() {
     // A track file opened/shared into Rumb (VIEW/SEND). Reactive so onNewIntent re-triggers import.
     private val importUri = mutableStateOf<Uri?>(null)
 
+    // Editor route requested by the pencil in the viewer. Because ManagerActivity is singleTask,
+    // that intent is delivered to onNewIntent on the already-composed NavHost, so startDestination
+    // can't take us there — we navigate reactively instead.
+    private val pendingRoute = mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         importUri.value = incomingTrackUri(intent)
@@ -32,6 +37,7 @@ class ManagerActivity : ComponentActivity() {
         setContent {
             RumbTheme {
                 val uri by importUri
+                val navTo by pendingRoute
                 ManagerApp(
                     onOpenViewer = {
                         startActivity(Intent(this, MapViewerActivity::class.java))
@@ -45,6 +51,8 @@ class ManagerActivity : ComponentActivity() {
                     },
                     importUri = uri,
                     onImportHandled = { importUri.value = null },
+                    navigateTo = navTo,
+                    onNavigated = { pendingRoute.value = null },
                 )
             }
         }
@@ -54,6 +62,7 @@ class ManagerActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         incomingTrackUri(intent)?.let { importUri.value = it }
+        intent.getStringExtra(EXTRA_ROUTE)?.let { pendingRoute.value = it }
     }
 
     /** Pulls a track Uri from an ACTION_VIEW (data) or ACTION_SEND (EXTRA_STREAM) intent. */
