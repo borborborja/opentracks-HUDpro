@@ -93,4 +93,6 @@
     <string name="viewer_comp_switch_msg">Υπάρχει εγγραφή σε εξέλιξη. Η έναρξη του αγώνα θα την απορρίψει.</string>
     <string name="viewer_comp_switch_confirm">Απόρριψη και αγώνας</string>
     <string name="viewer_comp_switch_cancel">Άκυρο</string>
+    <string name="viewer_qs_lap_countdown">Αντίστροφη μέτρηση 3-2-1 στην είσοδο του γύρου</string>
+    <string name="viewer_qs_lap_countdown_help">Σε αγώνα σε πίστα, μετρά αντίστροφα καθώς πλησιάζεις στον τερματισμό ώστε το 0 να πέσει στον νέο γύρο.</string>
 </resources>

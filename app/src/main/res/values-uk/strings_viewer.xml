@@ -93,4 +93,6 @@
     <string name="viewer_comp_switch_msg">Триває запис. Запуск змагання скасує його.</string>
     <string name="viewer_comp_switch_confirm">Скасувати й змагатися</string>
     <string name="viewer_comp_switch_cancel">Скасувати</string>
+    <string name="viewer_qs_lap_countdown">Зворотний відлік 3-2-1 на вході в коло</string>
+    <string name="viewer_qs_lap_countdown_help">У змаганні на колі веде відлік під час наближення до фінішу, щоб 0 збігся з новим колом.</string>
 </resources>

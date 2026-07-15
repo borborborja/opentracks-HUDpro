@@ -92,4 +92,6 @@
     <string name="viewer_comp_switch_msg">Tens una gravació en curs. Iniciar la competició la descartarà.</string>
     <string name="viewer_comp_switch_confirm">Descarta i competeix</string>
     <string name="viewer_comp_switch_cancel">Cancel·la</string>
+    <string name="viewer_qs_lap_countdown">Compte enrere 3-2-1 en entrar a la volta</string>
+    <string name="viewer_qs_lap_countdown_help">En competir en un circuit, compta enrere en apropar-te a la meta perquè el 0 coincideixi amb la volta nova.</string>
 </resources>

@@ -198,6 +198,11 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_TURN_VOICE, true)
         set(value) = prefs.edit().putBoolean(KEY_TURN_VOICE, value).apply()
 
+    /** 3-2-1 countdown as you close in on a circuit's finish line, landing on the new lap. */
+    var lapCountdown: Boolean
+        get() = prefs.getBoolean(KEY_LAP_COUNTDOWN, false)
+        set(value) = prefs.edit().putBoolean(KEY_LAP_COUNTDOWN, value).apply()
+
     /** User's weight (kg), drives the MET calorie estimate. */
     var userWeightKg: Int
         get() = prefs.getInt(KEY_USER_WEIGHT, 75)
@@ -393,6 +398,7 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_DESKTOP_PORT = "desktop_server_port"
         private const val KEY_USER_WEIGHT = "user_weight_kg"
         private const val KEY_REC_COUNTDOWN = "rec_countdown"
+        private const val KEY_LAP_COUNTDOWN = "lap_countdown"
         private const val KEY_REC_AUTO_PAUSE_SEC = "rec_auto_pause_sec"
         private const val KEY_FOLLOW_TRACK = "active_follow_track_id"
         private const val KEY_TRACK_COLOR_MODE = "track_color_mode"

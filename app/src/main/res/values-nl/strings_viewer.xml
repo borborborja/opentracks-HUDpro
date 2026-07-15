@@ -93,4 +93,6 @@
     <string name="viewer_comp_switch_msg">Er is een opname bezig. De competitie starten verwijdert deze.</string>
     <string name="viewer_comp_switch_confirm">Verwijderen en meedoen</string>
     <string name="viewer_comp_switch_cancel">Annuleren</string>
+    <string name="viewer_qs_lap_countdown">Aftellen 3-2-1 bij het ingaan van de ronde</string>
+    <string name="viewer_qs_lap_countdown_help">Bij een circuitwedstrijd telt het af als je de finish nadert, zodat 0 samenvalt met de nieuwe ronde.</string>
 </resources>

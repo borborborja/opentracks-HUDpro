@@ -93,4 +93,6 @@
     <string name="viewer_comp_switch_msg">En optagelse er i gang. At starte konkurrencen kasserer den.</string>
     <string name="viewer_comp_switch_confirm">Kassér og deltag</string>
     <string name="viewer_comp_switch_cancel">Annuller</string>
+    <string name="viewer_qs_lap_countdown">Nedtælling 3-2-1 ind i omgangen</string>
+    <string name="viewer_qs_lap_countdown_help">Når du konkurrerer på en bane, tæller den ned, når du nærmer dig mållinjen, så 0 rammer den nye omgang.</string>
 </resources>

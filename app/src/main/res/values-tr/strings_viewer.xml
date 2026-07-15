@@ -93,4 +93,6 @@
     <string name="viewer_comp_switch_msg">Devam eden bir kayıt var. Yarışı başlatmak onu silecek.</string>
     <string name="viewer_comp_switch_confirm">Sil ve yarış</string>
     <string name="viewer_comp_switch_cancel">İptal</string>
+    <string name="viewer_qs_lap_countdown">Tura girerken 3-2-1 geri sayım</string>
+    <string name="viewer_qs_lap_countdown_help">Pistte yarışırken bitiş çizgisine yaklaşırken geri sayar; 0, yeni tura denk gelir.</string>
 </resources>

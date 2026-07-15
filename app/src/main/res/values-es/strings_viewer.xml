@@ -92,4 +92,6 @@
     <string name="viewer_comp_switch_msg">Tienes una grabación en curso. Iniciar la competición la descartará.</string>
     <string name="viewer_comp_switch_confirm">Descartar y competir</string>
     <string name="viewer_comp_switch_cancel">Cancelar</string>
+    <string name="viewer_qs_lap_countdown">Cuenta atrás 3-2-1 al entrar en la vuelta</string>
+    <string name="viewer_qs_lap_countdown_help">Al competir en un circuito, cuenta atrás al acercarte a la meta para que el 0 coincida con la vuelta nueva.</string>
 </resources>

@@ -88,6 +88,8 @@ fun ViewerQuickSettings(
     onShowSeconds: (Boolean) -> Unit = {},
     turnVoice: Boolean = true,
     onTurnVoice: (Boolean) -> Unit = {},
+    lapCountdown: Boolean = false,
+    onLapCountdown: (Boolean) -> Unit = {},
     lapManagement: Boolean = true,
     onLapManagement: (Boolean) -> Unit = {},
     autoLapByPosition: Boolean = false,
@@ -122,7 +124,10 @@ fun ViewerQuickSettings(
         ) {
             when (tab) {
                 0 -> MapTab(selBase, offlineMaps) { id -> selBase = id; onSelectBaseMap(id) }
-                1 -> FollowTab(selFollow, tracks, competitions, turnVoice, onTurnVoice, onStartCompetition) { id -> selFollow = id; onSelectFollow(id) }
+                1 -> FollowTab(
+                    selFollow, tracks, competitions, turnVoice, onTurnVoice,
+                    lapCountdown, onLapCountdown, onStartCompetition,
+                ) { id -> selFollow = id; onSelectFollow(id) }
                 3 -> CompetitionQsTab(
                     ghostCandidates, opponentId, onSelectOpponent,
                     halo, onHalo, showSeconds, onShowSeconds,
@@ -172,6 +177,8 @@ private fun FollowTab(
     competitions: List<CompetitionEntity>,
     turnVoice: Boolean = true,
     onTurnVoice: (Boolean) -> Unit = {},
+    lapCountdown: Boolean = false,
+    onLapCountdown: (Boolean) -> Unit = {},
     onStartCompetition: (Long) -> Unit = {},
     onSelect: (Long) -> Unit,
 ) {
@@ -213,6 +220,13 @@ private fun FollowTab(
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
         var tv by remember { mutableStateOf(turnVoice) }
         ToggleRow(stringResource(R.string.viewer_qs_turn_voice), tv) { tv = it; onTurnVoice(it) }
+        var lapCd by remember { mutableStateOf(lapCountdown) }
+        ToggleRow(stringResource(R.string.viewer_qs_lap_countdown), lapCd) { lapCd = it; onLapCountdown(it) }
+        Text(
+            stringResource(R.string.viewer_qs_lap_countdown_help),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
     } else {
         if (competitions.isEmpty()) {
             Text(stringResource(R.string.viewer_qs_no_competitions_yet),

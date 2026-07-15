@@ -93,4 +93,6 @@
     <string name="viewer_comp_switch_msg">Trwa nagrywanie. Rozpoczęcie zawodów je odrzuci.</string>
     <string name="viewer_comp_switch_confirm">Odrzuć i rywalizuj</string>
     <string name="viewer_comp_switch_cancel">Anuluj</string>
+    <string name="viewer_qs_lap_countdown">Odliczanie 3-2-1 przy wejściu na okrążenie</string>
+    <string name="viewer_qs_lap_countdown_help">Podczas zawodów na torze odlicza przy zbliżaniu się do mety, tak aby 0 wypadło na nowym okrążeniu.</string>
 </resources>

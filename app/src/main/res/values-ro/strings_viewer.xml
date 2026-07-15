@@ -93,4 +93,6 @@
     <string name="viewer_comp_switch_msg">Ai o înregistrare în curs. Pornirea competiției o va anula.</string>
     <string name="viewer_comp_switch_confirm">Anulează și concurează</string>
     <string name="viewer_comp_switch_cancel">Anulează</string>
+    <string name="viewer_qs_lap_countdown">Numărătoare inversă 3-2-1 la intrarea în tur</string>
+    <string name="viewer_qs_lap_countdown_help">În competiție pe circuit, numără invers pe măsură ce te apropii de linia de sosire, ca 0 să cadă pe turul nou.</string>
 </resources>

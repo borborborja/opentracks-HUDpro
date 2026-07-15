@@ -86,6 +86,8 @@ class MapViewerActivity : ComponentActivity() {
 
     /** Pre-recording countdown: null hidden, -1 waiting for GPS, 3..1 digits, 0 = GO!. */
     private val countdownFlow = MutableStateFlow<Int?>(null)
+    // Circuit "3-2-1 into the lap" overlay (null = hidden). Separate from the recording countdown.
+    private val lapCountdownFlow = MutableStateFlow<Int?>(null)
 
     /** Competition pre-start: distance to the start point + whether the fix is precise enough. */
     data class StartPointState(val distanceM: Double, val precise: Boolean)
@@ -462,6 +464,11 @@ class MapViewerActivity : ComponentActivity() {
                                     DebugLog.i("UI", "quick-settings · avisos de gir → $b")
                                     prefs.turnVoice = b; turnVoiceOn = b
                                 },
+                                lapCountdown = prefs.lapCountdown,
+                                onLapCountdown = { b ->
+                                    DebugLog.i("UI", "quick-settings · compte enrere de volta → $b")
+                                    prefs.lapCountdown = b
+                                },
                             )
                         }
                         val pendingSave by saveDialogFlow.collectAsState()
@@ -493,6 +500,9 @@ class MapViewerActivity : ComponentActivity() {
                                 countdownFlow.value = null
                             }
                         }
+                        // Circuit lap countdown: nothing to cancel — it tracks the finish line.
+                        val lapCountdown by lapCountdownFlow.collectAsState()
+                        lapCountdown?.let { value -> CountdownOverlay(value) {} }
                         // "Race your laps?" prompt on the 2nd (or later) lap. Shown over map and Dades.
                         val showCompete by competePromptFlow.collectAsState()
                         if (showCompete) {
@@ -556,6 +566,7 @@ class MapViewerActivity : ComponentActivity() {
             setupControls(ctrl)
             maybeStartStartPill(ctrl)
             startTrackingMarkerTicker(ctrl)
+            startLapCountdownTicker(ctrl)
             val onReady: () -> Unit = {
                 // Frame the active route when not recording (no live track to follow yet) so it's visible.
                 val refPts = pendingRouteRefPts
@@ -924,6 +935,46 @@ class MapViewerActivity : ComponentActivity() {
                         }
                     }
                     kotlinx.coroutines.delay(1000)
+                }
+            }
+        }
+    }
+
+    /**
+     * Circuit "3-2-1 into the lap": while recording a circuit, estimate the seconds left to the
+     * finish line from the ground speed and show the countdown so 0 lands on the crossing. Armed
+     * only once we've left the finish area, so lingering near the line can't retrigger it.
+     */
+    private fun startLapCountdownTicker(ctrl: MapLibreController) {
+        lifecycleScope.launch {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                var armed = false
+                var lastDistM = Double.MAX_VALUE
+                while (true) {
+                    val prefs = ViewerPreferences.get(this@MapViewerActivity)
+                    val loc = ctrl.lastLocation()
+                    if (!prefs.lapCountdown || !circuitMode || !NativeRecording.isActive || loc == null) {
+                        lapCountdownFlow.value = null
+                        armed = false
+                        lastDistM = Double.MAX_VALUE
+                    } else {
+                        val here = cat.rumb.app.data.opentracks.model.GeoPoint(loc.latitude, loc.longitude)
+                        val line = cat.rumb.app.data.opentracks.model.GeoPoint(prefs.circuitLineLat, prefs.circuitLineLng)
+                        val d = MetricsCalculator.distanceMeters(here, line)
+                        val radius = prefs.circuitRadiusM
+                        if (d > radius * 2) armed = true // left the finish area → count the next lap in
+                        val speed = if (loc.hasSpeed()) loc.speed.toDouble() else 0.0
+                        val closing = d < lastDistM - CLOSING_HYSTERESIS_M
+                        lapCountdownFlow.value = if (armed && closing && speed > MIN_COUNTDOWN_SPEED_MS && d > radius) {
+                            val eta = d / speed
+                            if (eta <= 3.0) kotlin.math.ceil(eta).toInt().coerceIn(1, 3) else null
+                        } else {
+                            null
+                        }
+                        if (d <= radius) armed = false // crossing the line opens the lap; disarm
+                        lastDistM = d
+                    }
+                    kotlinx.coroutines.delay(250)
                 }
             }
         }
@@ -1475,6 +1526,11 @@ class MapViewerActivity : ComponentActivity() {
 
         /** Long extra: competition id — launches the viewer in competition mode (ROUTE or LAP). */
         const val EXTRA_COMPETITION_ID = "competition_id"
+
+        /** Below this ground speed (m/s) a time-to-line estimate is meaningless. */
+        private const val MIN_COUNTDOWN_SPEED_MS = 1.0
+        /** Distance the line must get closer per tick to count as "approaching" (GPS jitter guard). */
+        private const val CLOSING_HYSTERESIS_M = 0.5
 
         /** Countdown GPS gate: same threshold as the engine warm-up (RecorderConfig.startAccuracyM). */
         private const val COUNTDOWN_ACCURACY_M = 12f

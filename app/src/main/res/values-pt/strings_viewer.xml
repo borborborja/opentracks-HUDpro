@@ -93,4 +93,6 @@
     <string name="viewer_comp_switch_msg">Tens uma gravação em curso. Iniciar a competição irá descartá-la.</string>
     <string name="viewer_comp_switch_confirm">Descartar e competir</string>
     <string name="viewer_comp_switch_cancel">Cancelar</string>
+    <string name="viewer_qs_lap_countdown">Contagem decrescente 3-2-1 ao entrar na volta</string>
+    <string name="viewer_qs_lap_countdown_help">Ao competir num circuito, conta decrescente ao aproximares-te da meta para que o 0 coincida com a nova volta.</string>
 </resources>
