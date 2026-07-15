@@ -30,4 +30,5 @@
     <string name="competition_delete_msg">Själva spåren finns kvar i biblioteket.</string>
     <string name="competition_remove_attempt">Ta bort från tävling</string>
     <string name="competition_cd_menu">Tävlingsalternativ</string>
+    <string name="competition_attempt_not_counted">Inspelningen sparades, men räknas inte som ett tävlingsförsök.</string>
 </resources>

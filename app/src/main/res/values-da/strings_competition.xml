@@ -30,4 +30,5 @@
     <string name="competition_delete_msg">Selve sporene bliver i biblioteket.</string>
     <string name="competition_remove_attempt">Fjern fra konkurrence</string>
     <string name="competition_cd_menu">Konkurrencemuligheder</string>
+    <string name="competition_attempt_not_counted">Optagelsen er gemt, men tæller ikke som et konkurrenceforsøg.</string>
 </resources>

@@ -30,4 +30,5 @@
     <string name="competition_delete_msg">Les traces elles-mêmes restent dans la bibliothèque.</string>
     <string name="competition_remove_attempt">Retirer de la compétition</string>
     <string name="competition_cd_menu">Options de compétition</string>
+    <string name="competition_attempt_not_counted">Enregistrement sauvegardé, mais il ne compte pas comme tentative.</string>
 </resources>

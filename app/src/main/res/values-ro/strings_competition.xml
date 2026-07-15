@@ -30,4 +30,5 @@
     <string name="competition_delete_msg">Traseele în sine rămân în bibliotecă.</string>
     <string name="competition_remove_attempt">Elimină din competiție</string>
     <string name="competition_cd_menu">Opțiuni competiție</string>
+    <string name="competition_attempt_not_counted">Înregistrare salvată, dar nu contează ca încercare în competiție.</string>
 </resources>

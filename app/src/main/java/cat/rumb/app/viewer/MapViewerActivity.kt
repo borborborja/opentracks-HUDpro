@@ -954,10 +954,19 @@ class MapViewerActivity : ComponentActivity() {
                     RumbApplication.from(this@MapViewerActivity).trackRepository
                         .setLaps(newId, cat.rumb.app.data.tracks.Laps.encode(ranges))
                 }
-                // Competition attempt: file the whole track (ROUTE) or each completed lap (LAP).
+                // Competition attempt: file the whole track (ROUTE) or each completed lap (LAP). The
+                // track is always kept in the library; tell the user when it didn't qualify as an
+                // attempt (no completed lap, or the route wasn't actually raced).
                 if (competitionId > 0) {
-                    RumbApplication.from(this@MapViewerActivity).competitionRepository
+                    val filed = RumbApplication.from(this@MapViewerActivity).competitionRepository
                         .addAttemptsFromTrack(competitionId, newId, name, System.currentTimeMillis())
+                    if (filed == 0) {
+                        android.widget.Toast.makeText(
+                            this@MapViewerActivity,
+                            getString(R.string.competition_attempt_not_counted),
+                            android.widget.Toast.LENGTH_LONG,
+                        ).show()
+                    }
                 }
                 // Circuit mode is per-recording: clear the preset auto-lap line so a following
                 // recording in the same session never inherits a stale finish line.

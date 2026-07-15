@@ -30,4 +30,5 @@
     <string name="competition_delete_msg">Os percursos permanecem na biblioteca.</string>
     <string name="competition_remove_attempt">Remover da competição</string>
     <string name="competition_cd_menu">Opções da competição</string>
+    <string name="competition_attempt_not_counted">Gravação guardada, mas não conta como tentativa da competição.</string>
 </resources>

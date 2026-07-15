@@ -30,4 +30,5 @@
     <string name="competition_delete_msg">Los tracks se mantienen en la biblioteca.</string>
     <string name="competition_remove_attempt">Quitar de la competición</string>
     <string name="competition_cd_menu">Opciones de la competición</string>
+    <string name="competition_attempt_not_counted">Grabación guardada, pero no cuenta como intento de la competición.</string>
 </resources>

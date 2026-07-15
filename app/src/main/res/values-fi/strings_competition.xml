@@ -30,4 +30,5 @@
     <string name="competition_delete_msg">Reitit itsessään säilyvät kirjastossa.</string>
     <string name="competition_remove_attempt">Poista kilpailusta</string>
     <string name="competition_cd_menu">Kilpailun asetukset</string>
+    <string name="competition_attempt_not_counted">Tallennus tallennettu, mutta se ei kelpaa kilpailuyritykseksi.</string>
 </resources>

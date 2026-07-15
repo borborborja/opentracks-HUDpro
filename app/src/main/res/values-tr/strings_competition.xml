@@ -30,4 +30,5 @@
     <string name="competition_delete_msg">Kayıtların kendisi kitaplıkta kalır.</string>
     <string name="competition_remove_attempt">Yarıştan çıkar</string>
     <string name="competition_cd_menu">Yarış seçenekleri</string>
+    <string name="competition_attempt_not_counted">Kayıt kaydedildi, ancak yarış denemesi olarak sayılmaz.</string>
 </resources>

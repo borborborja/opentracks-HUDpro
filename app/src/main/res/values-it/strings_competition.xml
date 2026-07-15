@@ -30,4 +30,5 @@
     <string name="competition_delete_msg">Le tracce restano nella libreria.</string>
     <string name="competition_remove_attempt">Rimuovi dalla competizione</string>
     <string name="competition_cd_menu">Opzioni competizione</string>
+    <string name="competition_attempt_not_counted">Registrazione salvata, ma non conta come tentativo di gara.</string>
 </resources>

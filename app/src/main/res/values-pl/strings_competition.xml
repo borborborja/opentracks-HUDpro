@@ -30,4 +30,5 @@
     <string name="competition_delete_msg">Same ślady pozostają w bibliotece.</string>
     <string name="competition_remove_attempt">Usuń z rywalizacji</string>
     <string name="competition_cd_menu">Opcje rywalizacji</string>
+    <string name="competition_attempt_not_counted">Nagranie zapisane, ale nie liczy się jako próba w zawodach.</string>
 </resources>

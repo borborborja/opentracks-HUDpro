@@ -30,4 +30,5 @@
     <string name="competition_delete_msg">Сами треки остаются в библиотеке.</string>
     <string name="competition_remove_attempt">Убрать из соревнования</string>
     <string name="competition_cd_menu">Параметры соревнования</string>
+    <string name="competition_attempt_not_counted">Запись сохранена, но не засчитана как попытка соревнования.</string>
 </resources>
