@@ -42,17 +42,24 @@ object BleSensorProbe {
             }
         }
         val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
-        return runCatching {
+        // try/finally, not runCatching: the latter would swallow the CancellationException thrown by
+        // delay() when the viewer goes away, and a coroutine that eats its own cancellation lives on.
+        try {
             scanner.startScan(emptyList(), settings, callback)
+        } catch (e: Exception) {
+            DebugLog.e("Record", "sonda BLE", e)
+            return null
+        }
+        try {
             val step = 200L
             var waited = 0L
             while (waited < timeoutMs && seen.size < addresses.size) {
                 delay(step)
                 waited += step
             }
-            seen.toSet()
-        }.onFailure { DebugLog.e("Record", "sonda BLE", it) }
-            .also { runCatching { scanner.stopScan(callback) } }
-            .getOrNull()
+            return seen.toSet()
+        } finally {
+            runCatching { scanner.stopScan(callback) } // always, cancelled or not
+        }
     }
 }

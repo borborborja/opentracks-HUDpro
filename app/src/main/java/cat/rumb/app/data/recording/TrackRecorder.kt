@@ -513,9 +513,12 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         lapsActive = last.type != LapMarkType.END
         lapStartDistanceM = last.distanceM
         lapStartTotalMs = last.totalMs
-        // Recover the last completed lap's duration so the "last lap" tile isn't blank until the
-        // next split: it's the gap between the last two boundary marks.
-        if (marks.size >= 2) lastLapMs = last.totalMs - marks[marks.size - 2].totalMs
+        // Recover the last COMPLETED lap's duration so the "last lap" tile isn't blank until the next
+        // split: it's the gap between the last two boundary marks. An ABORT ends an abandoned attempt,
+        // never a lap, so a block ending in one has no last lap to show.
+        if (marks.size >= 2 && last.type != LapMarkType.ABORT) {
+            lastLapMs = last.totalMs - marks[marks.size - 2].totalMs
+        }
     }
 
     fun pause(time: Instant) {

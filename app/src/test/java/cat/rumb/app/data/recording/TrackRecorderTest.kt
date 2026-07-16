@@ -389,6 +389,20 @@ class TrackRecorderTest {
     }
 
     @Test
+    fun restoreAfterAnAbortHasNoLastLapToShow() {
+        // Crash-recovery reads the last completed lap off the last two marks. An ABORT ends an
+        // abandoned attempt, so its duration must not surface as "last lap" in the HUD.
+        val r = TrackRecorder(circuitCfg(refM = 600.0))
+        r.restoreLaps(
+            listOf(
+                LapMark(10, 100.0, 60_000, LapMarkType.START),
+                LapMark(20, 150.0, 90_000, LapMarkType.ABORT),
+            ),
+        )
+        assertThat(r.snapshot(at(120)).lastLapMs).isNull()
+    }
+
+    @Test
     fun circuitWithoutAReferenceKeepsTheOldDistanceGuard() {
         // An ad-hoc circuit has no lap to compare against: fall back to autoLapMinLapM (100 m), so a
         // ~666 m lap still counts and nothing regresses for people not racing a competition.

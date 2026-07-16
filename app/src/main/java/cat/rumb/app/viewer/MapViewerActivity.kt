@@ -200,6 +200,8 @@ class MapViewerActivity : ComponentActivity() {
     // per recording: probing on every re-entry would stall the record button.
     private val sensorWarnFlow = MutableStateFlow<List<String>?>(null)
     private var sensorWarnAcknowledged = false
+    /** A probe is in flight: the record button is async now, so a second tap must not start a second. */
+    private var sensorProbeRunning = false
 
     // Circuit mode: record an attempt at a saved circuit. The fixed line is preset (auto-lap arms
     // from the start) and the ghost is the circuit's best lap. Efforts are persisted on save.
@@ -599,6 +601,11 @@ class MapViewerActivity : ComponentActivity() {
                                 confirmButton = {
                                     androidx.compose.material3.TextButton(onClick = {
                                         sensorWarnFlow.value = null
+                                        // Only "start anyway" acknowledges. Dismissing leaves the
+                                        // flag false, so the next press checks again — otherwise
+                                        // cancelling to go and switch the sensor on would silently
+                                        // disable the warning for the rest of the session.
+                                        sensorWarnAcknowledged = true
                                         controller?.let { startNativeRecording(it) }
                                     }) { androidx.compose.material3.Text(stringResource(R.string.sensors_missing_start_anyway)) }
                                 },
@@ -900,10 +907,17 @@ class MapViewerActivity : ComponentActivity() {
         // that only runs when the countdown is enabled, so anyone with it off would never be warned.
         // Probing takes a moment, so it runs off-thread and re-enters here — like the sport picker.
         if (!sensorWarnAcknowledged) {
+            if (sensorProbeRunning) return // second tap while the probe is out
+            sensorProbeRunning = true
             lifecycleScope.launch {
-                val missing = missingWarnSensors()
-                sensorWarnAcknowledged = true
-                if (missing.isEmpty()) startNativeRecording(ctrl) else sensorWarnFlow.value = missing
+                val missing = try { missingWarnSensors() } finally { sensorProbeRunning = false }
+                if (missing.isEmpty()) {
+                    // Nothing to warn about: don't re-probe on the way back through.
+                    sensorWarnAcknowledged = true
+                    startNativeRecording(ctrl)
+                } else {
+                    sensorWarnFlow.value = missing
+                }
             }
             return
         }
