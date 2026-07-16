@@ -105,7 +105,9 @@ fun DataDesignerScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { ViewerPreferences.get(context) }
     val units = remember { UnitsStore.load(prefs) }
-    var layout by remember { mutableStateOf(DataLayoutStore.load(prefs)) }
+    // Edits the ACTIVE sport's Dades layout (per-sport, like the HUD editor).
+    val sportId = remember { prefs.activeSportId }
+    var layout by remember { mutableStateOf(DataLayoutStore.load(prefs, sportId)) }
     var selected by remember { mutableStateOf<String?>(null) }
     var dragging by remember { mutableStateOf<String?>(null) }
     var configFor by remember { mutableStateOf<String?>(null) }
@@ -117,7 +119,7 @@ fun DataDesignerScreen(onBack: () -> Unit) {
 
     fun update(next: DataLayout) {
         layout = next
-        DataLayoutStore.save(prefs, next) // live editing: always persisted
+        DataLayoutStore.save(prefs, next, sportId) // live editing: always persisted
     }
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {

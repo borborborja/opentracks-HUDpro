@@ -135,6 +135,8 @@ class MapViewerActivity : ComponentActivity() {
             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
     private val hudLayoutFlow = MutableStateFlow(HudLayout.DEFAULT)
     private val dataReloadFlow = MutableStateFlow(0)
+    /** The active sport id, so the top-bar sport icon updates reactively when it changes. */
+    private val activeSportFlow = MutableStateFlow<String?>(null)
 
     private var followEngine: FollowRouteEngine? = null
     private var followMode = true
@@ -226,6 +228,7 @@ class MapViewerActivity : ComponentActivity() {
 
         val prefs = ViewerPreferences.get(this)
         hudLayoutFlow.value = HudLayoutStore.load(prefs, prefs.activeSportId)
+        activeSportFlow.value = prefs.activeSportId
         hudDataFlow.value = hudDataFlow.value.copy(lapManagementEnabled = prefs.lapManagementEnabled)
         units = cat.rumb.app.viewer.hud.UnitsStore.load(prefs)
         adaptiveZoom = prefs.adaptiveZoom
@@ -344,6 +347,16 @@ class MapViewerActivity : ComponentActivity() {
                 RumbTheme {
                     val page by currentPageFlow.collectAsState()
                     val settingsOpen by settingsOpenFlow.collectAsState()
+                    // The sport is locked while recording (its layout must not change mid-effort); the
+                    // pencil stays editable (you can pause, edit, resume). Both react to these flows.
+                    val recState by cat.rumb.app.data.recording.NativeRecording.state.collectAsState()
+                    val recording = recState?.isFinished == false
+                    val activeSport by activeSportFlow.collectAsState()
+                    val customSports = remember {
+                        cat.rumb.app.data.tracks.ActivityTypes.decodeCustom(
+                            ViewerPreferences.get(this@MapViewerActivity).customActivityTypesJson,
+                        )
+                    }
                     // System back mirrors the exit arrow: close the settings sheet if open, else leave
                     // for Home (never the launcher). Dialogs handle their own back before this runs.
                     androidx.activity.compose.BackHandler(enabled = true) {
@@ -376,6 +389,13 @@ class MapViewerActivity : ComponentActivity() {
                             currentPage = page,
                             onSelect = { pager.setCurrentItem(it, true) },
                             onGear = { settingsOpenFlow.value = true },
+                            sportIcon = cat.rumb.app.manager.screens.activityTypeIcon(activeSport, customSports),
+                            sportEnabled = !recording,
+                            onSport = {
+                                settingsOpenFlow.value = false
+                                recordAfterSportPick = false
+                                sportPickerFlow.value = true
+                            },
                             modifier = Modifier.align(androidx.compose.ui.Alignment.TopCenter),
                         )
                         // Pencil at the top-right (mirroring the back arrow): edits the visible page.
@@ -975,11 +995,13 @@ class MapViewerActivity : ComponentActivity() {
             checkSelfPermission(android.Manifest.permission.BLUETOOTH_SCAN) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED
 
-    /** Applies a chosen sport: HUD layout, splits and the save-dialog prefill all follow from it. */
+    /** Applies a chosen sport: HUD layout, Dades layout, splits and the save-dialog prefill follow from it. */
     private fun applySport(sportId: String) {
         val prefs = ViewerPreferences.get(this)
         prefs.activeSportId = sportId
         hudLayoutFlow.value = HudLayoutStore.load(prefs, sportId)
+        dataReloadFlow.value++ // reload the Dades page with the new sport's (per-sport) layout
+        activeSportFlow.value = sportId // update the top-bar sport icon reactively
         DebugLog.i("Viewer", "esport actiu → $sportId")
     }
 

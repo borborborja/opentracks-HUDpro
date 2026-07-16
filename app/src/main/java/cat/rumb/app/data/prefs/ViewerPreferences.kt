@@ -223,6 +223,16 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
     fun setHudLayoutJsonFor(sportId: String, raw: String?) =
         prefs.edit().putString(KEY_HUD_LAYOUT + "_" + sportId, raw).apply()
 
+    /** True once the pre-sport global Dades layout has been adopted by a sport (see DataLayoutStore). */
+    var dataLayoutAdopted: Boolean
+        get() = prefs.getBoolean(KEY_DATA_ADOPTED, false)
+        set(value) = prefs.edit().putBoolean(KEY_DATA_ADOPTED, value).apply()
+
+    /** Per-sport Dades layout JSON (null = never edited for that sport). */
+    fun dataLayoutJsonFor(sportId: String): String? = prefs.getString(KEY_DATA_LAYOUT + "_" + sportId, null)
+    fun setDataLayoutJsonFor(sportId: String, raw: String?) =
+        prefs.edit().putString(KEY_DATA_LAYOUT + "_" + sportId, raw).apply()
+
     /** Per-base-map display config JSON (null = never edited → the map looks as it always did). */
     fun mapDisplayJsonFor(sourceId: String): String? = prefs.getString(KEY_MAP_DISPLAY + "_" + sourceId, null)
     fun setMapDisplayJsonFor(sourceId: String, raw: String?) =
@@ -454,6 +464,7 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_HUD_LAYOUT = "hud_layout_json"
         private const val KEY_MAP_DISPLAY = "map_display_json"
         private const val KEY_MAP_API_KEY = "map_api_key"
+        private const val KEY_DATA_ADOPTED = "data_layout_adopted"
         private const val KEY_DATA_LAYOUT = "data_layout_json"
         private const val KEY_UNIT_DISTANCE = "unit_distance"
         private const val KEY_UNIT_ELEVATION = "unit_elevation"

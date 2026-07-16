@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -53,10 +54,20 @@ class ViewerPagesAdapter(private val pages: List<View>) : RecyclerView.Adapter<V
 }
 
 /**
- * Top switcher: segmented "Mapa" / "Dades" plus a trailing gear that opens the quick-settings sheet.
+ * Top switcher: segmented "Mapa" / "Dades", a sport quick-access icon (opens the sport picker; the
+ * chosen sport drives the per-sport HUD & Dades layout), then a trailing gear opening quick-settings.
+ * [sportEnabled] false = greyed and inert (the sport is locked while recording).
  */
 @Composable
-fun ViewerSwitcher(currentPage: Int, onSelect: (Int) -> Unit, onGear: () -> Unit, modifier: Modifier = Modifier) {
+fun ViewerSwitcher(
+    currentPage: Int,
+    onSelect: (Int) -> Unit,
+    onGear: () -> Unit,
+    sportIcon: ImageVector,
+    sportEnabled: Boolean,
+    onSport: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier
             .clip(RoundedCornerShape(20.dp))
@@ -67,13 +78,23 @@ fun ViewerSwitcher(currentPage: Int, onSelect: (Int) -> Unit, onGear: () -> Unit
         SwitchTab(stringResource(R.string.viewer_tab_map), currentPage == 0) { onSelect(0) }
         SwitchTab(stringResource(R.string.viewer_tab_data), currentPage == 1) { onSelect(1) }
         Icon(
+            sportIcon,
+            contentDescription = stringResource(R.string.viewer_qs_sport),
+            tint = if (sportEnabled) Color.White else Color(0x66FFFFFF),
+            modifier = Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .then(if (sportEnabled) Modifier.clickable(onClick = onSport) else Modifier)
+                .padding(horizontal = 10.dp, vertical = 6.dp)
+                .size(22.dp),
+        )
+        Icon(
             Icons.Filled.Settings,
             contentDescription = stringResource(R.string.viewer_cd_settings),
             tint = Color.White,
             modifier = Modifier
                 .clip(RoundedCornerShape(16.dp))
                 .clickable(onClick = onGear)
-                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .padding(horizontal = 10.dp, vertical = 6.dp)
                 .size(22.dp),
         )
     }

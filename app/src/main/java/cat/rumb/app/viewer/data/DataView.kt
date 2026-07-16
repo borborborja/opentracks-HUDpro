@@ -95,7 +95,7 @@ fun DataView(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = ViewerPreferences.get(context)
-    val layout = remember(reloadKey) { DataLayoutStore.load(prefs) }
+    val layout = remember(reloadKey) { DataLayoutStore.load(prefs, prefs.activeSportId) }
     val followOnly = setOf(HudMetric.REMAINING.name, HudMetric.OFF_ROUTE.name)
 
     // Toggle tiles read straight from prefs (in-memory, updates synchronously). Bumped on tap to

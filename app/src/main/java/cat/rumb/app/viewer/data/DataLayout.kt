@@ -109,20 +109,35 @@ data class DataLayout(
     }
 }
 
-/** Persists/loads the [DataLayout] as JSON in [ViewerPreferences] (mirror of HudLayoutStore). */
+/**
+ * Persists/loads the [DataLayout] as JSON in [ViewerPreferences] (mirror of HudLayoutStore). Per-sport
+ * when a [sportId] is given: a sport's own layout → adopt the pre-sport global once → default. A null
+ * [sportId] keeps the old single global behaviour (no sport chosen yet).
+ */
 object DataLayoutStore {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-    fun load(prefs: ViewerPreferences): DataLayout {
-        val raw = prefs.dataLayoutJson ?: return DataLayout().normalized()
-        return runCatching { json.decodeFromString(DataLayout.serializer(), raw) }
-            .getOrDefault(DataLayout())
-            .normalized()
+    private fun decode(raw: String?): DataLayout? = raw?.let {
+        runCatching { json.decodeFromString(DataLayout.serializer(), it) }.getOrNull()?.normalized()
     }
 
-    fun save(prefs: ViewerPreferences, layout: DataLayout) {
+    fun load(prefs: ViewerPreferences, sportId: String? = null): DataLayout {
+        if (sportId == null) return decode(prefs.dataLayoutJson) ?: DataLayout().normalized()
+        decode(prefs.dataLayoutJsonFor(sportId))?.let { return it }
+        // First time this sport is shown: inherit the existing global layout once (don't lose it).
+        val legacy = decode(prefs.dataLayoutJson)
+        if (legacy != null && !prefs.dataLayoutAdopted) {
+            prefs.dataLayoutAdopted = true
+            save(prefs, legacy, sportId)
+            return legacy
+        }
+        return DataLayout().normalized()
+    }
+
+    fun save(prefs: ViewerPreferences, layout: DataLayout, sportId: String? = null) {
         // Keep the legacy flag in sync so older readers behave.
         val synced = layout.copy(showClock = DataLayout.CLOCK in layout.fields)
-        prefs.dataLayoutJson = json.encodeToString(DataLayout.serializer(), synced)
+        val raw = json.encodeToString(DataLayout.serializer(), synced)
+        if (sportId == null) prefs.dataLayoutJson = raw else prefs.setDataLayoutJsonFor(sportId, raw)
     }
 }
