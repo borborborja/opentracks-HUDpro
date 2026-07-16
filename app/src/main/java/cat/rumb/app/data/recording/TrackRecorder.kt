@@ -529,7 +529,14 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         DebugLog.i("Motor", "circuit: fin de vueltas en la meta · última al seq=${lastCrossing?.seq}")
     }
 
-    /** Reloads lap state after a crash (marks persisted alongside the points). */
+    /**
+     * Reloads lap state after a crash (marks persisted alongside the points). Call after [restore],
+     * which puts the points and the odometer back — this needs both.
+     *
+     * Everything the block needs to keep RUNNING has to come back here, not just what the HUD shows.
+     * Restoring the counters but not the machinery left a recording that looked alive and had quietly
+     * stopped lapping: `lapsActive` was true, the tile kept ticking, and no crossing ever fired again.
+     */
     fun restoreLaps(marks: List<LapMark>) {
         if (marks.isEmpty()) return
         lapMarks.clear(); lapMarks.addAll(marks)
@@ -537,6 +544,7 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         lapCount = opens
         val last = marks.last()
         lapsActive = last.type != LapMarkType.END
+        lapsEnded = last.type == LapMarkType.END // or a crossing would re-open a block you closed
         lapStartDistanceM = last.distanceM
         lapStartTotalMs = last.totalMs
         // Recover the last COMPLETED lap's duration so the "last lap" tile isn't blank until the next
@@ -544,6 +552,29 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         // never a lap, so a block ending in one has no last lap to show.
         if (marks.size >= 2 && last.type != LapMarkType.ABORT) {
             lastLapMs = last.totalMs - marks[marks.size - 2].totalMs
+        }
+        // The free-lap finish line. It isn't in the marks — it's wherever the block opened — so find
+        // the point that opened it. A mark's seq is the id the NEXT point will take, so the line is
+        // the point just before it; fall back to the one just after, since points buffered when the
+        // process died may never have reached the database.
+        if (lapsActive) {
+            val startSeq = marks.firstOrNull { it.type.opensLap }?.seq
+            if (startSeq != null) {
+                val pts = closedSegments.flatten() + currentSegment
+                lapLine = (pts.lastOrNull { it.id < startSeq } ?: pts.firstOrNull { it.id >= startSeq })?.latLong
+            }
+            lapLineArmed = false // re-arms on the first fix outside the radius
+        }
+        // Distance splits track absolute multiples from where the block opened, so rebuild the next
+        // boundary from that base rather than from here — otherwise every later split would be
+        // measured from the crash point and drift.
+        val base = marks.firstOrNull { it.type.opensLap }?.distanceM
+        nextSplitDistanceM = if (config.autoLapEveryM > 0 && lapsActive && base != null) {
+            var next = base + config.autoLapEveryM
+            while (next <= distanceM) next += config.autoLapEveryM
+            next
+        } else {
+            Double.MAX_VALUE
         }
     }
 

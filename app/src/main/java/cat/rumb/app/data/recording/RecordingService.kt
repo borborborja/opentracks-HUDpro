@@ -50,6 +50,8 @@ class RecordingService : Service() {
     private var recordingId: Long? = null
     private var restoring = false
     private var segmentIndex = 0
+    /** How many lap marks are already on disk, so the per-fix check costs one comparison. */
+    private var persistedLapMarks = 0
     private val pendingPoints = ArrayList<RecordingPointEntity>()
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -213,6 +215,11 @@ class RecordingService : Service() {
     /** Persists the current lap boundary marks so they survive a process death mid-recording. */
     private fun persistLaps() {
         val marks = recorder?.snapshot(Instant.now())?.lapMarks ?: return
+        persistedLapMarks = marks.size
+        persistMarks(marks)
+    }
+
+    private fun persistMarks(marks: List<LapMark>) {
         val id = recordingId ?: return
         val json = runCatching { LAP_JSON.encodeToString(marks) }.getOrNull()
         scope.launch {
@@ -286,7 +293,26 @@ class RecordingService : Service() {
     }
 
     private fun publish() {
-        recorder?.let { NativeRecording.publish(it.snapshot(Instant.now())) }
+        recorder?.let {
+            val snap = it.snapshot(Instant.now())
+            NativeRecording.publish(snap)
+            persistLapsIfChanged(snap.lapMarks)
+        }
+    }
+
+    /**
+     * Saves the lap marks when the engine has added one. Only the two button handlers used to
+     * persist, so every mark born in onLocation — auto-lap crossings, distance splits, aborts, and
+     * the START a circuit opens by crossing the meta — existed only in memory: a circuit lapped
+     * without ever touching a button stored `laps = null` and lost ALL of them to a process death.
+     *
+     * Guarded on the count so this stays a no-op on the vast majority of fixes; marks are only ever
+     * appended, never removed, so the count is a sufficient change signal.
+     */
+    private fun persistLapsIfChanged(marks: List<LapMark>) {
+        if (marks.size == persistedLapMarks) return
+        persistedLapMarks = marks.size
+        persistMarks(marks)
     }
 
     override fun onDestroy() {
@@ -308,23 +334,6 @@ class RecordingService : Service() {
         scope.cancel()
         super.onDestroy()
     }
-
-    private fun configFrom(prefs: ViewerPreferences) = RecorderConfig(
-        maxAccuracyM = prefs.recMaxAccuracyM,
-        minDistanceM = prefs.recMinDistanceM.toDouble(),
-        autoLapByPosition = prefs.autoLapByPosition,
-        // Distance splits are off during a circuit: the meta owns the laps there.
-        autoLapEveryM = if (prefs.circuitActive) 0.0 else prefs.autoLapEveryMFor(prefs.activeSportId).toDouble(),
-        presetLapLine = if (prefs.circuitActive) {
-            cat.rumb.app.data.opentracks.model.GeoPoint(prefs.circuitLineLat, prefs.circuitLineLng)
-        } else {
-            null
-        },
-        autoLapRadiusM = if (prefs.circuitActive) prefs.circuitRadiusM else 25.0,
-        autoLapMinLapMs = if (prefs.circuitActive) prefs.circuitMinLapMs else 20_000,
-        autoLapMinLapM = if (prefs.circuitActive) prefs.circuitMinLapM else 100.0,
-        lapRefDistanceM = if (prefs.circuitActive) prefs.circuitRefDistanceM else 0.0,
-    )
 
     // --- Notification ---
 
@@ -419,6 +428,27 @@ class RecordingService : Service() {
     }
 
     companion object {
+        /**
+         * The engine config the prefs describe. In the companion because crash recovery needs the
+         * same one the live path uses — it used to build a two-field stub and lose the circuit line.
+         */
+        private fun configFrom(prefs: ViewerPreferences) = RecorderConfig(
+            maxAccuracyM = prefs.recMaxAccuracyM,
+            minDistanceM = prefs.recMinDistanceM.toDouble(),
+            autoLapByPosition = prefs.autoLapByPosition,
+            // Distance splits are off during a circuit: the meta owns the laps there.
+            autoLapEveryM = if (prefs.circuitActive) 0.0 else prefs.autoLapEveryMFor(prefs.activeSportId).toDouble(),
+            presetLapLine = if (prefs.circuitActive) {
+                cat.rumb.app.data.opentracks.model.GeoPoint(prefs.circuitLineLat, prefs.circuitLineLng)
+            } else {
+                null
+            },
+            autoLapRadiusM = if (prefs.circuitActive) prefs.circuitRadiusM else 25.0,
+            autoLapMinLapMs = if (prefs.circuitActive) prefs.circuitMinLapMs else 20_000,
+            autoLapMinLapM = if (prefs.circuitActive) prefs.circuitMinLapM else 100.0,
+            lapRefDistanceM = if (prefs.circuitActive) prefs.circuitRefDistanceM else 0.0,
+        )
+
         private const val ACTION_START = "cat.rumb.app.recording.START"
         private const val ACTION_PAUSE = "cat.rumb.app.recording.PAUSE"
         private const val ACTION_RESUME = "cat.rumb.app.recording.RESUME"
@@ -456,10 +486,10 @@ class RecordingService : Service() {
                 return false
             }
             val prefs = ViewerPreferences.get(context)
-            val config = RecorderConfig(
-                maxAccuracyM = prefs.recMaxAccuracyM,
-                minDistanceM = prefs.recMinDistanceM.toDouble(),
-            )
+            // The FULL config, not a two-field stub: stop() only anchors a circuit's last lap to the
+            // meta when it can see the preset line, so recovering with a stub kept the trailing
+            // meta→stop stretch as a lap. Same config the live path builds.
+            val config = configFrom(prefs)
             val now = Instant.now()
             val r = TrackRecorder(config)
             r.restore(pts.toSegments(), Instant.ofEpochMilli(finished.startedAt), now)

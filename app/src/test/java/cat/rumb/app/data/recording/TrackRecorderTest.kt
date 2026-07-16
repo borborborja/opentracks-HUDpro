@@ -484,6 +484,67 @@ class TrackRecorderTest {
     }
 
     @Test
+    fun restoredFreeLapsStillCrossTheLine() {
+        // The invisible one. restoreLaps brought the counters back but not the finish line, so after
+        // a crash `lapsActive` was true, the tile kept ticking — and no crossing ever fired again.
+        // The recording only LOOKED alive. Nothing could recover it: startLaps early-returns while
+        // a block is open.
+        val cfg = freeCfg()
+        val snap = autoLapLaps(cfg, 15).snapshot(at(60)) // one lap done, block open, line at (41, 2)
+
+        val restored = TrackRecorder(cfg)
+        restored.restore(snap.segments, t0, resumeAt = at(120))
+        restored.restoreLaps(snap.lapMarks)
+        assertThat(restored.snapshot(at(120)).lapLine).isNotNull()
+
+        var sec = 121L
+        for (i in 1..15) { restored.onLocation(41.0 + i * 0.0002, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+        for (i in 14 downTo 0) { restored.onLocation(41.0 + i * 0.0002, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+        assertThat(restored.snapshot(at(sec)).lapCount).isEqualTo(3) // the lap after the crash counted
+    }
+
+    @Test
+    fun restoredDistanceSplitsKeepFallingOnTheSameMultiples() {
+        // Same class of bug: nextSplitDistanceM isn't in the marks, so km splits died at the crash.
+        // And they must resume on the ORIGINAL multiples, not restart from wherever the crash was.
+        val cfg = RecorderConfig(autoLapEveryM = 1000.0)
+        val snap = runStraight(cfg, 1500).snapshot(at(200)) // START at 0, SPLIT at 1000
+
+        val restored = TrackRecorder(cfg)
+        restored.restore(snap.segments, t0, resumeAt = at(300))
+        restored.restoreLaps(snap.lapMarks)
+
+        var sec = 301L
+        repeat(60) { restored.onLocation(41.0 + (135 + it) * 0.0001, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+        val s = restored.snapshot(at(sec))
+        assertThat(s.lapMarks.count { it.type == LapMarkType.SPLIT }).isEqualTo(2) // the 2 km one fell
+        val second = s.lapMarks.last { it.type == LapMarkType.SPLIT }
+        assertThat(second.distanceM).isBetween(2000.0, 2015.0) // on the multiple, not rebased
+    }
+
+    @Test
+    fun restoreAfterEndLapsDoesNotReopenOnACrossing() {
+        // lapsEnded isn't in the marks either: without it a circuit crossing would re-open a block
+        // the user explicitly closed — the very thing circuitDoesNotReopenLapsAfterEndLaps pins live.
+        val cfg = circuitCfg(refM = 600.0)
+        val original = circuitLap(cfg, outSteps = 15)
+        original.endLaps(at(60))
+        val snap = original.snapshot(at(60))
+
+        val restored = TrackRecorder(cfg)
+        restored.restore(snap.segments, t0, resumeAt = at(120))
+        restored.restoreLaps(snap.lapMarks)
+        val startsBefore = restored.snapshot(at(120)).lapMarks.count { it.type == LapMarkType.START }
+
+        var sec = 121L
+        for (i in 1..15) { restored.onLocation(41.0 + i * 0.0002, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+        for (i in 14 downTo 0) { restored.onLocation(41.0 + i * 0.0002, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+        val s = restored.snapshot(at(sec))
+        assertThat(s.lapsActive).isFalse()
+        assertThat(s.lapMarks.count { it.type == LapMarkType.START }).isEqualTo(startsBefore)
+    }
+
+    @Test
     fun restoreAfterAnAbortHasNoLastLapToShow() {
         // Crash-recovery reads the last completed lap off the last two marks. An ABORT ends an
         // abandoned attempt, so its duration must not surface as "last lap" in the HUD.
