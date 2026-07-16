@@ -88,6 +88,26 @@ object ActivityTypes {
         else -> null
     }
 
+    /**
+     * Maps Endurain's numeric `activity_type` (see its `activityType.ts`, codes 1–47) to a Rumb
+     * activity-type id, for activities downloaded from an Endurain server. Non-geo or unmatched
+     * sports (gym, racquet, sailing/surf/windsurf with no local equivalent) return null so the
+     * imported track carries no type rather than a wrong one.
+     */
+    fun fromEndurain(code: Int?): String? = when (code) {
+        1, 3, 34, 40 -> RUN // run, virtualRun, trackRun, treadmillRun
+        2 -> TRAIL_RUN
+        4, 5, 7, 27, 28, 29, 35 -> ROAD_BIKE // ride, gravel, virtual, commuting, indoor, mixed, ebike
+        6, 36 -> MTB // mtbRide, ebikeMountainRide
+        8, 9 -> SWIM // lap / open-water
+        11, 31 -> WALK // walk, indoorWalk
+        12, 44 -> HIKE // hike, snowShoeing (walking-paced, no local snowshoe type)
+        15, 16, 17 -> SKI // alpine, nordic, snowboard
+        37, 45 -> SKATE // iceSkate, inlineSkating
+        13, 32, 42 -> KAYAK // rowing, standUpPaddling, kayaking (paddle family)
+        else -> null
+    }
+
     /** TCX Sport attribute is limited to Running / Biking / Other. */
     fun tcxSport(id: String?): String = when (id) {
         RUN, TRAIL_RUN -> "Running"

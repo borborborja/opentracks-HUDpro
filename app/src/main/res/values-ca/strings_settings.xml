@@ -213,4 +213,13 @@
     <string name="settings_sync_missing_scope">La clau API no té el permís activities:upload.</string>
     <string name="settings_sync_bad_url">No s\'ha trobat el servidor en aquesta URL. Revisa l\'adreça.</string>
     <string name="settings_sync_not_configured">Encara no configurat.</string>
+    <string name="settings_sync_download">Baixa d\'Endurain</string>
+    <string name="endurain_dl_need_credentials">Configura el teu usuari i contrasenya d\'Endurain a Configuració → Sincronització per baixar les teves activitats.</string>
+    <string name="endurain_dl_empty">No s\'ha trobat cap activitat</string>
+    <string name="endurain_dl_load_more">Carrega\'n més</string>
+    <string name="endurain_dl_imported">Importada</string>
+    <string name="endurain_dl_import_cd">Importa</string>
+    <string name="endurain_dl_ok">Activitat importada</string>
+    <string name="endurain_dl_no_gps">Aquesta activitat no té dades GPS</string>
+    <string name="endurain_dl_error">No s\'ha pogut baixar l\'activitat</string>
 </resources>

@@ -12,6 +12,7 @@ import cat.rumb.app.manager.screens.CompetitionDetailScreen
 import cat.rumb.app.manager.screens.DataDesignerScreen
 import cat.rumb.app.manager.screens.DebugLogScreen
 import cat.rumb.app.manager.screens.DesktopModeScreen
+import cat.rumb.app.manager.screens.EndurainDownloadScreen
 import cat.rumb.app.manager.screens.HeatmapScreen
 import cat.rumb.app.manager.screens.HomeScreen
 import cat.rumb.app.manager.screens.HudDesignerScreen
@@ -32,6 +33,7 @@ object Routes {
     const val LAYERS = "layers"
     const val OFFLINE_SECTORS = "offline_sectors"
     const val SETTINGS = "settings"
+    const val ENDURAIN_DOWNLOAD = "endurain_download"
     const val DEBUG_LOG = "debug_log"
     const val SENSORS = "sensors"
     const val CREATE_ROUTE = "create_route"
@@ -115,8 +117,10 @@ fun ManagerApp(
                 onBack = { nav.popBackStack() },
                 onOpenDebugLog = { nav.navigate(Routes.DEBUG_LOG) },
                 onOpenSensors = { nav.navigate(Routes.SENSORS) },
+                onOpenEndurainDownload = { nav.navigate(Routes.ENDURAIN_DOWNLOAD) },
             )
         }
+        composable(Routes.ENDURAIN_DOWNLOAD) { EndurainDownloadScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.SENSORS) { SensorsScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.DEBUG_LOG) { DebugLogScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.HUD) { HudDesignerScreen(onBack = backOrFinish) }

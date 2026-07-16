@@ -69,6 +69,7 @@ class TrackRepository(
         activityType: String? = null,
         competitionRefId: Long? = null,
         followedRouteId: Long? = null,
+        createdAtMillis: Long? = null,
     ): Long = withContext(Dispatchers.IO) {
         val gpxText = Gpx.write(name, points)
         dao.insert(
@@ -78,7 +79,8 @@ class TrackRepository(
                 source = source,
                 distanceMeters = routeDistance(points.map { it.toGeoPoint() }),
                 pointCount = points.size,
-                createdAt = now(),
+                // Downloaded activities keep their real recorded date; imports/recordings use now().
+                createdAt = createdAtMillis ?: now(),
                 gpx = gpxText,
                 remoteId = remoteId,
                 kind = kind,

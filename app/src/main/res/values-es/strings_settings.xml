@@ -213,4 +213,13 @@
     <string name="settings_sync_missing_scope">La clave API no tiene el permiso activities:upload.</string>
     <string name="settings_sync_bad_url">No se encontró el servidor en esa URL. Revisa la dirección.</string>
     <string name="settings_sync_not_configured">Todavía sin configurar.</string>
+    <string name="settings_sync_download">Descargar de Endurain</string>
+    <string name="endurain_dl_need_credentials">Configura tu usuario y contraseña de Endurain en Ajustes → Sincronización para descargar tus actividades.</string>
+    <string name="endurain_dl_empty">No se han encontrado actividades</string>
+    <string name="endurain_dl_load_more">Cargar más</string>
+    <string name="endurain_dl_imported">Importada</string>
+    <string name="endurain_dl_import_cd">Importar</string>
+    <string name="endurain_dl_ok">Actividad importada</string>
+    <string name="endurain_dl_no_gps">Esta actividad no tiene datos GPS</string>
+    <string name="endurain_dl_error">No se pudo descargar la actividad</string>
 </resources>

@@ -1,6 +1,10 @@
 package cat.rumb.app.data.endurain
 
 import cat.rumb.app.data.prefs.EndurainPreferences
+import cat.rumb.app.data.tracks.ActivityTypes
+import cat.rumb.app.data.tracks.TrackKind
+import cat.rumb.app.data.tracks.TrackRepository
+import cat.rumb.app.data.tracks.TrackSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -12,6 +16,9 @@ sealed interface UploadResult {
     data class Failure(val code: Int?, val message: String) : UploadResult
     data object NotConfigured : UploadResult
 }
+
+/** Thrown when a downloaded activity carries no GPS (MAP) stream, so there's no track to import. */
+class EndurainNoGpsException : Exception("L'activitat no té dades GPS")
 
 /** Outcome of a "test connection", shaped so the UI can show the right message. */
 sealed interface ConnResult {
@@ -29,9 +36,21 @@ class EndurainRepository(private val prefs: EndurainPreferences) {
 
     private val auth = EndurainAuth(prefs)
 
+    /** The logged-in user's id, needed in the path of every list call. Resolved once, then cached. */
+    @Volatile private var cachedUserId: Long? = null
+
     private fun api(): EndurainApi? {
         prefs.host ?: return null
         return EndurainClient.create(prefs, auth)
+    }
+
+    private suspend fun userId(api: EndurainApi): Long {
+        cachedUserId?.let { return it }
+        val response = api.profile()
+        if (!response.isSuccessful) throw IllegalStateException("HTTP ${response.code()}")
+        val id = response.body()?.id ?: throw IllegalStateException("Perfil sense id")
+        cachedUserId = id
+        return id
     }
 
     /**
@@ -93,14 +112,48 @@ class EndurainRepository(private val prefs: EndurainPreferences) {
         }
     }
 
-    /** Lists remote activities (credentials mode only — JWT-authenticated). */
+    /**
+     * Lists the user's remote activities, newest first, paged (credentials/JWT mode only). Resolves
+     * the user id from the profile first, since Endurain scopes the list endpoint to a user path.
+     */
     suspend fun listActivities(page: Int = 1, pageSize: Int = 25): Result<List<EndurainActivity>> =
         withContext(Dispatchers.IO) {
             val api = api() ?: return@withContext Result.failure(IllegalStateException("No configurat"))
             runCatching {
-                val response = api.listActivities(page, pageSize)
+                val response = api.listUserActivities(userId(api), page, pageSize)
                 if (response.isSuccessful) response.body().orEmpty()
                 else throw IllegalStateException("HTTP ${response.code()}")
+            }
+        }
+
+    /**
+     * Downloads one activity and imports it into the library as a training. The track is rebuilt from
+     * the activity's streams (Endurain offers no GPX download); an activity without a GPS stream
+     * fails with [EndurainNoGpsException]. Returns the new local track id. De-dupe against
+     * [TrackRepository.knownEndurainIds] is the caller's responsibility.
+     */
+    suspend fun importActivity(id: Long, tracks: TrackRepository): Result<Long> =
+        withContext(Dispatchers.IO) {
+            val api = api() ?: return@withContext Result.failure(IllegalStateException("No configurat"))
+            runCatching {
+                val detail = api.activityDetail(id)
+                val activity = when {
+                    detail.isSuccessful -> detail.body() ?: EndurainActivity(id = id)
+                    else -> throw IllegalStateException("HTTP ${detail.code()}")
+                }
+                val streamsResp = api.activityStreams(id)
+                if (!streamsResp.isSuccessful) throw IllegalStateException("HTTP ${streamsResp.code()}")
+                val points = EndurainImport.streamsToPoints(streamsResp.body().orEmpty())
+                if (points.size < 2) throw EndurainNoGpsException()
+                tracks.insertRoute(
+                    name = activity.name?.takeIf { it.isNotBlank() } ?: "Endurain $id",
+                    points = points,
+                    source = TrackSource.ENDURAIN,
+                    remoteId = id,
+                    kind = TrackKind.TRAINING,
+                    activityType = ActivityTypes.fromEndurain(activity.activityType),
+                    createdAtMillis = EndurainImport.startMillis(activity.startTime),
+                )
             }
         }
 

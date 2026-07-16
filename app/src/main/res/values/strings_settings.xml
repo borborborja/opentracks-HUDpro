@@ -213,4 +213,13 @@
     <string name="settings_sync_missing_scope">The API key is missing the activities:upload permission.</string>
     <string name="settings_sync_bad_url">Server not found at that URL. Check the address.</string>
     <string name="settings_sync_not_configured">Not configured yet.</string>
+    <string name="settings_sync_download">Download from Endurain</string>
+    <string name="endurain_dl_need_credentials">Set up your Endurain username and password in Settings → Sync to download your activities.</string>
+    <string name="endurain_dl_empty">No activities found</string>
+    <string name="endurain_dl_load_more">Load more</string>
+    <string name="endurain_dl_imported">Imported</string>
+    <string name="endurain_dl_import_cd">Import</string>
+    <string name="endurain_dl_ok">Activity imported</string>
+    <string name="endurain_dl_no_gps">This activity has no GPS data</string>
+    <string name="endurain_dl_error">Couldn\'t download the activity</string>
 </resources>

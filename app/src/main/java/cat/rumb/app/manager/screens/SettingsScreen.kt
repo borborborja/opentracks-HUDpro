@@ -8,15 +8,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -94,7 +97,12 @@ private val TABS = listOf(
 )
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}, onOpenSensors: () -> Unit = {}) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onOpenDebugLog: () -> Unit = {},
+    onOpenSensors: () -> Unit = {},
+    onOpenEndurainDownload: () -> Unit = {},
+) {
     val context = LocalContext.current
     val prefs = remember { ViewerPreferences.get(context) }
     var tab by remember { mutableIntStateOf(0) }
@@ -115,7 +123,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenDebugLog: () -> Unit = {}, onOpenSe
                     1 -> ProfileSection(prefs)
                     2 -> MapRoutesSection(prefs)
                     3 -> AudioAnnouncementsSection(prefs)
-                    4 -> SyncSection()
+                    4 -> SyncSection(onOpenEndurainDownload)
                     else -> AppAndTypesSection(prefs, onOpenDebugLog)
                 }
             }
@@ -179,7 +187,7 @@ private fun UnitsSection(prefs: ViewerPreferences) {
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun SyncSection() {
+private fun SyncSection(onOpenEndurainDownload: () -> Unit = {}) {
     val context = LocalContext.current
     val endurainPrefs = remember { cat.rumb.app.data.prefs.EndurainPreferences.get(context) }
     val scope = rememberCoroutineScope()
@@ -264,6 +272,21 @@ private fun SyncSection() {
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )
+    // Downloading needs a JWT session to read activities, so it's credentials-only.
+    if (mode == credMode) {
+        androidx.compose.material3.OutlinedButton(
+            onClick = onOpenEndurainDownload,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(
+                Icons.Filled.Download,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.settings_sync_download))
+        }
+    }
 
     SyncStatusSummary()
     FolderExportBlock()
