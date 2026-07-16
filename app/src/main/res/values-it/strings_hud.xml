@@ -32,4 +32,6 @@
     <string name="metric_lap_distance">Dist. giro</string>
     <string name="metric_last_lap">Ultimo giro</string>
     <string name="metric_avg_pace">Ritmo medio</string>
+    <string name="metric_lap_avg_speed">Vel. med. giro</string>
+    <string name="metric_lap_avg_pace">Ritmo med. giro</string>
 </resources>

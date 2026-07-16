@@ -16,6 +16,30 @@ class HudModelTest {
     }
 
     @Test
+    fun lapAverageIsMeasuredFromTheStartLineNotFromPressingRecord() {
+        // 2 km covered in 6 min of the CURRENT lap → 20 km/h and 3:00/km, whatever the whole track did.
+        val m = LiveMetrics(
+            currentLapDistanceKm = 2.0,
+            currentLapTime = kotlin.time.Duration.parse("6m"),
+            distanceKm = 40.0, // the outing so far — must not leak into a lap average
+            avgMovingSpeedKmh = 35.0,
+        )
+        assertThat(HudMetric.LAP_AVG_SPEED.value(m)).isEqualTo("20.0")
+        assertThat(HudMetric.LAP_AVG_PACE.value(m)).isEqualTo("3:00")
+    }
+
+    @Test
+    fun lapAverageIsBlankOutsideALap() {
+        // No lap open (the approach to the start line, or a track with no laps at all).
+        val m = LiveMetrics(distanceKm = 5.0, avgMovingSpeedKmh = 20.0)
+        assertThat(HudMetric.LAP_AVG_SPEED.value(m)).isEqualTo("—")
+        assertThat(HudMetric.LAP_AVG_PACE.value(m)).isEqualTo("—")
+        // …and a lap that just opened has no elapsed time yet: no division by zero.
+        val fresh = m.copy(currentLapDistanceKm = 0.0, currentLapTime = kotlin.time.Duration.ZERO)
+        assertThat(HudMetric.LAP_AVG_SPEED.value(fresh)).isEqualTo("—")
+    }
+
+    @Test
     fun catalogHasMetricsChartsAndControls() {
         assertThat(HudCatalog.byId(HudCatalog.idOf(HudMetric.SPEED))?.category).isEqualTo(HudCategory.METRIC)
         assertThat(HudCatalog.byId(HudCatalog.CHART_SPEED)?.category).isEqualTo(HudCategory.CHART)

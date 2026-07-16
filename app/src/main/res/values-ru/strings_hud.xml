@@ -32,4 +32,6 @@
     <string name="metric_lap_distance">Дист. круга</string>
     <string name="metric_last_lap">Посл. круг</string>
     <string name="metric_avg_pace">Ср. темп</string>
+    <string name="metric_lap_avg_speed">Ср. скор. круга</string>
+    <string name="metric_lap_avg_pace">Ср. темп круга</string>
 </resources>

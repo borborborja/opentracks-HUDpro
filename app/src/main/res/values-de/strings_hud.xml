@@ -32,4 +32,6 @@
     <string name="metric_lap_distance">Rundendist.</string>
     <string name="metric_last_lap">Letzte Runde</string>
     <string name="metric_avg_pace">Ø Pace</string>
+    <string name="metric_lap_avg_speed">Ø Tempo Runde</string>
+    <string name="metric_lap_avg_pace">Ø Pace Runde</string>
 </resources>

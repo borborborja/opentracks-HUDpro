@@ -32,4 +32,6 @@
     <string name="metric_lap_distance">Dyst. okrążenia</string>
     <string name="metric_last_lap">Ostatnie okrążenie</string>
     <string name="metric_avg_pace">Śr. tempo</string>
+    <string name="metric_lap_avg_speed">Śr. pręd. okr.</string>
+    <string name="metric_lap_avg_pace">Śr. tempo okr.</string>
 </resources>

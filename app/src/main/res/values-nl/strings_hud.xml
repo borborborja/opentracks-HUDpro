@@ -32,4 +32,6 @@
     <string name="metric_lap_distance">Ronde-afst.</string>
     <string name="metric_last_lap">Laatste ronde</string>
     <string name="metric_avg_pace">Gem. tempo</string>
+    <string name="metric_lap_avg_speed">Gem. snelh. ronde</string>
+    <string name="metric_lap_avg_pace">Gem. tempo ronde</string>
 </resources>

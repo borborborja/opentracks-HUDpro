@@ -158,10 +158,20 @@ fun HudDesignerScreen(onBack: () -> Unit) {
     }
 }
 
-/** Competition-only HUD elements: addable always, but only rendered mid-competition. */
+/**
+ * Competition-only HUD elements: addable always, but only meaningful mid-competition (off it they
+ * read "—"). The lap tiles were already in the catalogue but buried under General, where nobody
+ * racing a circuit would think to look for them — the ghost tiles alone made a thin tab.
+ */
 private val HUD_COMPETITION_IDS = setOf(
     HudCatalog.idOf(cat.rumb.app.viewer.hud.HudMetric.GHOST_DELTA),
     HudCatalog.idOf(cat.rumb.app.viewer.hud.HudMetric.GHOST_SECONDS),
+    HudCatalog.idOf(cat.rumb.app.viewer.hud.HudMetric.LAP_TIME),
+    HudCatalog.idOf(cat.rumb.app.viewer.hud.HudMetric.LAP_DISTANCE),
+    HudCatalog.idOf(cat.rumb.app.viewer.hud.HudMetric.LAP_AVG_SPEED),
+    HudCatalog.idOf(cat.rumb.app.viewer.hud.HudMetric.LAP_AVG_PACE),
+    HudCatalog.idOf(cat.rumb.app.viewer.hud.HudMetric.LAST_LAP),
+    HudCatalog.idOf(cat.rumb.app.viewer.hud.HudMetric.LAP_COUNT),
 )
 
 /** Tabbed add-widgets sheet: General (elements by category) / Competició / Ajustes (presets + size). */

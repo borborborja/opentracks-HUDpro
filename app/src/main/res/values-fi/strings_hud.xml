@@ -32,4 +32,6 @@
     <string name="metric_lap_distance">Kierrosmatka</string>
     <string name="metric_last_lap">Viime kierros</string>
     <string name="metric_avg_pace">Ka. tahti</string>
+    <string name="metric_lap_avg_speed">Kierr. keskinop.</string>
+    <string name="metric_lap_avg_pace">Kierr. keskivauhti</string>
 </resources>

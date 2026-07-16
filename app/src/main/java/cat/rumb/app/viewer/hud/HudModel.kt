@@ -32,6 +32,8 @@ enum class HudMetric(val labelRes: Int) {
     LAP_TIME(cat.rumb.app.R.string.metric_lap_time),
     LAP_DISTANCE(cat.rumb.app.R.string.metric_lap_distance),
     LAST_LAP(cat.rumb.app.R.string.metric_last_lap),
+    LAP_AVG_SPEED(cat.rumb.app.R.string.metric_lap_avg_speed),
+    LAP_AVG_PACE(cat.rumb.app.R.string.metric_lap_avg_pace),
     ;
 
     /** Formatted value string for [m] under [u] (defaults to metric). */
@@ -62,6 +64,8 @@ enum class HudMetric(val labelRes: Int) {
         LAP_TIME -> fmtDurationN(m.currentLapTime)
         LAP_DISTANCE -> fmt2(m.currentLapDistanceKm?.let { u.distance.fromKm(it) })
         LAST_LAP -> fmtDurationN(m.lastLapTime)
+        LAP_AVG_SPEED -> fmt1(lapAvgSpeedKmh(m)?.let { u.speed.fromKmh(it) })
+        LAP_AVG_PACE -> fmtPace(pacePerUnit(MetricsCalculator.paceFromSpeedKmh(lapAvgSpeedKmh(m)), u.distance))
     }
 
     /** Unit label under [u] (defaults to metric). Empty for unit-less metrics (durations). */
@@ -83,6 +87,8 @@ enum class HudMetric(val labelRes: Int) {
         LAP_COUNT -> ""
         LAP_TIME, LAST_LAP -> ""
         LAP_DISTANCE -> u.distance.label
+        LAP_AVG_SPEED -> u.speed.label
+        LAP_AVG_PACE -> "/${u.distance.label}"
     }
 
     companion object {
@@ -93,6 +99,18 @@ enum class HudMetric(val labelRes: Int) {
         /** Minutes per selected distance unit, from a pace in min/km. */
         private fun pacePerUnit(paceMinPerKm: Double?, distance: DistanceUnit): Double? =
             paceMinPerKm?.let { it * distance.kmPerUnit }
+
+        /**
+         * Average speed of the lap in progress — since you crossed the start line, not since you
+         * pressed record. Derived here rather than stored, like [AVG_PACE]: both inputs are already
+         * on [LiveMetrics], and they are null outside a lap block, so the tile reads "—" during the
+         * approach. The clock is ACTIVE time (it freezes on pause), which is what a lap is timed on.
+         */
+        private fun lapAvgSpeedKmh(m: LiveMetrics): Double? {
+            val km = m.currentLapDistanceKm ?: return null
+            val hours = (m.currentLapTime ?: return null).inWholeMilliseconds / 3_600_000.0
+            return if (hours > 0) km / hours else null
+        }
 
         private fun fmtPace(v: Double?): String {
             if (v == null) return "—"

@@ -32,4 +32,6 @@
     <string name="metric_lap_distance">Varvdist.</string>
     <string name="metric_last_lap">Senaste varv</string>
     <string name="metric_avg_pace">Snittempo</string>
+    <string name="metric_lap_avg_speed">Snitt varv</string>
+    <string name="metric_lap_avg_pace">Snitttempo varv</string>
 </resources>
