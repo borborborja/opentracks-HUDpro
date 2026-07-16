@@ -200,4 +200,8 @@
     <string name="settings_sim_off">Vypnuto (skutečná GPS)</string>
     <string name="settings_sim_speed">Rychlost: %1$dx</string>
     <string name="settings_sim_active_warning">Simulace ZAPNUTA: prohlížeč nepoužije skutečnou GPS.</string>
+    <string name="sensors_warn_if_missing">Upozornit při nahrávání, pokud je vypnutý</string>
+    <string name="sensors_missing_title">Senzor není zapnutý</string>
+    <string name="sensors_missing_msg">%1$s neodpovídá. Zapni ho a připojí se sám.</string>
+    <string name="sensors_missing_start_anyway">Přesto začít</string>
 </resources>

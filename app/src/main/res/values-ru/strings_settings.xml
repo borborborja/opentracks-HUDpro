@@ -200,4 +200,8 @@
     <string name="settings_sim_off">Выключено (реальный GPS)</string>
     <string name="settings_sim_speed">Скорость: %1$dx</string>
     <string name="settings_sim_active_warning">Симуляция ВКЛ: просмотрщик не будет использовать реальный GPS.</string>
+    <string name="sensors_warn_if_missing">Предупредить при записи, если он выключен</string>
+    <string name="sensors_missing_title">Датчик не включён</string>
+    <string name="sensors_missing_msg">%1$s не отвечает. Включите его — он подключится сам.</string>
+    <string name="sensors_missing_start_anyway">Всё равно начать</string>
 </resources>

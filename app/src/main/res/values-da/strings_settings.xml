@@ -200,4 +200,8 @@
     <string name="settings_sim_off">Fra (rigtig GPS)</string>
     <string name="settings_sim_speed">Hastighed: %1$dx</string>
     <string name="settings_sim_active_warning">Simulering TIL: viseren bruger ikke rigtig GPS.</string>
+    <string name="sensors_warn_if_missing">Advar ved optagelse hvis den er slukket</string>
+    <string name="sensors_missing_title">Sensor er ikke tændt</string>
+    <string name="sensors_missing_msg">%1$s svarer ikke. Tænd den, så forbinder den selv.</string>
+    <string name="sensors_missing_start_anyway">Start alligevel</string>
 </resources>

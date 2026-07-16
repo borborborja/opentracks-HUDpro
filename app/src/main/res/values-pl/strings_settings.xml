@@ -200,4 +200,8 @@
     <string name="settings_sim_off">Wyłączone (prawdziwy GPS)</string>
     <string name="settings_sim_speed">Prędkość: %1$dx</string>
     <string name="settings_sim_active_warning">Symulacja WŁĄCZONA: podgląd nie użyje prawdziwego GPS.</string>
+    <string name="sensors_warn_if_missing">Ostrzeż przy nagrywaniu, jeśli jest wyłączony</string>
+    <string name="sensors_missing_title">Czujnik wyłączony</string>
+    <string name="sensors_missing_msg">%1$s nie odpowiada. Włącz go, a połączy się sam.</string>
+    <string name="sensors_missing_start_anyway">Zacznij mimo to</string>
 </resources>

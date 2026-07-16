@@ -200,4 +200,8 @@
     <string name="settings_sim_off">Off (use the real GPS)</string>
     <string name="settings_sim_speed">Speed: %1$dx</string>
     <string name="settings_sim_active_warning">Simulation ON: the viewer will not use the real GPS.</string>
+    <string name="sensors_warn_if_missing">Warn me when recording if it isn\'t on</string>
+    <string name="sensors_missing_title">Sensor not switched on</string>
+    <string name="sensors_missing_msg">%1$s isn\'t responding. Switch it on and it will connect on its own.</string>
+    <string name="sensors_missing_start_anyway">Start anyway</string>
 </resources>

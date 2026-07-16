@@ -200,4 +200,8 @@
     <string name="settings_sim_off">Вимкнено (справжній GPS)</string>
     <string name="settings_sim_speed">Швидкість: %1$dx</string>
     <string name="settings_sim_active_warning">Симуляція УВІМКНЕНА: переглядач не використовуватиме справжній GPS.</string>
+    <string name="sensors_warn_if_missing">Попередити при записі, якщо він вимкнений</string>
+    <string name="sensors_missing_title">Датчик не увімкнено</string>
+    <string name="sensors_missing_msg">%1$s не відповідає. Увімкни його — він підключиться сам.</string>
+    <string name="sensors_missing_start_anyway">Однаково почати</string>
 </resources>

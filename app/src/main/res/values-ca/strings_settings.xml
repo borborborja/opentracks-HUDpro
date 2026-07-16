@@ -200,4 +200,8 @@
     <string name="settings_sim_off">Desactivat (GPS real)</string>
     <string name="settings_sim_speed">Velocitat: %1$dx</string>
     <string name="settings_sim_active_warning">Simulació ACTIVA: el visor no farà servir el GPS real.</string>
+    <string name="sensors_warn_if_missing">Avisa\'m en gravar si no està encès</string>
+    <string name="sensors_missing_title">Sensor no encès</string>
+    <string name="sensors_missing_msg">%1$s no respon. Encén-lo i es connectarà tot sol.</string>
+    <string name="sensors_missing_start_anyway">Comença igualment</string>
 </resources>

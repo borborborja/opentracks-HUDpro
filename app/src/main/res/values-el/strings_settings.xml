@@ -200,4 +200,8 @@
     <string name="settings_sim_off">Ανενεργό (πραγματικό GPS)</string>
     <string name="settings_sim_speed">Ταχύτητα: %1$dx</string>
     <string name="settings_sim_active_warning">Προσομοίωση ΕΝΕΡΓΗ: ο προβολέας δεν θα χρησιμοποιήσει πραγματικό GPS.</string>
+    <string name="sensors_warn_if_missing">Ειδοποίησέ με στην καταγραφή αν είναι κλειστό</string>
+    <string name="sensors_missing_title">Ο αισθητήρας δεν είναι ανοιχτός</string>
+    <string name="sensors_missing_msg">Το %1$s δεν απαντά. Άνοιξέ το και θα συνδεθεί μόνο του.</string>
+    <string name="sensors_missing_start_anyway">Έναρξη ούτως ή άλλως</string>
 </resources>

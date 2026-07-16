@@ -280,10 +280,19 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getString(KEY_USER_SEX, "") ?: ""
         set(value) = prefs.edit().putString(KEY_USER_SEX, value).apply()
 
-    /** MAC addresses of paired BLE fitness sensors (heart rate / cadence / power). */
+    /**
+     * MAC addresses of paired BLE fitness sensors (heart rate / cadence / power). The addresses are
+     * what the recording service connects to; [bleSensorsJson] holds the rest (name, warn flag) and
+     * keeps this in sync. Kept as the source of truth for connecting so pairings survive downgrades.
+     */
     var bleSensorAddrs: Set<String>
         get() = prefs.getStringSet(KEY_BLE_SENSORS, emptySet()) ?: emptySet()
         set(value) = prefs.edit().putStringSet(KEY_BLE_SENSORS, value).apply()
+
+    /** JSON list of paired sensors with their names and per-sensor settings (see ble.SavedSensor). */
+    var bleSensorsJson: String?
+        get() = prefs.getString(KEY_BLE_SENSORS_JSON, null)
+        set(value) = prefs.edit().putString(KEY_BLE_SENSORS_JSON, value).apply()
 
     /** Name of the selected [cat.rumb.app.data.map.TrackColorMode]. */
     var trackColorMode: String?
@@ -446,6 +455,7 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_CIRCUIT_REF_M = "circuit_ref_distance_m"
         private const val KEY_REC_BAROMETER = "rec_barometer"
         private const val KEY_BLE_SENSORS = "ble_sensors"
+        private const val KEY_BLE_SENSORS_JSON = "ble_sensors_json"
         private const val KEY_ROUTE_VIEW_MODE = "route_view_mode"
         private const val KEY_FOLDERS_TRAINING = "folders_training"
         private const val KEY_FOLDERS_ROUTE = "folders_route"

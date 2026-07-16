@@ -200,4 +200,8 @@
     <string name="settings_sim_off">Av (riktig GPS)</string>
     <string name="settings_sim_speed">Hastighet: %1$dx</string>
     <string name="settings_sim_active_warning">Simulering PÅ: visaren använder inte riktig GPS.</string>
+    <string name="sensors_warn_if_missing">Varna vid inspelning om den är av</string>
+    <string name="sensors_missing_title">Sensorn är inte på</string>
+    <string name="sensors_missing_msg">%1$s svarar inte. Slå på den så ansluter den av sig själv.</string>
+    <string name="sensors_missing_start_anyway">Starta ändå</string>
 </resources>

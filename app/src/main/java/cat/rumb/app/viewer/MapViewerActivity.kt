@@ -55,6 +55,8 @@ import cat.rumb.app.data.opentracks.model.TrackStatistics
 import cat.rumb.app.data.prefs.ViewerPreferences
 import cat.rumb.app.data.recording.NativeRecording
 import cat.rumb.app.data.recording.RecorderState
+import cat.rumb.app.data.recording.ble.BleSensorProbe
+import cat.rumb.app.data.recording.ble.SavedSensors
 import cat.rumb.app.data.tracks.TrackStatsCalculator
 import cat.rumb.app.data.recording.RecordingService
 import cat.rumb.app.viewer.follow.FollowRouteEngine
@@ -194,6 +196,10 @@ class MapViewerActivity : ComponentActivity() {
     private val sportPickerFlow = MutableStateFlow(false)
     /** True when the picker was opened by pressing record, so it should start once a sport is set. */
     private var recordAfterSportPick = false
+    // Sensors flagged "warn me" that aren't switched on (null = no warning pending). Checked once
+    // per recording: probing on every re-entry would stall the record button.
+    private val sensorWarnFlow = MutableStateFlow<List<String>?>(null)
+    private var sensorWarnAcknowledged = false
 
     // Circuit mode: record an attempt at a saved circuit. The fixed line is preset (auto-lap arms
     // from the start) and the ghost is the circuit's best lap. Efforts are persisted on save.
@@ -578,6 +584,31 @@ class MapViewerActivity : ComponentActivity() {
                                 },
                             )
                         }
+                        // A sensor you asked to be warned about isn't switched on. Never a block:
+                        // "start anyway" is always there — you might have chosen to leave it at home.
+                        val missingSensors by sensorWarnFlow.collectAsState()
+                        missingSensors?.let { names ->
+                            androidx.compose.material3.AlertDialog(
+                                onDismissRequest = { sensorWarnFlow.value = null },
+                                title = { androidx.compose.material3.Text(stringResource(R.string.sensors_missing_title)) },
+                                text = {
+                                    androidx.compose.material3.Text(
+                                        stringResource(R.string.sensors_missing_msg, names.joinToString(", ")),
+                                    )
+                                },
+                                confirmButton = {
+                                    androidx.compose.material3.TextButton(onClick = {
+                                        sensorWarnFlow.value = null
+                                        controller?.let { startNativeRecording(it) }
+                                    }) { androidx.compose.material3.Text(stringResource(R.string.sensors_missing_start_anyway)) }
+                                },
+                                dismissButton = {
+                                    androidx.compose.material3.TextButton(onClick = { sensorWarnFlow.value = null }) {
+                                        androidx.compose.material3.Text(stringResource(R.string.viewer_comp_switch_cancel))
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -865,9 +896,44 @@ class MapViewerActivity : ComponentActivity() {
             sportPickerFlow.value = true
             return
         }
+        // Sensors you asked to be warned about. Deliberately NOT hung off the GPS-precision wait:
+        // that only runs when the countdown is enabled, so anyone with it off would never be warned.
+        // Probing takes a moment, so it runs off-thread and re-enters here — like the sport picker.
+        if (!sensorWarnAcknowledged) {
+            lifecycleScope.launch {
+                val missing = missingWarnSensors()
+                sensorWarnAcknowledged = true
+                if (missing.isEmpty()) startNativeRecording(ctrl) else sensorWarnFlow.value = missing
+            }
+            return
+        }
         val countdownOn = cat.rumb.app.data.prefs.ViewerPreferences.get(this).recCountdown
         if (countdownOn) startWithCountdown(ctrl) else doStartNativeRecording(ctrl)
     }
+
+    /**
+     * Names of the sensors flagged "warn me" that aren't advertising right now. Empty (no dialog) if
+     * none are flagged, or if we can't tell — a short scan is the only signal available before
+     * recording, since nothing connects to the sensors until the recording service starts.
+     *
+     * It says the sensor is ON, not that it will connect. That's the right basis for a warning, and
+     * we never block: [SensorWarnDialog] always offers to start anyway.
+     */
+    private suspend fun missingWarnSensors(): List<String> {
+        val prefs = ViewerPreferences.get(this)
+        val watched = SavedSensors.load(prefs).filter { it.warnIfMissing }
+        if (watched.isEmpty()) return emptyList()
+        if (!hasBluetoothScanPermission()) return emptyList()
+        val seen = BleSensorProbe.advertising(this, watched.map { it.address }.toSet(), SENSOR_PROBE_MS)
+            ?: return emptyList() // no scanner / bluetooth off: can't judge, so don't nag
+        return watched.filter { it.address !in seen }
+            .map { it.name.takeIf { n -> n.isNotBlank() } ?: it.address }
+    }
+
+    private fun hasBluetoothScanPermission(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+            checkSelfPermission(android.Manifest.permission.BLUETOOTH_SCAN) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
 
     /** Applies a chosen sport: HUD layout, splits and the save-dialog prefill all follow from it. */
     private fun applySport(sportId: String) {
@@ -974,6 +1040,7 @@ class MapViewerActivity : ComponentActivity() {
             bestLapMs = null
         }
         lastSeenLapCount = 0
+        sensorWarnAcknowledged = false // the next recording gets its own sensor check
         requestNotificationPermission()
         DebugLog.i("Record", "native start")
         RecordingService.start(this)
@@ -1701,6 +1768,12 @@ class MapViewerActivity : ComponentActivity() {
         private const val GPS_RELAX_MS = 20_000L
         private const val MAX_ACCURACY_M = 25f
         private const val GPS_WAIT_TIMEOUT_MS = 30_000L
+
+        /**
+         * How long to listen for a watched sensor before deciding it's off. Long enough for a strap
+         * advertising at ~1 Hz, short enough that the record button doesn't feel stuck.
+         */
+        private const val SENSOR_PROBE_MS = 2_500L
 
         /** Within this distance of the reference start, the competition pre-start pill turns green. */
         private const val START_POINT_NEAR_M = 30.0

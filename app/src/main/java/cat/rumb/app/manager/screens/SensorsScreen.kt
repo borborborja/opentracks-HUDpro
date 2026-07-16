@@ -39,6 +39,8 @@ import cat.rumb.app.R
 import cat.rumb.app.data.debug.DebugLog
 import cat.rumb.app.data.prefs.ViewerPreferences
 import cat.rumb.app.data.recording.ble.BleSensorManager
+import cat.rumb.app.data.recording.ble.SavedSensor
+import cat.rumb.app.data.recording.ble.SavedSensors
 
 /**
  * Scan & pair BLE fitness sensors (heart rate 0x180D, cadence/CSC 0x1816, power 0x1818). Paired
@@ -51,7 +53,8 @@ fun SensorsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { ViewerPreferences.get(context) }
 
-    var paired by remember { mutableStateOf(prefs.bleSensorAddrs) }
+    var sensors by remember { mutableStateOf(SavedSensors.load(prefs)) }
+    val paired = sensors.map { it.address }.toSet()
     val found = remember { mutableStateMapOf<String, String>() } // address → name
     var scanning by remember { mutableStateOf(false) }
     var scanError by remember { mutableStateOf<String?>(null) }
@@ -126,24 +129,68 @@ fun SensorsScreen(onBack: () -> Unit) {
                 )
             }
             all.forEach { address ->
-                val name = found[address] ?: stringResource(R.string.sensors_paired_name)
-                Card {
-                    Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(name, style = MaterialTheme.typography.bodyLarge)
-                            Text(address, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                val saved = sensors.firstOrNull { it.address == address }
+                val fallback = stringResource(R.string.sensors_paired_name)
+                SensorRow(
+                    address = address,
+                    // A live scan knows the real name; otherwise use the one stored when it was
+                    // paired, and only then fall back to the generic label.
+                    name = found[address] ?: saved?.name?.takeIf { it.isNotBlank() } ?: fallback,
+                    paired = saved != null,
+                    warnIfMissing = saved?.warnIfMissing == true,
+                    onPaired = { checked ->
+                        sensors = if (checked) {
+                            sensors + SavedSensor(address, found[address].orEmpty())
+                        } else {
+                            sensors.filterNot { it.address == address }
                         }
-                        Checkbox(
-                            checked = address in paired,
-                            onCheckedChange = { checked ->
-                                paired = if (checked) paired + address else paired - address
-                                prefs.bleSensorAddrs = paired
-                            },
-                        )
-                    }
+                        SavedSensors.save(prefs, sensors)
+                    },
+                    onWarn = { checked ->
+                        sensors = sensors.map {
+                            if (it.address == address) it.copy(warnIfMissing = checked) else it
+                        }
+                        SavedSensors.save(prefs, sensors)
+                    },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * One sensor: pair it, and — once paired — choose whether recording should warn you when it isn't
+ * switched on. The warn option only exists for a paired sensor: there is nothing to miss otherwise.
+ */
+@Composable
+private fun SensorRow(
+    address: String,
+    name: String,
+    paired: Boolean,
+    warnIfMissing: Boolean,
+    onPaired: (Boolean) -> Unit,
+    onWarn: (Boolean) -> Unit,
+) {
+    Card {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(name, style = MaterialTheme.typography.bodyLarge)
+                    Text(address, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                }
+                Checkbox(checked = paired, onCheckedChange = onPaired)
+            }
+            if (paired) {
+                Row(
+                    Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        stringResource(R.string.sensors_warn_if_missing),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Checkbox(checked = warnIfMissing, onCheckedChange = onWarn)
                 }
             }
         }
