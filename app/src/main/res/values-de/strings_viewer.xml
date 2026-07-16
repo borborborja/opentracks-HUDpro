@@ -91,7 +91,7 @@
     <string name="viewer_comp_switch_confirm">Verwerfen und fortfahren</string>
     <string name="viewer_comp_switch_cancel">Abbrechen</string>
     <string name="viewer_qs_lap_countdown">3-2-1-Countdown beim Rundenstart</string>
-    <string name="viewer_qs_lap_countdown_help">Beim Wettkampf auf einem Rundkurs zählt es bei Annäherung an die Ziellinie herunter, sodass 0 auf die neue Runde fällt.</string>
+    <string name="viewer_qs_lap_countdown_help">Immer wenn du Runden drehst, zählt beim Anfahren der Ziellinie herunter, damit die 0 auf die neue Runde fällt.</string>
     <string name="viewer_qs_competition_none">Keiner</string>
     <string name="viewer_qs_competition_none_subtitle">Nicht antreten</string>
     <string name="viewer_qs_auto_lap_distance">Automatische Runden nach Distanz</string>

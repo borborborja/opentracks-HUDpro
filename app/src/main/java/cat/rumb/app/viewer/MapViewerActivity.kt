@@ -191,6 +191,8 @@ class MapViewerActivity : ComponentActivity() {
     private var lapGhost: cat.rumb.app.data.competition.GhostEngine? = null
     private var bestLapMs: Long? = null
     private var lastSeenLapCount = 0
+    /** Last arrow visibility pushed to the map, so the style is only re-applied when it changes. */
+    private var lastArrowsShown: Boolean? = null
     // Competition id awaiting confirmation because a recording is in progress (null = no prompt).
     private val confirmCompetitionFlow = MutableStateFlow<Long?>(null)
     // Sport mode: shown when recording is requested with no sport chosen yet, or from settings.
@@ -239,11 +241,14 @@ class MapViewerActivity : ComponentActivity() {
         // auto-lap at the fixed line + best-lap ghost. Reference/ghost come from the competition's
         // inline GPX (no live track id).
         prefs.circuitActive = false
+        // Ghost looks are read for EVERY ghost, not just a competition's: racing your own best lap
+        // draws the same halo and badge, and reading these only inside the competition branch meant
+        // someone who had turned the halo off still got one.
+        ghostHaloOn = prefs.competitionHalo
+        ghostSecondsOn = prefs.competitionShowSeconds
         val compId = intent.getLongExtra(EXTRA_COMPETITION_ID, -1L)
         if (compId > 0) {
             competitionId = compId
-            ghostHaloOn = prefs.competitionHalo
-            ghostSecondsOn = prefs.competitionShowSeconds
             lifecycleScope.launch {
                 val app = RumbApplication.from(this@MapViewerActivity)
                 val comp = app.competitionRepository.getCompetition(compId) ?: return@launch
@@ -961,13 +966,17 @@ class MapViewerActivity : ComponentActivity() {
     /**
      * Applies the ghost setting without leaving the viewer. Turning it off drops whatever is being
      * chased right now; turning it back on re-seeds a competition's ghost from the reference already
-     * parsed at entry ([pendingRouteRefPts]). A free lap ghost isn't re-seeded here — it rebuilds
-     * itself from the next completed lap.
+     * parsed at entry ([pendingRouteRefPts]).
+     *
+     * A free lap ghost cannot be re-seeded from anything stored, so it rebuilds itself from the next
+     * lap that beats [bestLapMs] — which is why turning the ghost off must clear that best too, or
+     * the next lap would have to beat a record whose ghost no longer exists.
      */
     private fun applyGhostEnabled(on: Boolean) {
         if (!on) {
             lapCompeting = false
             lapGhost = null
+            bestLapMs = null
             ghostEngine = null
             controller?.setGhost(null)
         } else if (competitionId > 0) {
@@ -1140,7 +1149,12 @@ class MapViewerActivity : ComponentActivity() {
                 while (true) {
                     val prefs = ViewerPreferences.get(this@MapViewerActivity)
                     val loc = ctrl.lastLocation()
-                    if (!prefs.lapCountdown || !circuitMode || !NativeRecording.isActive || loc == null) {
+                    // The line comes from the engine, not from the competition prefs. Those are only
+                    // ever written when entering a LAP competition, so reading them meant free laps
+                    // counted down against (0.0, 0.0) — the Atlantic — and never reached a digit.
+                    val state = NativeRecording.state.value
+                    val line = state?.lapLine
+                    if (!prefs.lapCountdown || line == null || !NativeRecording.isActive || loc == null) {
                         lapCountdownFlow.value = null
                         armed = false
                         lastDistM = Double.MAX_VALUE
@@ -1148,9 +1162,8 @@ class MapViewerActivity : ComponentActivity() {
                         counted = false
                     } else {
                         val here = cat.rumb.app.data.opentracks.model.GeoPoint(loc.latitude, loc.longitude)
-                        val line = cat.rumb.app.data.opentracks.model.GeoPoint(prefs.circuitLineLat, prefs.circuitLineLng)
                         val d = MetricsCalculator.distanceMeters(here, line)
-                        val radius = prefs.circuitRadiusM
+                        val radius = state.lapLineRadiusM
                         if (d > radius * 2) armed = true // left the finish area → count the next lap in
                         val speed = if (loc.hasSpeed()) loc.speed.toDouble() else 0.0
                         val closing = d < lastDistM - CLOSING_HYSTERESIS_M
@@ -1353,11 +1366,14 @@ class MapViewerActivity : ComponentActivity() {
     }
 
     /**
-     * Direction chevrons on the followed route. Only while racing: a ROUTE or lap only counts ridden
-     * the right way round, whereas just following a track the direction doesn't matter. The setting
-     * is the on/off switch for that competition-only behaviour.
+     * Direction chevrons on the followed route. Shown where direction MATTERS — a route or a lap only
+     * counts ridden the right way round — and not when you're just following a track to find your
+     * way. That is about laps, not about competitions: `circuitMode` alone meant someone lapping
+     * their own circuit had the setting on and saw nothing, because it is really "I entered via a
+     * competition". Laps in progress count too, whoever started them.
      */
-    private fun showFollowArrows(prefs: ViewerPreferences) = prefs.followArrows && (competing || circuitMode)
+    private fun showFollowArrows(prefs: ViewerPreferences) =
+        prefs.followArrows && (competing || circuitMode || NativeRecording.state.value?.lapsActive == true)
 
     /** Draws a follow route directly from inline points (ROUTE competition reference; no track id). */
     private fun drawFollowRouteFromPoints(
@@ -1570,6 +1586,19 @@ class MapViewerActivity : ComponentActivity() {
             // stops a turn being re-announced when GPS jitter oscillates nearestIndex around its
             // vertex — without it, dipping back below the vertex re-adds the pair and re-fires.
             announcedTurns.removeAll { it.first < state.nearestIndex - 3 }
+        }
+
+        // "Direction matters" flips the moment a lap block opens or closes, but the arrow style is
+        // only applied where the route is drawn — without this they'd wait for a route reload that
+        // may never come.
+        val arrowsNow = showFollowArrows(ViewerPreferences.get(this))
+        if (following && arrowsNow != lastArrowsShown) {
+            lastArrowsShown = arrowsNow
+            val p = ViewerPreferences.get(this)
+            ctrl.setFollowRouteStyle(
+                p.followColor, p.followWidth, arrowsNow, p.followProgress,
+                p.followArrowColor, p.followArrowSize,
+            )
         }
 
         // Lap racing: when a new lap starts, keep a ghost of the best previous lap and offer to race.

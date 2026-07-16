@@ -91,7 +91,7 @@
     <string name="viewer_comp_switch_confirm">Отменить и продолжить</string>
     <string name="viewer_comp_switch_cancel">Отмена</string>
     <string name="viewer_qs_lap_countdown">Обратный отсчёт 3-2-1 при входе в круг</string>
-    <string name="viewer_qs_lap_countdown_help">В соревновании на круге отсчитывает при приближении к финишу, чтобы 0 совпал с новым кругом.</string>
+    <string name="viewer_qs_lap_countdown_help">Всегда, когда вы наматываете круги, ведёт отсчёт на подходе к финишу, чтобы 0 совпал с новым кругом.</string>
     <string name="viewer_qs_competition_none">Нет</string>
     <string name="viewer_qs_competition_none_subtitle">Не соревноваться</string>
     <string name="viewer_qs_auto_lap_distance">Автокруги по расстоянию</string>

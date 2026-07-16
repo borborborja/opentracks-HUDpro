@@ -344,6 +344,34 @@ class TrackRecorderTest {
     }
 
     @Test
+    fun theActiveLineIsPublishedForFreeLapsToo() {
+        // The viewer's 3-2-1 needs the line, and a free lap's only exists in here. Before this it
+        // read the competition prefs, which are (0,0) outside a competition — the Atlantic.
+        val r = TrackRecorder(freeCfg())
+        r.start(t0)
+        r.warmUp()
+        assertThat(r.snapshot(at(0)).lapLine).isNull() // no block open yet: nothing to count into
+        r.onLocation(41.0, 2.0, 100.0, null, null, 5f, at(0))
+        r.startLaps(at(0))
+        val s = r.snapshot(at(1))
+        assertThat(s.lapLine?.latitude).isEqualTo(41.0, within(0.0001))
+        assertThat(s.lapLineRadiusM).isEqualTo(freeCfg().autoLapRadiusM)
+        r.endLaps(at(2))
+        assertThat(r.snapshot(at(3)).lapLine).isNull() // block closed: the countdown must stop
+    }
+
+    @Test
+    fun theActiveLineIsTheCompetitionsWhenRacingOne() {
+        // A circuit's preset line wins, and is published from the very start — before the block
+        // opens — because the first crossing is what opens it.
+        val line = cat.rumb.app.data.opentracks.model.GeoPoint(41.0, 2.0)
+        val r = TrackRecorder(RecorderConfig(presetLapLine = line, autoLapByPosition = true))
+        r.start(t0)
+        r.warmUp()
+        assertThat(r.snapshot(at(0)).lapLine).isEqualTo(line)
+    }
+
+    @Test
     fun manualFlagAlwaysCountsHoweverShort() {
         // The coverage rule lives in the line's proximity gate, never in split(): the flag is the
         // user saying "a lap ends here", and a 40 m sprint marker is a legitimate thing to want.

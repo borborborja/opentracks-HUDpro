@@ -82,6 +82,14 @@ data class RecorderState(
     val currentLapTimeMs: Long = 0L,
     val lastLapMs: Long? = null,
     val lapMarks: List<LapMark> = emptyList(),
+    /**
+     * The start/finish line in force, and the radius that counts as crossing it. Null when laps
+     * aren't line-driven. Published because the viewer needs it: its lap countdown used to read the
+     * line from the competition prefs, which meant it could never work for laps round your own line
+     * — those live only in here.
+     */
+    val lapLine: GeoPoint? = null,
+    val lapLineRadiusM: Double = 0.0,
 ) {
     val isRecording: Boolean get() = !isFinished
     fun points(): List<Trackpoint> = segments.flatten()
@@ -606,6 +614,8 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
             currentLapTimeMs = if (lapsActive) (total.inWholeMilliseconds - lapStartTotalMs).coerceAtLeast(0L) else 0L,
             lastLapMs = lastLapMs,
             lapMarks = lapMarks.toList(),
+            lapLine = activeLapLine(),
+            lapLineRadiusM = config.autoLapRadiusM,
         )
     }
 

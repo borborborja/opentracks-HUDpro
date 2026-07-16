@@ -90,7 +90,7 @@
     <string name="viewer_comp_switch_confirm">Descarta i continua</string>
     <string name="viewer_comp_switch_cancel">Cancel·la</string>
     <string name="viewer_qs_lap_countdown">Compte enrere 3-2-1 en entrar a la volta</string>
-    <string name="viewer_qs_lap_countdown_help">En competir en un circuit, compta enrere en apropar-te a la meta perquè el 0 coincideixi amb la volta nova.</string>
+    <string name="viewer_qs_lap_countdown_help">Sempre que facis voltes, compta enrere en apropar-te a la meta perquè el 0 coincideixi amb la volta nova.</string>
     <string name="viewer_qs_competition_none">Cap</string>
     <string name="viewer_qs_competition_none_subtitle">No competir</string>
     <string name="viewer_qs_auto_lap_distance">Parcials automàtics per distància</string>

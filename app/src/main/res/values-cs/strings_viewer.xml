@@ -91,7 +91,7 @@
     <string name="viewer_comp_switch_confirm">Zahodit a pokračovat</string>
     <string name="viewer_comp_switch_cancel">Zrušit</string>
     <string name="viewer_qs_lap_countdown">Odpočet 3-2-1 při vjezdu do kola</string>
-    <string name="viewer_qs_lap_countdown_help">Při závodu na okruhu odpočítává, když se blížíš k cíli, aby 0 padla na nové kolo.</string>
+    <string name="viewer_qs_lap_countdown_help">Kdykoli zajíždíš kola, odpočítává při blížení k cíli, aby 0 padla na nové kolo.</string>
     <string name="viewer_qs_competition_none">Žádná</string>
     <string name="viewer_qs_competition_none_subtitle">Nezávodit</string>
     <string name="viewer_qs_auto_lap_distance">Automatická kola podle vzdálenosti</string>

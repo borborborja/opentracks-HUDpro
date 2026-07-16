@@ -91,7 +91,7 @@
     <string name="viewer_comp_switch_confirm">Sil ve devam et</string>
     <string name="viewer_comp_switch_cancel">İptal</string>
     <string name="viewer_qs_lap_countdown">Tura girerken 3-2-1 geri sayım</string>
-    <string name="viewer_qs_lap_countdown_help">Pistte yarışırken bitiş çizgisine yaklaşırken geri sayar; 0, yeni tura denk gelir.</string>
+    <string name="viewer_qs_lap_countdown_help">Tur attığın her durumda, bitiş çizgisine yaklaşırken geri sayar; 0 yeni tura denk gelir.</string>
     <string name="viewer_qs_competition_none">Yok</string>
     <string name="viewer_qs_competition_none_subtitle">Yarışma</string>
     <string name="viewer_qs_auto_lap_distance">Mesafeye göre otomatik turlar</string>

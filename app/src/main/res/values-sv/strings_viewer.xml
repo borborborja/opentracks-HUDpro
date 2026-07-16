@@ -91,7 +91,7 @@
     <string name="viewer_comp_switch_confirm">Kasta och fortsätt</string>
     <string name="viewer_comp_switch_cancel">Avbryt</string>
     <string name="viewer_qs_lap_countdown">Nedräkning 3-2-1 in i varvet</string>
-    <string name="viewer_qs_lap_countdown_help">Vid tävling på bana räknar den ned när du närmar dig mållinjen så att 0 hamnar på det nya varvet.</string>
+    <string name="viewer_qs_lap_countdown_help">När du kör varv räknar den ner när du närmar dig mållinjen så att 0 hamnar på det nya varvet.</string>
     <string name="viewer_qs_competition_none">Ingen</string>
     <string name="viewer_qs_competition_none_subtitle">Tävla inte</string>
     <string name="viewer_qs_auto_lap_distance">Automatiska varv per distans</string>

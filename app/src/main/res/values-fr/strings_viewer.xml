@@ -91,7 +91,7 @@
     <string name="viewer_comp_switch_confirm">Annuler et continuer</string>
     <string name="viewer_comp_switch_cancel">Annuler</string>
     <string name="viewer_qs_lap_countdown">Compte à rebours 3-2-1 à l\'entrée du tour</string>
-    <string name="viewer_qs_lap_countdown_help">En compétition sur circuit, décompte à l\'approche de la ligne pour que 0 coïncide avec le nouveau tour.</string>
+    <string name="viewer_qs_lap_countdown_help">Dès que vous tournez, décompte à l\'approche de la ligne pour que 0 tombe sur le nouveau tour.</string>
     <string name="viewer_qs_competition_none">Aucune</string>
     <string name="viewer_qs_competition_none_subtitle">Ne pas concourir</string>
     <string name="viewer_qs_auto_lap_distance">Tours automatiques par distance</string>

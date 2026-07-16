@@ -91,7 +91,7 @@
     <string name="viewer_comp_switch_confirm">Descartar e continuar</string>
     <string name="viewer_comp_switch_cancel">Cancelar</string>
     <string name="viewer_qs_lap_countdown">Contagem decrescente 3-2-1 ao entrar na volta</string>
-    <string name="viewer_qs_lap_countdown_help">Ao competir num circuito, conta decrescente ao aproximares-te da meta para que o 0 coincida com a nova volta.</string>
+    <string name="viewer_qs_lap_countdown_help">Sempre que estiveres a dar voltas, faz a contagem ao aproximares-te da meta para o 0 cair na volta nova.</string>
     <string name="viewer_qs_competition_none">Nenhuma</string>
     <string name="viewer_qs_competition_none_subtitle">Não competir</string>
     <string name="viewer_qs_auto_lap_distance">Parciais automáticas por distância</string>

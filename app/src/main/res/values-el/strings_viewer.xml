@@ -91,7 +91,7 @@
     <string name="viewer_comp_switch_confirm">Απόρριψη και συνέχεια</string>
     <string name="viewer_comp_switch_cancel">Άκυρο</string>
     <string name="viewer_qs_lap_countdown">Αντίστροφη μέτρηση 3-2-1 στην είσοδο του γύρου</string>
-    <string name="viewer_qs_lap_countdown_help">Σε αγώνα σε πίστα, μετρά αντίστροφα καθώς πλησιάζεις στον τερματισμό ώστε το 0 να πέσει στον νέο γύρο.</string>
+    <string name="viewer_qs_lap_countdown_help">Όποτε κάνεις γύρους, μετράει αντίστροφα καθώς πλησιάζεις τον τερματισμό ώστε το 0 να πέσει στον νέο γύρο.</string>
     <string name="viewer_qs_competition_none">Καμία</string>
     <string name="viewer_qs_competition_none_subtitle">Χωρίς αγώνα</string>
     <string name="viewer_qs_auto_lap_distance">Αυτόματοι γύροι ανά απόσταση</string>

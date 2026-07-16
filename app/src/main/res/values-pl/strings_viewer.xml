@@ -91,7 +91,7 @@
     <string name="viewer_comp_switch_confirm">Odrzuć i kontynuuj</string>
     <string name="viewer_comp_switch_cancel">Anuluj</string>
     <string name="viewer_qs_lap_countdown">Odliczanie 3-2-1 przy wejściu na okrążenie</string>
-    <string name="viewer_qs_lap_countdown_help">Podczas zawodów na torze odlicza przy zbliżaniu się do mety, tak aby 0 wypadło na nowym okrążeniu.</string>
+    <string name="viewer_qs_lap_countdown_help">Zawsze gdy jedziesz okrążenia, odlicza przy zbliżaniu do mety, by 0 wypadło na nowym okrążeniu.</string>
     <string name="viewer_qs_competition_none">Brak</string>
     <string name="viewer_qs_competition_none_subtitle">Nie rywalizuj</string>
     <string name="viewer_qs_auto_lap_distance">Automatyczne okrążenia co dystans</string>

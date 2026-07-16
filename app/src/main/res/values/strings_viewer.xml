@@ -91,7 +91,7 @@
     <string name="viewer_comp_switch_confirm">Discard and continue</string>
     <string name="viewer_comp_switch_cancel">Cancel</string>
     <string name="viewer_qs_lap_countdown">3-2-1 countdown into the lap</string>
-    <string name="viewer_qs_lap_countdown_help">While racing a circuit, counts down as you close in on the finish line so 0 lands on the new lap.</string>
+    <string name="viewer_qs_lap_countdown_help">Whenever you are lapping, counts down as you close in on the finish line so 0 lands on the new lap.</string>
     <string name="viewer_qs_competition_none">None</string>
     <string name="viewer_qs_competition_none_subtitle">Don\'t compete</string>
     <string name="viewer_qs_auto_lap_distance">Automatic splits by distance</string>

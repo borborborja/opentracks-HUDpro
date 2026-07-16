@@ -91,7 +91,7 @@
     <string name="viewer_comp_switch_confirm">Скасувати й продовжити</string>
     <string name="viewer_comp_switch_cancel">Скасувати</string>
     <string name="viewer_qs_lap_countdown">Зворотний відлік 3-2-1 на вході в коло</string>
-    <string name="viewer_qs_lap_countdown_help">У змаганні на колі веде відлік під час наближення до фінішу, щоб 0 збігся з новим колом.</string>
+    <string name="viewer_qs_lap_countdown_help">Завжди, коли ти намотуєш кола, веде відлік на підході до фінішу, щоб 0 збігся з новим колом.</string>
     <string name="viewer_qs_competition_none">Немає</string>
     <string name="viewer_qs_competition_none_subtitle">Не змагатися</string>
     <string name="viewer_qs_auto_lap_distance">Автокола за відстанню</string>

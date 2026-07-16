@@ -91,7 +91,7 @@
     <string name="viewer_comp_switch_confirm">Kassér og fortsæt</string>
     <string name="viewer_comp_switch_cancel">Annuller</string>
     <string name="viewer_qs_lap_countdown">Nedtælling 3-2-1 ind i omgangen</string>
-    <string name="viewer_qs_lap_countdown_help">Når du konkurrerer på en bane, tæller den ned, når du nærmer dig mållinjen, så 0 rammer den nye omgang.</string>
+    <string name="viewer_qs_lap_countdown_help">Når du kører omgange, tæller den ned når du nærmer dig mållinjen, så 0 rammer den nye omgang.</string>
     <string name="viewer_qs_competition_none">Ingen</string>
     <string name="viewer_qs_competition_none_subtitle">Konkurrer ikke</string>
     <string name="viewer_qs_auto_lap_distance">Automatiske omgange efter distance</string>
