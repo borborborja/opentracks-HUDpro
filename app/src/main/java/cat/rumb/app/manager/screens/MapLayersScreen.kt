@@ -256,6 +256,8 @@ private fun MapDisplayDialog(
 @Composable
 private fun MapDisplayPreview(source: MapSource, config: MapDisplayConfig, modifier: Modifier) {
     val mapView = rememberMapViewWithLifecycle(textureMode = true)
+    // Only re-style when the styling inputs actually change, not on every recomposition.
+    val styleJson = remember(source, config) { MapStyleFactory.rasterStyleJson(source, config) }
     AndroidView(
         factory = {
             mapView.getMapAsync { map ->
@@ -267,10 +269,9 @@ private fun MapDisplayPreview(source: MapSource, config: MapDisplayConfig, modif
             }
             mapView
         },
-        // update runs on every recomposition (i.e. every slider move) → restyle live.
         update = {
             it.getMapAsync { map ->
-                map.setStyle(org.maplibre.android.maps.Style.Builder().fromJson(MapStyleFactory.rasterStyleJson(source, config)))
+                map.setStyle(org.maplibre.android.maps.Style.Builder().fromJson(styleJson))
             }
         },
         modifier = modifier,

@@ -228,12 +228,6 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
     fun setMapDisplayJsonFor(sourceId: String, raw: String?) =
         prefs.edit().putString(KEY_MAP_DISPLAY + "_" + sourceId, raw).apply()
 
-    /** Every saved per-map display config, keyed by source id — for the desktop server to mirror. */
-    fun allMapDisplayJson(): Map<String, String> =
-        prefs.all.entries
-            .filter { it.key.startsWith(KEY_MAP_DISPLAY + "_") && it.value is String }
-            .associate { it.key.removePrefix(KEY_MAP_DISPLAY + "_") to it.value as String }
-
     /** Per-sport split distance (m): 1 km for running, usually off for cycling. */
     fun autoLapEveryMFor(sportId: String?): Float =
         if (sportId == null) autoLapEveryM else prefs.getFloat(KEY_AUTO_LAP_EVERY_M + "_" + sportId, autoLapEveryM)
