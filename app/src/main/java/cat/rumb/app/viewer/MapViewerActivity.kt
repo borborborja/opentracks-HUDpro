@@ -55,6 +55,7 @@ import cat.rumb.app.data.opentracks.model.TrackStatistics
 import cat.rumb.app.data.prefs.ViewerPreferences
 import cat.rumb.app.data.recording.NativeRecording
 import cat.rumb.app.data.recording.RecorderState
+import cat.rumb.app.data.recording.opensLap
 import cat.rumb.app.data.recording.ble.BleSensorProbe
 import cat.rumb.app.data.recording.ble.SavedSensors
 import cat.rumb.app.data.tracks.TrackStatsCalculator
@@ -1583,10 +1584,10 @@ class MapViewerActivity : ComponentActivity() {
                 // fastest so far, make it the ghost to chase. In circuit mode the ghost is the
                 // circuit's stored best lap, so we never overwrite it from the current session.
                 if (!circuitMode) {
-                    val opens = ls.lapMarks.filter {
-                        it.type == cat.rumb.app.data.recording.LapMarkType.START ||
-                            it.type == cat.rumb.app.data.recording.LapMarkType.SPLIT
-                    }
+                    // opensLap, not START|SPLIT: an ABORT opens a lap too. Miss it and the slice for
+                    // START·ABORT·SPLIT spans the abandoned attempt AND the retry, while lastLapMs
+                    // covers only the retry — a ghost whose shape and time disagree.
+                    val opens = ls.lapMarks.filter { it.type.opensLap }
                     val lastLap = ls.lastLapMs
                     if (opens.size >= 2 && lastLap != null && (bestLapMs == null || lastLap < bestLapMs!!)) {
                         val startSeq = opens[opens.size - 2].seq

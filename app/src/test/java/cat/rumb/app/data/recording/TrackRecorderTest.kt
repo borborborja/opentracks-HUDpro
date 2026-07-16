@@ -294,6 +294,73 @@ class TrackRecorderTest {
         assertThat(r.snapshot(at(60)).lapCount).isEqualTo(1)
     }
 
+    /** Free laps around the line captured at startLaps: one out-and-back per entry of [outSteps]. */
+    private fun autoLapLaps(cfg: RecorderConfig, vararg outSteps: Int): TrackRecorder {
+        val r = TrackRecorder(cfg)
+        r.start(t0)
+        r.warmUp()
+        r.onLocation(41.0, 2.0, 100.0, null, null, 5f, at(0)) // the line point
+        r.startLaps(at(0))
+        var sec = 1L
+        outSteps.forEach { steps ->
+            for (i in 1..steps) { r.onLocation(41.0 + i * 0.0002, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+            for (i in (steps - 1) downTo 0) { r.onLocation(41.0 + i * 0.0002, 2.0, 100.0, null, null, 5f, at(sec)); sec++ }
+        }
+        return r
+    }
+
+    /** Free laps, isolating the coverage guard from the anti-re-trigger time guard. */
+    private fun freeCfg() = RecorderConfig(autoLapByPosition = true, autoLapMinLapMs = 0)
+
+    @Test
+    fun freeLapsAbandonedLapDoesNotCountEither() {
+        // The reported bug, away from any competition. Lap 1 is ~667 m and becomes the yardstick
+        // (bar: ~534 m). Lap 2 gives up 6 steps out and comes back: ~267 m of travel — which CLEARS
+        // the old flat 100 m odometer guard, so the old code counted it as a full lap. That is the
+        // whole point of the yardstick: 40% of a lap is not a lap.
+        val r = autoLapLaps(freeCfg(), 15, 6)
+        val s = r.snapshot(at(120))
+        assertThat(s.lapCount).isEqualTo(2) // still on lap 2, not counted into lap 3
+        assertThat(s.lapMarks.count { it.type == LapMarkType.SPLIT }).isEqualTo(1)
+        assertThat(s.lapMarks.count { it.type == LapMarkType.ABORT }).isEqualTo(1) // exactly one: it disarms
+    }
+
+    @Test
+    fun freeLapsSecondLapThatGoesRoundCounts() {
+        val r = autoLapLaps(freeCfg(), 15, 15)
+        val s = r.snapshot(at(120))
+        assertThat(s.lapCount).isEqualTo(3)
+        assertThat(s.lapMarks.count { it.type == LapMarkType.SPLIT }).isEqualTo(2)
+        assertThat(s.lapMarks.none { it.type == LapMarkType.ABORT }).isTrue()
+    }
+
+    @Test
+    fun freeLapsFirstLapHasNoYardstickSoItKeepsTheOldGuard() {
+        // Nothing to measure lap 1 against, so it falls back to autoLapMinLapM (100 m): ~220 m counts.
+        // This is what stops the new rule from ever rejecting more than today's did.
+        val r = autoLapLaps(freeCfg(), 5)
+        assertThat(r.snapshot(at(60)).lapCount).isEqualTo(2)
+        assertThat(r.snapshot(at(60)).lapMarks.none { it.type == LapMarkType.ABORT }).isTrue()
+    }
+
+    @Test
+    fun manualFlagAlwaysCountsHoweverShort() {
+        // The coverage rule lives in the line's proximity gate, never in split(): the flag is the
+        // user saying "a lap ends here", and a 40 m sprint marker is a legitimate thing to want.
+        val r = TrackRecorder(freeCfg())
+        r.start(t0)
+        r.warmUp()
+        r.onLocation(41.0, 2.0, 100.0, null, null, 5f, at(0))
+        r.lap(at(0)) // first press opens the block
+        r.onLocation(41.0002, 2.0, 100.0, null, null, 5f, at(1)) // ~22 m
+        r.onLocation(41.0004, 2.0, 100.0, null, null, 5f, at(2)) // ~44 m
+        r.lap(at(3)) // second press closes it, whatever the odometer says
+        val s = r.snapshot(at(10))
+        assertThat(s.lapCount).isEqualTo(2)
+        assertThat(s.lapMarks.count { it.type == LapMarkType.SPLIT }).isEqualTo(1)
+        assertThat(s.lapMarks.none { it.type == LapMarkType.ABORT }).isTrue()
+    }
+
     @Test
     fun circuitDoesNotReopenLapsAfterEndLaps() {
         val line = cat.rumb.app.data.opentracks.model.GeoPoint(41.0, 2.0)

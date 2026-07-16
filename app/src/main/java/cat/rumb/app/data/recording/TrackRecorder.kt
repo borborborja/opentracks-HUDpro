@@ -355,52 +355,11 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
             while (nextSplitDistanceM <= distanceM) nextSplitDistanceM += config.autoLapEveryM
         }
 
-        // Position auto-lap: proximity-gate state machine. Armed once we leave the radius; a re-entry
-        // while armed and past the min-lap guards inserts a SPLIT (identical to a manual flag press),
-        // then disarms until we leave again. The GPS filters above already ran, so `here` is clean.
-        if (config.autoLapByPosition && lapsActive && config.presetLapLine == null) {
-            lapLine?.let { line ->
-                val d = MetricsCalculator.distanceMeters(here, line)
-                if (d > config.autoLapRadiusM) {
-                    lapLineArmed = true
-                } else if (lapLineArmed) {
-                    val sinceMs = totalMs(time) - lapStartTotalMs
-                    val sinceM = distanceM - lapStartDistanceM
-                    if (sinceMs >= config.autoLapMinLapMs && sinceM >= config.autoLapMinLapM) {
-                        DebugLog.i("Motor", "auto-lap: creuament línia (${fmt(d)}m) · vuelta ${lapCount + 1}")
-                        split(time)
-                        lapLineArmed = false
-                    }
-                }
-            }
-        }
-
-        // Circuit mode: a FIXED preset line, armed from the start. The FIRST crossing opens lap 1
-        // (approach from home stays APPROACH); later crossings split. Guards only apply once a lap is
-        // open, so the first crossing always fires.
-        config.presetLapLine?.let { line ->
-            val d = MetricsCalculator.distanceMeters(here, line)
-            if (d > config.autoLapRadiusM) {
-                lapLineArmed = true
-            } else if (lapLineArmed) {
-                if (!lapsActive) {
-                    // After an explicit End-Laps, don't auto-open a new block just by crossing the
-                    // line again (e.g. riding out of the circuit).
-                    if (!lapsEnded) { DebugLog.i("Motor", "circuit: inici per creuament"); startLaps(time); lapLineArmed = false }
-                } else if (totalMs(time) - lapStartTotalMs >= config.autoLapMinLapMs) {
-                    val sinceM = distanceM - lapStartDistanceM
-                    if (sinceM >= requiredLapDistanceM()) {
-                        DebugLog.i("Motor", "circuit: creuament meta (${fmt(d)}m)")
-                        split(time)
-                    } else {
-                        abortLap(time, sinceM)
-                    }
-                    // Disarm on EITHER outcome. Left armed after a rejected crossing, the machine
-                    // sits hot on the line and fires on the next fix that clears the guards.
-                    lapLineArmed = false
-                }
-            }
-        }
+        // The start/finish line, whichever kind it is. Two nearly identical copies of this used to
+        // live here — a circuit one and a free one — and that is exactly how the free one was left
+        // half-fixed: the coverage rule and the abandoned-lap handling only ever reached the circuit.
+        // One line, one state machine, one set of rules.
+        activeLapLine()?.let { onLapLineProximity(it, here, time) }
         return point
     }
 
@@ -417,14 +376,73 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
     }
 
     /**
-     * How far you must have travelled for a crossing to close a lap. With a reference lap to race,
-     * it's a fraction of that lap — the point is "did you go round", which the flat [autoLapMinLapM]
-     * cannot tell: it counts odometer metres, so 100 m of wandering by the finish line passes it and
-     * a 5% lap of a 2 km circuit counted the same as a full one.
+     * The start/finish line in force, or null when laps aren't line-driven. A circuit's preset line
+     * wins: it is the competition's, and it is armed even before the block opens so the first
+     * crossing can open it. Otherwise it's the line captured when the lap block started, and only if
+     * the user asked for position auto-lap.
      */
-    private fun requiredLapDistanceM(): Double =
-        if (config.lapRefDistanceM > 0) config.lapRefDistanceM * LAP_MIN_COVERAGE
-        else config.autoLapMinLapM
+    private fun activeLapLine(): GeoPoint? =
+        config.presetLapLine ?: lapLine?.takeIf { config.autoLapByPosition && lapsActive }
+
+    /**
+     * Proximity-gate state machine for the finish line, shared by circuits and free laps. Armed once
+     * we leave the radius; a re-entry while armed closes the lap — or, if you didn't go round,
+     * abandons it. The GPS filters upstream already ran, so [here] is clean.
+     */
+    private fun onLapLineProximity(line: GeoPoint, here: GeoPoint, time: Instant) {
+        val d = MetricsCalculator.distanceMeters(here, line)
+        if (d > config.autoLapRadiusM) {
+            lapLineArmed = true
+            return
+        }
+        if (!lapLineArmed) return
+        if (!lapsActive) {
+            // Circuit only (a free line exists only while the block is open). After an explicit
+            // End-Laps, don't auto-open a new block just by crossing the line again — e.g. riding
+            // out of the circuit past the meta on the way home.
+            if (!lapsEnded) {
+                DebugLog.i("Motor", "creuament: obre vueltas")
+                startLaps(time)
+                lapLineArmed = false
+            }
+            return
+        }
+        // Disarm on EVERY outcome below. Left armed after a rejected crossing, the machine sits hot
+        // on the line and fires on the next fix that happens to clear the guards.
+        if (totalMs(time) - lapStartTotalMs < config.autoLapMinLapMs) {
+            lapLineArmed = false
+            return
+        }
+        val sinceM = distanceM - lapStartDistanceM
+        if (sinceM >= requiredLapDistanceM()) {
+            DebugLog.i("Motor", "creuament meta (${fmt(d)}m)")
+            split(time)
+        } else {
+            abortLap(time, sinceM)
+        }
+        lapLineArmed = false
+    }
+
+    /**
+     * How far you must have travelled for a crossing to close a lap. The point is "did you go
+     * round", which the flat [autoLapMinLapM] cannot tell: it counts odometer metres, so 100 m of
+     * wandering by the finish line passes it and a 5% lap of a 2 km circuit counted the same as a
+     * full one.
+     *
+     * The yardstick is the reference lap when racing one. Without it — free laps round your own
+     * line — the FIRST lap you complete becomes the yardstick for the rest: exact by subtraction,
+     * since every mark carries the cumulative odometer. Lap 1 itself has nothing to be measured
+     * against, so it keeps the old absolute guard; that never rejects more than today does.
+     */
+    private fun requiredLapDistanceM(): Double {
+        if (config.lapRefDistanceM > 0) return config.lapRefDistanceM * LAP_MIN_COVERAGE
+        val opens = lapMarks.filter { it.type.opensLap }
+        if (opens.size >= 2) {
+            val firstLapM = opens[1].distanceM - opens[0].distanceM
+            if (firstLapM > 0) return firstLapM * LAP_MIN_COVERAGE
+        }
+        return config.autoLapMinLapM
+    }
 
     /**
      * Crossing the line without having gone round: the lap is abandoned, not completed. It doesn't
