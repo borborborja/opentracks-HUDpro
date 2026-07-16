@@ -76,9 +76,21 @@ fun ManagerApp(
             onNavigated()
         }
     }
-    // Launched directly on an editor (pencil in the viewer): back closes the activity, not Home.
     val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
-    val backOrFinish: () -> Unit = { if (!nav.popBackStack()) activity?.finish() }
+    /**
+     * Exit from the HUD/Dades editors, which are ONLY ever opened from the viewer's pencil. Because
+     * ManagerActivity is `singleTask`, that pencil either reuses this instance (editor pushed on Home
+     * → a plain back would land on Home) or, when no manager exists, creates a fresh one with the
+     * editor as its start destination (empty back stack → `finish()` would drop to the launcher —
+     * the reported "crash"). Either way the viewer the user was editing is gone, so bring it back
+     * explicitly, then drop the editor from this manager.
+     */
+    val backToViewer: () -> Unit = {
+        activity?.let { act ->
+            act.startActivity(android.content.Intent(act, cat.rumb.app.viewer.MapViewerActivity::class.java))
+            if (!nav.popBackStack()) act.finish()
+        }
+    }
     NavHost(navController = nav, startDestination = startRoute ?: Routes.HOME) {
         composable(Routes.HOME) {
             HomeScreen(
@@ -123,8 +135,8 @@ fun ManagerApp(
         composable(Routes.ENDURAIN_DOWNLOAD) { EndurainDownloadScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.SENSORS) { SensorsScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.DEBUG_LOG) { DebugLogScreen(onBack = { nav.popBackStack() }) }
-        composable(Routes.HUD) { HudDesignerScreen(onBack = backOrFinish) }
-        composable(Routes.DATA) { DataDesignerScreen(onBack = backOrFinish) }
+        composable(Routes.HUD) { HudDesignerScreen(onBack = backToViewer) }
+        composable(Routes.DATA) { DataDesignerScreen(onBack = backToViewer) }
         composable(Routes.LAYERS) {
             MapLayersScreen(
                 onBack = { nav.popBackStack() },
