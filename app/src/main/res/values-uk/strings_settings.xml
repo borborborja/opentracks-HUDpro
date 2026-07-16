@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Датчик не увімкнено</string>
     <string name="sensors_missing_msg">%1$s не відповідає. Увімкни його — він підключиться сам.</string>
     <string name="sensors_missing_start_anyway">Однаково почати</string>
+    <string name="settings_sync_mode_credentials">Логін + пароль</string>
+    <string name="settings_sync_mode_api_key">API-ключ</string>
+    <string name="settings_sync_username_label">Ім\'я користувача</string>
+    <string name="settings_sync_password_label">Пароль</string>
+    <string name="settings_sync_connected_no_count">Підключено ✓ — ключ придатний для завантаження</string>
+    <string name="settings_sync_bad_key">Облікові дані відхилено. Перевір логін/пароль або API-ключ.</string>
+    <string name="settings_sync_missing_scope">У API-ключа немає дозволу activities:upload.</string>
+    <string name="settings_sync_bad_url">Сервер за цим URL не знайдено. Перевір адресу.</string>
+    <string name="settings_sync_not_configured">Ще не налаштовано.</string>
 </resources>

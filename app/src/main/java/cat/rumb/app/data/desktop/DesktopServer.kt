@@ -277,7 +277,9 @@ class DesktopServer(
                 p.keepScreenOn, p.fullscreen, p.adaptiveZoom, p.mapOrientation, p.recCountdown,
                 p.competitionHalo, p.competitionShowSeconds, p.desktopServerPort,
             ),
-            endurain = EndurainDto(e.host, !e.apiKey.isNullOrBlank()),
+            endurain = EndurainDto(
+                e.host, e.authMode.name, !e.username.isNullOrBlank(), !e.apiKey.isNullOrBlank(),
+            ),
             webdav = WebDavDto(w.url, !w.user.isNullOrBlank()),
             folder = FolderDto(f.enabled, !f.treeUri.isNullOrBlank()),
             sync = SyncStatusDto(
@@ -360,11 +362,20 @@ class DesktopServer(
         val body = runCatching { json.decodeFromString<Map<String, String>>(readBody(session)) }.getOrNull()
             ?: return json(Response.Status.BAD_REQUEST, OkDto(false, error = "bad body"))
         val e = EndurainPreferences.get(context)
-        // Only touch a field the client actually sent, so a blank secret box doesn't wipe a saved key.
+        // Only touch a field the client actually sent, so a blank secret box doesn't wipe a saved one.
         body["host"]?.let { e.host = it.ifBlank { null } }
+        body["mode"]?.let { m ->
+            runCatching { EndurainPreferences.AuthMode.valueOf(m) }.getOrNull()?.let { e.authMode = it }
+        }
+        body["username"]?.let { e.username = it.ifBlank { null } }
+        body["password"]?.let { e.password = it }
         body["apiKey"]?.let { e.apiKey = it }
+        e.clearSession() // credentials may have changed → drop stale tokens before testing
         val res = runBlocking { app.endurainRepository.testConnection() }
-        return json(Response.Status.OK, OkDto(res.isSuccess, error = res.exceptionOrNull()?.message))
+        val ok = res is cat.rumb.app.data.endurain.ConnResult.Ok
+        val error = (res as? cat.rumb.app.data.endurain.ConnResult.Error)?.message
+            ?: res.takeIf { !ok }?.let { it::class.simpleName }
+        return json(Response.Status.OK, OkDto(ok, error = error))
     }
 
     private fun handleWebDavSave(session: IHTTPSession): Response {

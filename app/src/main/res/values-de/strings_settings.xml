@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Sensor nicht an</string>
     <string name="sensors_missing_msg">%1$s antwortet nicht. Schalte ihn ein, dann verbindet er sich von selbst.</string>
     <string name="sensors_missing_start_anyway">Trotzdem starten</string>
+    <string name="settings_sync_mode_credentials">Benutzer + Passwort</string>
+    <string name="settings_sync_mode_api_key">API-Schlüssel</string>
+    <string name="settings_sync_username_label">Benutzername</string>
+    <string name="settings_sync_password_label">Passwort</string>
+    <string name="settings_sync_connected_no_count">Verbunden ✓ — der Schlüssel ist zum Hochladen gültig</string>
+    <string name="settings_sync_bad_key">Anmeldedaten abgelehnt. Prüfe Benutzer/Passwort oder API-Schlüssel.</string>
+    <string name="settings_sync_missing_scope">Dem API-Schlüssel fehlt die Berechtigung activities:upload.</string>
+    <string name="settings_sync_bad_url">Server unter dieser URL nicht gefunden. Prüfe die Adresse.</string>
+    <string name="settings_sync_not_configured">Noch nicht konfiguriert.</string>
 </resources>

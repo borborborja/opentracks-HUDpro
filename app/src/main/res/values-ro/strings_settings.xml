@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Senzorul nu e pornit</string>
     <string name="sensors_missing_msg">%1$s nu răspunde. Pornește-l și se va conecta singur.</string>
     <string name="sensors_missing_start_anyway">Începe oricum</string>
+    <string name="settings_sync_mode_credentials">Utilizator + parolă</string>
+    <string name="settings_sync_mode_api_key">Cheie API</string>
+    <string name="settings_sync_username_label">Nume utilizator</string>
+    <string name="settings_sync_password_label">Parolă</string>
+    <string name="settings_sync_connected_no_count">Conectat ✓ — cheia e validă pentru încărcare</string>
+    <string name="settings_sync_bad_key">Acreditări respinse. Verifică utilizatorul/parola sau cheia API.</string>
+    <string name="settings_sync_missing_scope">Cheii API îi lipsește permisiunea activities:upload.</string>
+    <string name="settings_sync_bad_url">Serverul nu a fost găsit la acel URL. Verifică adresa.</string>
+    <string name="settings_sync_not_configured">Încă neconfigurat.</string>
 </resources>

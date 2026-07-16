@@ -185,7 +185,9 @@ data class SettingsDto(
 @Serializable data class EstimateDto(val tiles: Long, val mb: Long, val overLimit: Boolean)
 @Serializable data class DownloadProgressDto(val state: String, val done: Int, val total: Int, val failed: Int)
 
-@Serializable data class EndurainDto(val host: String?, val apiKeySet: Boolean)
+@Serializable data class EndurainDto(
+    val host: String?, val mode: String, val usernameSet: Boolean, val apiKeySet: Boolean,
+)
 @Serializable data class WebDavDto(val url: String?, val userSet: Boolean)
 @Serializable data class FolderDto(val enabled: Boolean, val folderSet: Boolean)
 @Serializable data class SyncStatusDto(val pending: Int, val failed: Int, val lastUploadedMs: Long?)

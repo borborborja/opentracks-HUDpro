@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Датчик не включён</string>
     <string name="sensors_missing_msg">%1$s не отвечает. Включите его — он подключится сам.</string>
     <string name="sensors_missing_start_anyway">Всё равно начать</string>
+    <string name="settings_sync_mode_credentials">Логин + пароль</string>
+    <string name="settings_sync_mode_api_key">API-ключ</string>
+    <string name="settings_sync_username_label">Имя пользователя</string>
+    <string name="settings_sync_password_label">Пароль</string>
+    <string name="settings_sync_connected_no_count">Подключено ✓ — ключ подходит для загрузки</string>
+    <string name="settings_sync_bad_key">Учётные данные отклонены. Проверьте логин/пароль или API-ключ.</string>
+    <string name="settings_sync_missing_scope">У API-ключа нет разрешения activities:upload.</string>
+    <string name="settings_sync_bad_url">Сервер по этому URL не найден. Проверьте адрес.</string>
+    <string name="settings_sync_not_configured">Ещё не настроено.</string>
 </resources>

@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Capteur éteint</string>
     <string name="sensors_missing_msg">%1$s ne répond pas. Allumez-le et il se connectera tout seul.</string>
     <string name="sensors_missing_start_anyway">Démarrer quand même</string>
+    <string name="settings_sync_mode_credentials">Utilisateur + mot de passe</string>
+    <string name="settings_sync_mode_api_key">Clé API</string>
+    <string name="settings_sync_username_label">Nom d\'utilisateur</string>
+    <string name="settings_sync_password_label">Mot de passe</string>
+    <string name="settings_sync_connected_no_count">Connecté ✓ — la clé est valide pour l\'envoi</string>
+    <string name="settings_sync_bad_key">Identifiants refusés. Vérifiez l\'utilisateur/mot de passe ou la clé API.</string>
+    <string name="settings_sync_missing_scope">La clé API n\'a pas la permission activities:upload.</string>
+    <string name="settings_sync_bad_url">Serveur introuvable à cette URL. Vérifiez l\'adresse.</string>
+    <string name="settings_sync_not_configured">Pas encore configuré.</string>
 </resources>

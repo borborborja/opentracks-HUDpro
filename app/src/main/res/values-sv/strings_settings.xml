@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Sensorn är inte på</string>
     <string name="sensors_missing_msg">%1$s svarar inte. Slå på den så ansluter den av sig själv.</string>
     <string name="sensors_missing_start_anyway">Starta ändå</string>
+    <string name="settings_sync_mode_credentials">Användare + lösenord</string>
+    <string name="settings_sync_mode_api_key">API-nyckel</string>
+    <string name="settings_sync_username_label">Användarnamn</string>
+    <string name="settings_sync_password_label">Lösenord</string>
+    <string name="settings_sync_connected_no_count">Ansluten ✓ — nyckeln är giltig för uppladdning</string>
+    <string name="settings_sync_bad_key">Uppgifterna avvisades. Kontrollera användare/lösenord eller API-nyckel.</string>
+    <string name="settings_sync_missing_scope">API-nyckeln saknar behörigheten activities:upload.</string>
+    <string name="settings_sync_bad_url">Ingen server på den URL:en. Kontrollera adressen.</string>
+    <string name="settings_sync_not_configured">Inte konfigurerad ännu.</string>
 </resources>

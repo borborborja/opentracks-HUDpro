@@ -20,6 +20,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -174,14 +177,20 @@ private fun UnitsSection(prefs: ViewerPreferences) {
 
 // --- Sync (Endurain now; more services later) ---
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun SyncSection() {
     val context = LocalContext.current
     val endurainPrefs = remember { cat.rumb.app.data.prefs.EndurainPreferences.get(context) }
     val scope = rememberCoroutineScope()
     var host by remember { mutableStateOf(endurainPrefs.host ?: "") }
+    var mode by remember { mutableStateOf(endurainPrefs.authMode) }
+    var username by remember { mutableStateOf(endurainPrefs.username ?: "") }
+    var password by remember { mutableStateOf(endurainPrefs.password ?: "") }
     var apiKey by remember { mutableStateOf(endurainPrefs.apiKey ?: "") }
     var status by remember { mutableStateOf<String?>(null) }
+    val credMode = cat.rumb.app.data.prefs.EndurainPreferences.AuthMode.CREDENTIALS
+    val keyMode = cat.rumb.app.data.prefs.EndurainPreferences.AuthMode.API_KEY
 
     Text(stringResource(R.string.settings_sync_endurain), style = MaterialTheme.typography.titleSmall)
     androidx.compose.material3.OutlinedTextField(
@@ -191,25 +200,60 @@ private fun SyncSection() {
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
     )
-    androidx.compose.material3.OutlinedTextField(
-        value = apiKey,
-        onValueChange = { apiKey = it },
-        label = { Text(stringResource(R.string.settings_sync_api_key_label)) },
-        singleLine = true,
-        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-        modifier = Modifier.fillMaxWidth(),
-    )
+    // Full access needs a login (username/password → JWT); an API key can only upload.
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        SegmentedButton(
+            selected = mode == credMode,
+            onClick = { mode = credMode },
+            shape = SegmentedButtonDefaults.itemShape(0, 2),
+        ) { Text(stringResource(R.string.settings_sync_mode_credentials)) }
+        SegmentedButton(
+            selected = mode == keyMode,
+            onClick = { mode = keyMode },
+            shape = SegmentedButtonDefaults.itemShape(1, 2),
+        ) { Text(stringResource(R.string.settings_sync_mode_api_key)) }
+    }
+    if (mode == credMode) {
+        androidx.compose.material3.OutlinedTextField(
+            value = username,
+            onValueChange = { username = it },
+            label = { Text(stringResource(R.string.settings_sync_username_label)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        androidx.compose.material3.OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text(stringResource(R.string.settings_sync_password_label)) },
+            singleLine = true,
+            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    } else {
+        androidx.compose.material3.OutlinedTextField(
+            value = apiKey,
+            onValueChange = { apiKey = it },
+            label = { Text(stringResource(R.string.settings_sync_api_key_label)) },
+            singleLine = true,
+            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
     Button(
         onClick = {
             endurainPrefs.host = host
-            endurainPrefs.apiKey = apiKey
+            endurainPrefs.authMode = mode
+            if (mode == credMode) {
+                endurainPrefs.username = username
+                endurainPrefs.password = password
+            } else {
+                endurainPrefs.apiKey = apiKey
+            }
+            endurainPrefs.clearSession() // credentials changed → drop any stale tokens
             status = context.getString(R.string.settings_sync_saved_testing)
             scope.launch {
                 val repo = cat.rumb.app.data.endurain.EndurainRepository(endurainPrefs)
-                status = repo.testConnection().fold(
-                    onSuccess = { context.getString(R.string.settings_sync_connected, "$it") },
-                    onFailure = { context.getString(R.string.settings_error, "${it.message}") },
-                )
+                status = endurainStatusText(context, repo.testConnection())
             }
         },
         modifier = Modifier.fillMaxWidth(),
@@ -231,6 +275,21 @@ private fun SyncSection() {
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )
+}
+
+/** Turns a connection-test outcome into a user-facing line. */
+private fun endurainStatusText(
+    context: android.content.Context,
+    result: cat.rumb.app.data.endurain.ConnResult,
+): String = when (result) {
+    is cat.rumb.app.data.endurain.ConnResult.Ok ->
+        result.activityCount?.let { context.getString(R.string.settings_sync_connected, "$it") }
+            ?: context.getString(R.string.settings_sync_connected_no_count)
+    cat.rumb.app.data.endurain.ConnResult.BadKey -> context.getString(R.string.settings_sync_bad_key)
+    cat.rumb.app.data.endurain.ConnResult.MissingScope -> context.getString(R.string.settings_sync_missing_scope)
+    cat.rumb.app.data.endurain.ConnResult.BadUrl -> context.getString(R.string.settings_sync_bad_url)
+    cat.rumb.app.data.endurain.ConnResult.NotConfigured -> context.getString(R.string.settings_sync_not_configured)
+    is cat.rumb.app.data.endurain.ConnResult.Error -> context.getString(R.string.settings_error, result.message)
 }
 
 /** Sync outbox summary: last upload + pending/failed counts + retry-failed. */

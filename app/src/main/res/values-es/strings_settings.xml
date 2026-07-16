@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Sensor no encendido</string>
     <string name="sensors_missing_msg">%1$s no responde. Enciéndelo y se conectará solo.</string>
     <string name="sensors_missing_start_anyway">Empezar sin sensor</string>
+    <string name="settings_sync_mode_credentials">Usuario + contraseña</string>
+    <string name="settings_sync_mode_api_key">Clave API</string>
+    <string name="settings_sync_username_label">Usuario</string>
+    <string name="settings_sync_password_label">Contraseña</string>
+    <string name="settings_sync_connected_no_count">Conectado ✓ — la clave es válida para subir</string>
+    <string name="settings_sync_bad_key">Credenciales rechazadas. Revisa el usuario/contraseña o la clave API.</string>
+    <string name="settings_sync_missing_scope">La clave API no tiene el permiso activities:upload.</string>
+    <string name="settings_sync_bad_url">No se encontró el servidor en esa URL. Revisa la dirección.</string>
+    <string name="settings_sync_not_configured">Todavía sin configurar.</string>
 </resources>

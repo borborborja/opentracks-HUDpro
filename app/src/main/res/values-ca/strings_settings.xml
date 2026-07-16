@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Sensor no encès</string>
     <string name="sensors_missing_msg">%1$s no respon. Encén-lo i es connectarà tot sol.</string>
     <string name="sensors_missing_start_anyway">Comença igualment</string>
+    <string name="settings_sync_mode_credentials">Usuari + contrasenya</string>
+    <string name="settings_sync_mode_api_key">Clau API</string>
+    <string name="settings_sync_username_label">Usuari</string>
+    <string name="settings_sync_password_label">Contrasenya</string>
+    <string name="settings_sync_connected_no_count">Connectat ✓ — la clau és vàlida per pujar</string>
+    <string name="settings_sync_bad_key">Credencials rebutjades. Revisa l\'usuari/contrasenya o la clau API.</string>
+    <string name="settings_sync_missing_scope">La clau API no té el permís activities:upload.</string>
+    <string name="settings_sync_bad_url">No s\'ha trobat el servidor en aquesta URL. Revisa l\'adreça.</string>
+    <string name="settings_sync_not_configured">Encara no configurat.</string>
 </resources>

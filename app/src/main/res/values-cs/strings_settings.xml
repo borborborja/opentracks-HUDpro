@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Senzor není zapnutý</string>
     <string name="sensors_missing_msg">%1$s neodpovídá. Zapni ho a připojí se sám.</string>
     <string name="sensors_missing_start_anyway">Přesto začít</string>
+    <string name="settings_sync_mode_credentials">Uživatel + heslo</string>
+    <string name="settings_sync_mode_api_key">API klíč</string>
+    <string name="settings_sync_username_label">Uživatelské jméno</string>
+    <string name="settings_sync_password_label">Heslo</string>
+    <string name="settings_sync_connected_no_count">Připojeno ✓ — klíč je platný pro nahrávání</string>
+    <string name="settings_sync_bad_key">Přihlašovací údaje odmítnuty. Zkontroluj uživatele/heslo nebo API klíč.</string>
+    <string name="settings_sync_missing_scope">Klíči API chybí oprávnění activities:upload.</string>
+    <string name="settings_sync_bad_url">Na této URL nebyl nalezen server. Zkontroluj adresu.</string>
+    <string name="settings_sync_not_configured">Zatím nenastaveno.</string>
 </resources>

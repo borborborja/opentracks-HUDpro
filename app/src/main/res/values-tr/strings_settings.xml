@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Sensör açık değil</string>
     <string name="sensors_missing_msg">%1$s yanıt vermiyor. Aç, kendiliğinden bağlanacak.</string>
     <string name="sensors_missing_start_anyway">Yine de başla</string>
+    <string name="settings_sync_mode_credentials">Kullanıcı + parola</string>
+    <string name="settings_sync_mode_api_key">API anahtarı</string>
+    <string name="settings_sync_username_label">Kullanıcı adı</string>
+    <string name="settings_sync_password_label">Parola</string>
+    <string name="settings_sync_connected_no_count">Bağlandı ✓ — anahtar yükleme için geçerli</string>
+    <string name="settings_sync_bad_key">Kimlik bilgileri reddedildi. Kullanıcı/parola veya API anahtarını kontrol et.</string>
+    <string name="settings_sync_missing_scope">API anahtarında activities:upload izni yok.</string>
+    <string name="settings_sync_bad_url">Bu URL\'de sunucu bulunamadı. Adresi kontrol et.</string>
+    <string name="settings_sync_not_configured">Henüz yapılandırılmadı.</string>
 </resources>

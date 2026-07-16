@@ -1238,9 +1238,16 @@ async function renderSettings() {
     '<p class="set-status">' + s.sync.pending + t("set_sync_pending") + t("sep") + s.sync.failed + t("set_sync_failed") +
     (s.sync.lastUploadedMs ? t("sep") + t("set_sync_last") + date(s.sync.lastUploadedMs) : "") + "</p>" +
     '<button class="btn" id="syncRetry">' + t("set_sync_retry") + "</button>");
+  const enCreds = (s.endurain.mode || "CREDENTIALS") === "CREDENTIALS";
   const endurain = g(t("set_endurain"),
     '<label class="set-row"><span>' + t("set_server") + '</span><input type="text" id="enHost" value="' + esc(s.endurain.host || "") + '" placeholder="https://…"></label>' +
-    '<label class="set-row"><span>' + t("set_apikey") + (s.endurain.apiKeySet ? t("set_configured") : "") + '</span><input type="text" id="enKey" placeholder="' + (s.endurain.apiKeySet ? "·····" : "") + '"></label>' +
+    '<label class="set-row"><span>' + t("set_auth_mode") + '</span><select id="enMode">' +
+      '<option value="CREDENTIALS"' + (enCreds ? " selected" : "") + ">" + t("set_auth_creds") + "</option>" +
+      '<option value="API_KEY"' + (enCreds ? "" : " selected") + ">" + t("set_auth_key") + "</option>" +
+    "</select></label>" +
+    '<label class="set-row" id="enUserRow"><span>' + t("set_user") + (s.endurain.usernameSet ? t("set_configured_m") : "") + '</span><input type="text" id="enUser"></label>' +
+    '<label class="set-row" id="enPassRow"><span>' + t("set_password") + '</span><input type="password" id="enPass"></label>' +
+    '<label class="set-row" id="enKeyRow"><span>' + t("set_apikey") + (s.endurain.apiKeySet ? t("set_configured") : "") + '</span><input type="text" id="enKey" placeholder="' + (s.endurain.apiKeySet ? "·····" : "") + '"></label>' +
     '<button class="btn" id="enSave">' + t("set_save_test") + "</button>");
   const webdav = g(t("set_webdav"),
     '<label class="set-row"><span>' + t("set_url") + '</span><input type="text" id="wdUrl" value="' + esc(s.webdav.url || "") + '"></label>' +
@@ -1258,8 +1265,20 @@ async function renderSettings() {
   v.querySelector("#syncRetry").addEventListener("click", async () => {
     try { await api("/api/settings/sync/retry", { method: "POST" }); toast(t("set_retrying")); } catch (e) { if (!e.auth) toast(t("err_generic"), true); }
   });
+  // Show only the fields the chosen mode uses.
+  const enModeSel = v.querySelector("#enMode");
+  const syncEnRows = () => {
+    const creds = enModeSel.value === "CREDENTIALS";
+    v.querySelector("#enUserRow").style.display = creds ? "" : "none";
+    v.querySelector("#enPassRow").style.display = creds ? "" : "none";
+    v.querySelector("#enKeyRow").style.display = creds ? "none" : "";
+  };
+  enModeSel.addEventListener("change", syncEnRows); syncEnRows();
   v.querySelector("#enSave").addEventListener("click", async () => {
-    const b = { host: document.getElementById("enHost").value };
+    const b = { host: document.getElementById("enHost").value, mode: enModeSel.value };
+    // Only send non-empty secrets so a blank box keeps the saved value (the server only sets what it gets).
+    const user = document.getElementById("enUser").value; if (user) b.username = user;
+    const pass = document.getElementById("enPass").value; if (pass) b.password = pass;
     const key = document.getElementById("enKey").value; if (key) b.apiKey = key;
     try {
       const res = await api("/api/settings/endurain", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) });

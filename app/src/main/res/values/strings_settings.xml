@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Sensor not switched on</string>
     <string name="sensors_missing_msg">%1$s isn\'t responding. Switch it on and it will connect on its own.</string>
     <string name="sensors_missing_start_anyway">Start anyway</string>
+    <string name="settings_sync_mode_credentials">User + password</string>
+    <string name="settings_sync_mode_api_key">API key</string>
+    <string name="settings_sync_username_label">Username</string>
+    <string name="settings_sync_password_label">Password</string>
+    <string name="settings_sync_connected_no_count">Connected ✓ — the key is valid for uploading</string>
+    <string name="settings_sync_bad_key">Credentials rejected. Check the username/password or API key.</string>
+    <string name="settings_sync_missing_scope">The API key is missing the activities:upload permission.</string>
+    <string name="settings_sync_bad_url">Server not found at that URL. Check the address.</string>
+    <string name="settings_sync_not_configured">Not configured yet.</string>
 </resources>

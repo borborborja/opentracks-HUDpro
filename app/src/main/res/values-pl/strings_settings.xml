@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Czujnik wyłączony</string>
     <string name="sensors_missing_msg">%1$s nie odpowiada. Włącz go, a połączy się sam.</string>
     <string name="sensors_missing_start_anyway">Zacznij mimo to</string>
+    <string name="settings_sync_mode_credentials">Użytkownik + hasło</string>
+    <string name="settings_sync_mode_api_key">Klucz API</string>
+    <string name="settings_sync_username_label">Nazwa użytkownika</string>
+    <string name="settings_sync_password_label">Hasło</string>
+    <string name="settings_sync_connected_no_count">Połączono ✓ — klucz jest ważny do przesyłania</string>
+    <string name="settings_sync_bad_key">Odrzucono dane logowania. Sprawdź użytkownika/hasło lub klucz API.</string>
+    <string name="settings_sync_missing_scope">Klucz API nie ma uprawnienia activities:upload.</string>
+    <string name="settings_sync_bad_url">Nie znaleziono serwera pod tym adresem. Sprawdź URL.</string>
+    <string name="settings_sync_not_configured">Jeszcze nie skonfigurowano.</string>
 </resources>

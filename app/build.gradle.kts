@@ -14,8 +14,8 @@ android {
         applicationId = "cat.rumb.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 143
-        versionName = "1.67.0"
+        versionCode = 144
+        versionName = "1.68.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -102,6 +102,7 @@ dependencies {
     implementation(libs.nanohttpd)
     implementation(libs.okhttp.logging)
     implementation(libs.serialization.json)
+    implementation(libs.security.crypto)
 
     implementation(libs.coil.compose)
     implementation(libs.documentfile)

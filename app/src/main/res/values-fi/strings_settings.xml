@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Anturi ei ole päällä</string>
     <string name="sensors_missing_msg">%1$s ei vastaa. Kytke se päälle, niin se yhdistyy itsestään.</string>
     <string name="sensors_missing_start_anyway">Aloita silti</string>
+    <string name="settings_sync_mode_credentials">Käyttäjä + salasana</string>
+    <string name="settings_sync_mode_api_key">API-avain</string>
+    <string name="settings_sync_username_label">Käyttäjänimi</string>
+    <string name="settings_sync_password_label">Salasana</string>
+    <string name="settings_sync_connected_no_count">Yhdistetty ✓ — avain kelpaa lataamiseen</string>
+    <string name="settings_sync_bad_key">Tunnukset hylätty. Tarkista käyttäjä/salasana tai API-avain.</string>
+    <string name="settings_sync_missing_scope">API-avaimelta puuttuu activities:upload-oikeus.</string>
+    <string name="settings_sync_bad_url">Palvelinta ei löytynyt tuosta URL:sta. Tarkista osoite.</string>
+    <string name="settings_sync_not_configured">Ei vielä määritetty.</string>
 </resources>

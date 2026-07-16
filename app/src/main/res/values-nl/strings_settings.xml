@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Sensor staat uit</string>
     <string name="sensors_missing_msg">%1$s reageert niet. Zet hem aan en hij verbindt vanzelf.</string>
     <string name="sensors_missing_start_anyway">Toch starten</string>
+    <string name="settings_sync_mode_credentials">Gebruiker + wachtwoord</string>
+    <string name="settings_sync_mode_api_key">API-sleutel</string>
+    <string name="settings_sync_username_label">Gebruikersnaam</string>
+    <string name="settings_sync_password_label">Wachtwoord</string>
+    <string name="settings_sync_connected_no_count">Verbonden ✓ — de sleutel is geldig om te uploaden</string>
+    <string name="settings_sync_bad_key">Inloggegevens geweigerd. Controleer gebruiker/wachtwoord of API-sleutel.</string>
+    <string name="settings_sync_missing_scope">De API-sleutel mist de rechten activities:upload.</string>
+    <string name="settings_sync_bad_url">Server niet gevonden op die URL. Controleer het adres.</string>
+    <string name="settings_sync_not_configured">Nog niet ingesteld.</string>
 </resources>

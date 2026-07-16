@@ -204,4 +204,13 @@
     <string name="sensors_missing_title">Ο αισθητήρας δεν είναι ανοιχτός</string>
     <string name="sensors_missing_msg">Το %1$s δεν απαντά. Άνοιξέ το και θα συνδεθεί μόνο του.</string>
     <string name="sensors_missing_start_anyway">Έναρξη ούτως ή άλλως</string>
+    <string name="settings_sync_mode_credentials">Χρήστης + κωδικός</string>
+    <string name="settings_sync_mode_api_key">Κλειδί API</string>
+    <string name="settings_sync_username_label">Όνομα χρήστη</string>
+    <string name="settings_sync_password_label">Κωδικός</string>
+    <string name="settings_sync_connected_no_count">Συνδέθηκε ✓ — το κλειδί είναι έγκυρο για μεταφόρτωση</string>
+    <string name="settings_sync_bad_key">Απορρίφθηκαν τα διαπιστευτήρια. Έλεγξε χρήστη/κωδικό ή κλειδί API.</string>
+    <string name="settings_sync_missing_scope">Στο κλειδί API λείπει το δικαίωμα activities:upload.</string>
+    <string name="settings_sync_bad_url">Δεν βρέθηκε διακομιστής σε αυτό το URL. Έλεγξε τη διεύθυνση.</string>
+    <string name="settings_sync_not_configured">Δεν ρυθμίστηκε ακόμη.</string>
 </resources>
