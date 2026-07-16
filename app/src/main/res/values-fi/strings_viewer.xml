@@ -18,7 +18,6 @@
 
     <!-- Quick-settings sheet -->
     <string name="viewer_qs_tab_map">Kartta</string>
-    <string name="viewer_qs_tab_route">Reitti</string>
     <string name="viewer_qs_tab_options">Asetukset</string>
     <string name="viewer_qs_online_map">Verkkokartta</string>
     <string name="viewer_qs_offline_map">Offline-kartta</string>
@@ -50,9 +49,6 @@
     <string name="viewer_qs_route_meta">%1$.1f km · %2$d pistettä</string>
 
     <!-- Competition (ghost) mode -->
-    <string name="viewer_qs_tab_competition">Kilpailu</string>
-    <string name="viewer_qs_opponent">Haamu (vastustaja)</string>
-    <string name="viewer_qs_opponent_best">paras aika</string>
     <string name="viewer_qs_halo">Näytön reunan värikehä</string>
     <string name="viewer_qs_halo_help">Vihreä: olet haamun edellä. Punainen: olet jäljessä. Sininen: tasan (±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Näytä arvioidut sekunnit</string>
@@ -100,7 +96,9 @@
     <string name="viewer_sport_picker_help">Laji määrää HUDin, kierrokset ja mihin sinua verrataan.</string>
     <string name="viewer_qs_sport">Laji</string>
     <string name="viewer_qs_sport_locked">Ei voi vaihtaa tallennuksen aikana.</string>
-    <string name="viewer_qs_ghost_enabled">Haamu</string>
+    <string name="viewer_qs_ghost_enabled">Kilpaile haamua vastaan</string>
     <string name="viewer_qs_ghost_enabled_help">Kilpaile haamua vastaan aina kun sellainen on: kilpailun vertailukierros ensimmäisestä kierroksesta tai lenkin paras kierroksesi.</string>
     <string name="lap_countdown_lap_ahead">KIERROS %1$d</string>
+    <string name="viewer_qs_section_laps">Kierrokset</string>
+    <string name="viewer_qs_section_ghost">Haamu</string>
 </resources>

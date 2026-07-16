@@ -18,7 +18,6 @@
 
     <!-- Quick-settings sheet -->
     <string name="viewer_qs_tab_map">Mapa</string>
-    <string name="viewer_qs_tab_route">Trasa</string>
     <string name="viewer_qs_tab_options">Opcje</string>
     <string name="viewer_qs_online_map">Mapa online</string>
     <string name="viewer_qs_offline_map">Mapa offline</string>
@@ -50,9 +49,6 @@
     <string name="viewer_qs_route_meta">%1$.1f km · %2$d pkt</string>
 
     <!-- Competition (ghost) mode -->
-    <string name="viewer_qs_tab_competition">Rywalizacja</string>
-    <string name="viewer_qs_opponent">Duch (przeciwnik)</string>
-    <string name="viewer_qs_opponent_best">najlepszy czas</string>
     <string name="viewer_qs_halo">Kolorowa poświata przy krawędzi ekranu</string>
     <string name="viewer_qs_halo_help">Zielony: jesteś przed duchem. Czerwony: jesteś z tyłu. Niebieski: równo (w zakresie ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Pokaż szacowane sekundy</string>
@@ -100,7 +96,9 @@
     <string name="viewer_sport_picker_help">Sport określa HUD, okrążenia i z czym jesteś porównywany.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Nie można zmienić podczas nagrywania.</string>
-    <string name="viewer_qs_ghost_enabled">Duch</string>
+    <string name="viewer_qs_ghost_enabled">Ścigaj się z duchem</string>
     <string name="viewer_qs_ghost_enabled_help">Ścigaj się z duchem, gdy tylko jest: referencja zawodów od pierwszego okrążenia lub twoje najlepsze okrążenie wyjazdu.</string>
     <string name="lap_countdown_lap_ahead">OKRĄŻENIE %1$d</string>
+    <string name="viewer_qs_section_laps">Okrążenia</string>
+    <string name="viewer_qs_section_ghost">Duch</string>
 </resources>

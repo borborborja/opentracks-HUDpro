@@ -18,7 +18,6 @@
 
     <!-- Quick-settings sheet -->
     <string name="viewer_qs_tab_map">Map</string>
-    <string name="viewer_qs_tab_route">Route</string>
     <string name="viewer_qs_tab_options">Options</string>
     <string name="viewer_qs_online_map">Online map</string>
     <string name="viewer_qs_offline_map">Offline map</string>
@@ -50,9 +49,6 @@
     <string name="viewer_qs_route_meta">%1$.1f km · %2$d points</string>
 
     <!-- Competition (ghost) mode -->
-    <string name="viewer_qs_tab_competition">Competition</string>
-    <string name="viewer_qs_opponent">Ghost (opponent)</string>
-    <string name="viewer_qs_opponent_best">best time</string>
     <string name="viewer_qs_halo">Screen-edge color halo</string>
     <string name="viewer_qs_halo_help">Green: you are ahead of the ghost. Red: you are behind. Blue: even (within ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Show estimated seconds</string>
@@ -100,7 +96,9 @@
     <string name="viewer_sport_picker_help">The sport sets the HUD, the splits and which efforts you can be compared against.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Can\'t be changed while recording.</string>
-    <string name="viewer_qs_ghost_enabled">Ghost</string>
+    <string name="viewer_qs_ghost_enabled">Race a ghost</string>
     <string name="viewer_qs_ghost_enabled_help">Race a ghost whenever there is one to chase: a competition\'s reference from the first lap, or your best lap of the outing.</string>
     <string name="lap_countdown_lap_ahead">LAP %1$d</string>
+    <string name="viewer_qs_section_laps">Laps</string>
+    <string name="viewer_qs_section_ghost">Ghost</string>
 </resources>

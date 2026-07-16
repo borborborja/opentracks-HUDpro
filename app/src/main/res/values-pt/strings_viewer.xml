@@ -18,7 +18,6 @@
 
     <!-- Quick-settings sheet -->
     <string name="viewer_qs_tab_map">Mapa</string>
-    <string name="viewer_qs_tab_route">Rota</string>
     <string name="viewer_qs_tab_options">Opções</string>
     <string name="viewer_qs_online_map">Mapa online</string>
     <string name="viewer_qs_offline_map">Mapa offline</string>
@@ -50,9 +49,6 @@
     <string name="viewer_qs_route_meta">%1$.1f km · %2$d pontos</string>
 
     <!-- Competition (ghost) mode -->
-    <string name="viewer_qs_tab_competition">Competição</string>
-    <string name="viewer_qs_opponent">Ghost (adversário)</string>
-    <string name="viewer_qs_opponent_best">melhor tempo</string>
     <string name="viewer_qs_halo">Halo de cor na borda do ecrã</string>
     <string name="viewer_qs_halo_help">Verde: estás à frente do ghost. Vermelho: estás atrás. Azul: empatado (dentro de ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Mostrar segundos estimados</string>
@@ -100,7 +96,9 @@
     <string name="viewer_sport_picker_help">O desporto define o HUD, as parciais e com que esforços podes ser comparado.</string>
     <string name="viewer_qs_sport">Desporto</string>
     <string name="viewer_qs_sport_locked">Não pode ser alterado durante a gravação.</string>
-    <string name="viewer_qs_ghost_enabled">Fantasma</string>
+    <string name="viewer_qs_ghost_enabled">Competir contra um fantasma</string>
     <string name="viewer_qs_ghost_enabled_help">Compete contra um fantasma sempre que houver: a referência da competição desde a primeira volta, ou a tua melhor volta da saída.</string>
     <string name="lap_countdown_lap_ahead">VOLTA %1$d</string>
+    <string name="viewer_qs_section_laps">Voltas</string>
+    <string name="viewer_qs_section_ghost">Fantasma</string>
 </resources>

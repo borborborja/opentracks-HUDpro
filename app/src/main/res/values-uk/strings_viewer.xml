@@ -18,7 +18,6 @@
 
     <!-- Quick-settings sheet -->
     <string name="viewer_qs_tab_map">Карта</string>
-    <string name="viewer_qs_tab_route">Маршрут</string>
     <string name="viewer_qs_tab_options">Параметри</string>
     <string name="viewer_qs_online_map">Онлайн-карта</string>
     <string name="viewer_qs_offline_map">Офлайн-карта</string>
@@ -50,9 +49,6 @@
     <string name="viewer_qs_route_meta">%1$.1f км · %2$d точок</string>
 
     <!-- Competition (ghost) mode -->
-    <string name="viewer_qs_tab_competition">Змагання</string>
-    <string name="viewer_qs_opponent">Привид (суперник)</string>
-    <string name="viewer_qs_opponent_best">найкращий час</string>
     <string name="viewer_qs_halo">Кольорове сяйво по краях екрана</string>
     <string name="viewer_qs_halo_help">Зелений: ви попереду привида. Червоний: позаду. Синій: нарівні (у межах ±5 м).</string>
     <string name="viewer_qs_ghost_seconds">Показувати орієнтовні секунди</string>
@@ -100,7 +96,9 @@
     <string name="viewer_sport_picker_help">Вид спорту визначає HUD, кола і з чим тебе порівнюють.</string>
     <string name="viewer_qs_sport">Вид спорту</string>
     <string name="viewer_qs_sport_locked">Не можна змінити під час запису.</string>
-    <string name="viewer_qs_ghost_enabled">Привид</string>
+    <string name="viewer_qs_ghost_enabled">Змагатися з привидом</string>
     <string name="viewer_qs_ghost_enabled_help">Змагайся з привидом, коли є з ким: еталон змагання з першого кола або твоє найкраще коло за виїзд.</string>
     <string name="lap_countdown_lap_ahead">КОЛО %1$d</string>
+    <string name="viewer_qs_section_laps">Кола</string>
+    <string name="viewer_qs_section_ghost">Привид</string>
 </resources>

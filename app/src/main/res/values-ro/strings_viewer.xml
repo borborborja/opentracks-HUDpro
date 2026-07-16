@@ -18,7 +18,6 @@
 
     <!-- Quick-settings sheet -->
     <string name="viewer_qs_tab_map">Hartă</string>
-    <string name="viewer_qs_tab_route">Traseu</string>
     <string name="viewer_qs_tab_options">Opțiuni</string>
     <string name="viewer_qs_online_map">Hartă online</string>
     <string name="viewer_qs_offline_map">Hartă offline</string>
@@ -50,9 +49,6 @@
     <string name="viewer_qs_route_meta">%1$.1f km · %2$d puncte</string>
 
     <!-- Competition (ghost) mode -->
-    <string name="viewer_qs_tab_competition">Competiție</string>
-    <string name="viewer_qs_opponent">Ghost (adversar)</string>
-    <string name="viewer_qs_opponent_best">cel mai bun timp</string>
     <string name="viewer_qs_halo">Halo colorat pe marginea ecranului</string>
     <string name="viewer_qs_halo_help">Verde: ești înaintea ghostului. Roșu: ești în urmă. Albastru: la egalitate (în ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Afișează secundele estimate</string>
@@ -100,7 +96,9 @@
     <string name="viewer_sport_picker_help">Sportul stabilește HUD-ul, tururile și cu ce ești comparat.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Nu poate fi schimbat în timpul înregistrării.</string>
-    <string name="viewer_qs_ghost_enabled">Fantomă</string>
+    <string name="viewer_qs_ghost_enabled">Concurează cu o fantomă</string>
     <string name="viewer_qs_ghost_enabled_help">Concurează cu o fantomă ori de câte ori există una: referința competiției de la primul tur, sau cel mai bun tur al ieșirii.</string>
     <string name="lap_countdown_lap_ahead">TURUL %1$d</string>
+    <string name="viewer_qs_section_laps">Tururi</string>
+    <string name="viewer_qs_section_ghost">Fantomă</string>
 </resources>

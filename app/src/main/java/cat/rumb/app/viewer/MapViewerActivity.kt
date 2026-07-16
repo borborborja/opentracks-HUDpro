@@ -176,10 +176,7 @@ class MapViewerActivity : ComponentActivity() {
 
     // Competition (ghost race) mode: race a previously recorded reference or one of its attempts.
     private var competing = false
-    private var competitionRefId = -1L
     private var ghostEngine: cat.rumb.app.data.competition.GhostEngine? = null
-    private var ghostCandidates: List<cat.rumb.app.data.tracks.FollowTrackEntity> = emptyList()
-    private var opponentId = -1L
     private var ghostHaloOn = true
     private var ghostSecondsOn = true
 
@@ -478,20 +475,17 @@ class MapViewerActivity : ComponentActivity() {
                                     recordAfterSportPick = false
                                     sportPickerFlow.value = true
                                 },
-                                autoLapEveryM = prefs.autoLapEveryM,
+                                // Per sport, like the HUD layout: 1 km splits for running, usually
+                                // off for cycling. The chips wrote the GLOBAL pref while the engine
+                                // and the ghost gate both read the per-sport one — it only ever
+                                // worked because nothing wrote the per-sport key, so the getter fell
+                                // back to the global. "Splits per sport" was a promise, not a fact.
+                                autoLapEveryM = prefs.autoLapEveryMFor(prefs.activeSportId),
                                 onAutoLapEveryM = { m ->
-                                    DebugLog.i("UI", "quick-settings · parcials cada ${m}m")
-                                    prefs.autoLapEveryM = m
+                                    DebugLog.i("UI", "quick-settings · parcials cada ${m}m · ${prefs.activeSportId}")
+                                    prefs.setAutoLapEveryMFor(prefs.activeSportId, m)
                                 },
                                 onDismiss = { settingsOpenFlow.value = false },
-                                competing = competing,
-                                ghostCandidates = ghostCandidates,
-                                opponentId = opponentId,
-                                onSelectOpponent = { id ->
-                                    DebugLog.i("Competi", "quick-settings · rival → id=$id")
-                                    opponentId = id
-                                    loadGhost(id)
-                                },
                                 halo = ghostHaloOn,
                                 onHalo = { b ->
                                     DebugLog.i("Competi", "quick-settings · halo → $b")
@@ -1421,27 +1415,6 @@ class MapViewerActivity : ComponentActivity() {
         val maxZ = maxOf(minZ, minOf(src.maxZoom, z + 1))
         DebugLog.i("Prefetch", "encuant ruta $trackId · ${src.id} · zoom $minZ-$maxZ")
         cat.rumb.app.data.map.RoutePrefetchWorker.enqueue(this, trackId, src.id, minZ, maxZ)
-    }
-
-    /**
-     * Loads the ghost candidates (the competition reference + every attempt recorded against it)
-     * and picks the default opponent: the best (lowest) timed attempt, else the reference itself.
-     */
-    private fun loadGhostCandidates() {
-        lifecycleScope.launch {
-            val all = RumbApplication.from(this@MapViewerActivity).trackRepository.observeSummaries().first()
-            val ref = all.firstOrNull { it.id == competitionRefId }
-            // Only same-family rivals: racing a bike ghost while running is a pointless comparison.
-            val prefs = ViewerPreferences.get(this@MapViewerActivity)
-            val custom = cat.rumb.app.data.tracks.ActivityTypes.decodeCustom(prefs.customActivityTypesJson)
-            val refType = ref?.activityType
-            ghostCandidates = (listOfNotNull(ref) + all.filter { it.competitionRefId == competitionRefId })
-                .filter { cat.rumb.app.data.tracks.ActivityTypes.comparableTypes(it.activityType, refType, custom) }
-            val best = ghostCandidates.filter { (it.durationMs ?: 0) > 0 }.minByOrNull { it.durationMs!! } ?: ref
-            opponentId = best?.id ?: -1L
-            DebugLog.i("Competi", "candidats=${ghostCandidates.size} · rival per defecte id=$opponentId")
-            if (opponentId > 0) loadGhost(opponentId)
-        }
     }
 
     /** (Re)builds the ghost engine from track [id]'s GPX (fails on untimed tracks → toast). */

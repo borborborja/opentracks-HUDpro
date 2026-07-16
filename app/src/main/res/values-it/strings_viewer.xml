@@ -18,7 +18,6 @@
 
     <!-- Quick-settings sheet -->
     <string name="viewer_qs_tab_map">Mappa</string>
-    <string name="viewer_qs_tab_route">Percorso</string>
     <string name="viewer_qs_tab_options">Opzioni</string>
     <string name="viewer_qs_online_map">Mappa online</string>
     <string name="viewer_qs_offline_map">Mappa offline</string>
@@ -50,9 +49,6 @@
     <string name="viewer_qs_route_meta">%1$.1f km · %2$d punti</string>
 
     <!-- Competition (ghost) mode -->
-    <string name="viewer_qs_tab_competition">Competizione</string>
-    <string name="viewer_qs_opponent">Ghost (avversario)</string>
-    <string name="viewer_qs_opponent_best">miglior tempo</string>
     <string name="viewer_qs_halo">Alone colorato ai bordi dello schermo</string>
     <string name="viewer_qs_halo_help">Verde: sei davanti al ghost. Rosso: sei indietro. Blu: pari (entro ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Mostra secondi stimati</string>
@@ -100,7 +96,9 @@
     <string name="viewer_sport_picker_help">Lo sport determina l\'HUD, i parziali e con quali sforzi vieni confrontato.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Non modificabile durante la registrazione.</string>
-    <string name="viewer_qs_ghost_enabled">Fantasma</string>
+    <string name="viewer_qs_ghost_enabled">Gareggia contro un fantasma</string>
     <string name="viewer_qs_ghost_enabled_help">Gareggia contro un fantasma quando ce n\'è uno: il riferimento della gara dal primo giro, o il tuo miglior giro dell\'uscita.</string>
     <string name="lap_countdown_lap_ahead">GIRO %1$d</string>
+    <string name="viewer_qs_section_laps">Giri</string>
+    <string name="viewer_qs_section_ghost">Fantasma</string>
 </resources>

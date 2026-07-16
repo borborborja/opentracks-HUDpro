@@ -79,10 +79,6 @@ fun ViewerQuickSettings(
     onAutoPauseSec: (Int) -> Unit = {},
     onAdaptiveZoom: (Boolean) -> Unit,
     onDismiss: () -> Unit,
-    competing: Boolean = false,
-    ghostCandidates: List<FollowTrackEntity> = emptyList(),
-    opponentId: Long = -1L,
-    onSelectOpponent: (Long) -> Unit = {},
     halo: Boolean = true,
     onHalo: (Boolean) -> Unit = {},
     showSeconds: Boolean = true,
@@ -114,15 +110,10 @@ fun ViewerQuickSettings(
     var ap by remember { mutableStateOf(autoPause) }
     var apSec by remember { mutableStateOf(autoPauseSec) }
     var autoZoom by remember { mutableStateOf(adaptiveZoom) }
-    var lapMgmt by remember { mutableStateOf(lapManagement) }
-    var autoLap by remember { mutableStateOf(autoLapByPosition) }
-    var lapEveryM by remember { mutableStateOf(autoLapEveryM) }
-
-    val tabs = TABS + if (competing) listOf(R.string.viewer_qs_tab_competition) else emptyList()
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         ScrollableTabRow(selectedTabIndex = tab, edgePadding = 8.dp) {
-            tabs.forEachIndexed { i, title ->
+            TABS.forEachIndexed { i, title ->
                 Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(title)) })
             }
         }
@@ -135,12 +126,11 @@ fun ViewerQuickSettings(
                 0 -> MapTab(selBase, offlineMaps) { id -> selBase = id; onSelectBaseMap(id) }
                 1 -> FollowTab(
                     selFollow, tracks, competitions, currentCompetitionId, turnVoice, onTurnVoice,
-                    lapCountdown, onLapCountdown, ghostEnabled, onGhostEnabled, onStartCompetition,
+                    lapCountdown, onLapCountdown, ghostEnabled, onGhostEnabled,
+                    lapManagement, onLapManagement, autoLapByPosition, onAutoLapByPosition,
+                    autoLapEveryM, onAutoLapEveryM, halo, onHalo, showSeconds, onShowSeconds,
+                    onStartCompetition,
                 ) { id -> selFollow = id; onSelectFollow(id) }
-                3 -> CompetitionQsTab(
-                    ghostCandidates, opponentId, onSelectOpponent,
-                    halo, onHalo, showSeconds, onShowSeconds,
-                )
                 else -> OptionsTab(
                     orient, keep, full, autoZoom,
                     onOrientation = { orient = it; onOrientation(it) },
@@ -153,12 +143,6 @@ fun ViewerQuickSettings(
                     autoPauseSec = apSec,
                     onAutoPauseSec = { apSec = it; onAutoPauseSec(it) },
                     onAdaptiveZoom = { autoZoom = it; onAdaptiveZoom(it) },
-                    lapManagement = lapMgmt,
-                    onLapManagement = { lapMgmt = it; onLapManagement(it) },
-                    autoLapByPosition = autoLap,
-                    onAutoLapByPosition = { autoLap = it; onAutoLapByPosition(it) },
-                    autoLapEveryM = lapEveryM,
-                    onAutoLapEveryM = { lapEveryM = it; onAutoLapEveryM(it) },
                     sportLabel = sportLabel,
                     sportLocked = sportLocked,
                     onChangeSport = onChangeSport,
@@ -196,6 +180,16 @@ private fun FollowTab(
     onLapCountdown: (Boolean) -> Unit = {},
     ghostEnabled: Boolean = true,
     onGhostEnabled: (Boolean) -> Unit = {},
+    lapManagement: Boolean = true,
+    onLapManagement: (Boolean) -> Unit = {},
+    autoLapByPosition: Boolean = false,
+    onAutoLapByPosition: (Boolean) -> Unit = {},
+    autoLapEveryM: Float = 0f,
+    onAutoLapEveryM: (Float) -> Unit = {},
+    halo: Boolean = true,
+    onHalo: (Boolean) -> Unit = {},
+    showSeconds: Boolean = true,
+    onShowSeconds: (Boolean) -> Unit = {},
     onStartCompetition: (Long) -> Unit = {},
     onSelect: (Long) -> Unit,
 ) {
@@ -257,24 +251,95 @@ private fun FollowTab(
                 selected = c.id == currentCompetitionId,
             ) { onStartCompetition(c.id) }
         }
-        // Racing settings: decided here, once, instead of asked while you're crossing the line.
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-        var ghost by remember { mutableStateOf(ghostEnabled) }
-        ToggleRow(stringResource(R.string.viewer_qs_ghost_enabled), ghost) { ghost = it; onGhostEnabled(it) }
-        Text(
-            stringResource(R.string.viewer_qs_ghost_enabled_help),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline,
-        )
+    }
+
+    // Laps are their own axis, not a sub-mode of competition: you can lap a route, lap a
+    // competition's circuit, or lap nothing at all. So the block sits BELOW the routes/competitions
+    // switch and outside it — buried in the "Competiciones" branch, these were invisible unless you
+    // happened to tap that button, and the switch resets to "Rutas" every time the sheet opens.
+    HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    LapsSection(
+        lapManagement, onLapManagement, autoLapByPosition, onAutoLapByPosition,
+        autoLapEveryM, onAutoLapEveryM, lapCountdown, onLapCountdown,
+        ghostEnabled, onGhostEnabled, halo, onHalo, showSeconds, onShowSeconds,
+    )
+}
+
+/**
+ * Everything about going round again: whether laps exist at all, how they close, and who you chase.
+ * The ghost sits under its own heading because it serves a route competition too, where there are
+ * no laps — its help text has always said so even while the UI filed it under "Competiciones".
+ */
+@Composable
+private fun LapsSection(
+    lapManagement: Boolean,
+    onLapManagement: (Boolean) -> Unit,
+    autoLapByPosition: Boolean,
+    onAutoLapByPosition: (Boolean) -> Unit,
+    autoLapEveryM: Float,
+    onAutoLapEveryM: (Float) -> Unit,
+    lapCountdown: Boolean,
+    onLapCountdown: (Boolean) -> Unit,
+    ghostEnabled: Boolean,
+    onGhostEnabled: (Boolean) -> Unit,
+    halo: Boolean,
+    onHalo: (Boolean) -> Unit,
+    showSeconds: Boolean,
+    onShowSeconds: (Boolean) -> Unit,
+) {
+    Text(stringResource(R.string.viewer_qs_section_laps), style = MaterialTheme.typography.labelLarge)
+    var lapMgmt by remember { mutableStateOf(lapManagement) }
+    ToggleRow(stringResource(R.string.viewer_qs_lap_management), lapMgmt) { lapMgmt = it; onLapManagement(it) }
+    if (lapMgmt) {
+        var autoLap by remember { mutableStateOf(autoLapByPosition) }
+        ToggleRow(stringResource(R.string.viewer_qs_auto_lap), autoLap) { autoLap = it; onAutoLapByPosition(it) }
+        Hint(R.string.viewer_qs_auto_lap_help)
+        // Runner splits: a lap every N km, no buttons. Off (0) keeps laps fully manual.
+        Hint(R.string.viewer_qs_auto_lap_distance)
+        var lapEveryM by remember { mutableStateOf(autoLapEveryM) }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(0f, 500f, 1000f, 5000f).forEach { m ->
+                FilterChip(
+                    selected = lapEveryM == m,
+                    onClick = { lapEveryM = m; onAutoLapEveryM(m) },
+                    label = {
+                        Text(
+                            when {
+                                m == 0f -> stringResource(R.string.viewer_qs_auto_lap_off)
+                                m < 1000f -> "%.1f km".format(m / 1000f)
+                                else -> "%.0f km".format(m / 1000f)
+                            },
+                        )
+                    },
+                )
+            }
+        }
         var lapCd by remember { mutableStateOf(lapCountdown) }
         ToggleRow(stringResource(R.string.viewer_qs_lap_countdown), lapCd) { lapCd = it; onLapCountdown(it) }
-        Text(
-            stringResource(R.string.viewer_qs_lap_countdown_help),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline,
-        )
+        Hint(R.string.viewer_qs_lap_countdown_help)
+    }
+
+    HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    Text(stringResource(R.string.viewer_qs_section_ghost), style = MaterialTheme.typography.labelLarge)
+    var ghost by remember { mutableStateOf(ghostEnabled) }
+    ToggleRow(stringResource(R.string.viewer_qs_ghost_enabled), ghost) { ghost = it; onGhostEnabled(it) }
+    Hint(R.string.viewer_qs_ghost_enabled_help)
+    if (ghost) {
+        var h by remember { mutableStateOf(halo) }
+        ToggleRow(stringResource(R.string.viewer_qs_halo), h) { h = it; onHalo(it) }
+        Hint(R.string.viewer_qs_halo_help)
+        var secs by remember { mutableStateOf(showSeconds) }
+        ToggleRow(stringResource(R.string.viewer_qs_ghost_seconds), secs) { secs = it; onShowSeconds(it) }
     }
 }
+
+/** Small explanatory line under a setting. */
+@Composable
+private fun Hint(res: Int) = Text(
+    stringResource(res),
+    style = MaterialTheme.typography.bodySmall,
+    color = MaterialTheme.colorScheme.outline,
+)
 
 /** One competition in the race list: selection dot + type icon (lap vs route) + name + tap-to-race. */
 @Composable
@@ -317,12 +382,6 @@ private fun OptionsTab(
     autoPauseSec: Int = 5,
     onAutoPauseSec: (Int) -> Unit = {},
     onAdaptiveZoom: (Boolean) -> Unit,
-    lapManagement: Boolean = true,
-    onLapManagement: (Boolean) -> Unit = {},
-    autoLapByPosition: Boolean = false,
-    onAutoLapByPosition: (Boolean) -> Unit = {},
-    autoLapEveryM: Float = 0f,
-    onAutoLapEveryM: (Float) -> Unit = {},
     sportLabel: String? = null,
     sportLocked: Boolean = false,
     onChangeSport: () -> Unit = {},
@@ -362,38 +421,6 @@ private fun OptionsTab(
     ToggleRow(stringResource(R.string.viewer_qs_keep_screen_on), keepScreenOn, onKeepScreenOn)
     ToggleRow(stringResource(R.string.viewer_qs_fullscreen), fullscreen, onFullscreen)
     ToggleRow(stringResource(R.string.viewer_qs_countdown), countdown, onCountdown)
-    ToggleRow(stringResource(R.string.viewer_qs_lap_management), lapManagement, onLapManagement)
-    if (lapManagement) {
-        ToggleRow(stringResource(R.string.viewer_qs_auto_lap), autoLapByPosition, onAutoLapByPosition)
-        Text(
-            stringResource(R.string.viewer_qs_auto_lap_help),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline,
-        )
-        // Runner splits: a lap every N km, no buttons. Off (0) keeps laps fully manual.
-        Text(
-            stringResource(R.string.viewer_qs_auto_lap_distance),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf(0f, 500f, 1000f, 5000f).forEach { m ->
-                FilterChip(
-                    selected = autoLapEveryM == m,
-                    onClick = { onAutoLapEveryM(m) },
-                    label = {
-                        Text(
-                            when {
-                                m == 0f -> stringResource(R.string.viewer_qs_auto_lap_off)
-                                m < 1000f -> "%.1f km".format(m / 1000f)
-                                else -> "%.0f km".format(m / 1000f)
-                            },
-                        )
-                    },
-                )
-            }
-        }
-    }
     ToggleRow(stringResource(R.string.viewer_qs_auto_pause), autoPause, onAutoPause)
     if (autoPause) {
         Text(
@@ -407,50 +434,6 @@ private fun OptionsTab(
             }
         }
     }
-}
-
-@Composable
-private fun CompetitionQsTab(
-    candidates: List<FollowTrackEntity>,
-    opponentId: Long,
-    onSelectOpponent: (Long) -> Unit,
-    halo: Boolean,
-    onHalo: (Boolean) -> Unit,
-    showSeconds: Boolean,
-    onShowSeconds: (Boolean) -> Unit,
-) {
-    var selOpponent by remember { mutableLongStateOf(opponentId) }
-    var h by remember { mutableStateOf(halo) }
-    var secs by remember { mutableStateOf(showSeconds) }
-
-    fun fmtDuration(ms: Long?): String {
-        if (ms == null || ms <= 0) return "—"
-        val s = ms / 1000
-        return "%d:%02d:%02d".format(s / 3600, (s % 3600) / 60, s % 60)
-    }
-
-    val bestId = candidates.filter { (it.durationMs ?: 0) > 0 }.minByOrNull { it.durationMs!! }?.id
-
-    // No candidate list = race against the competition's own reference (best). Hide the empty picker.
-    if (candidates.isNotEmpty()) {
-        Text(stringResource(R.string.viewer_qs_opponent), style = MaterialTheme.typography.labelLarge)
-        candidates.forEach { c ->
-            val subtitle = fmtDuration(c.durationMs) +
-                if (c.id == bestId) " · " + stringResource(R.string.viewer_qs_opponent_best) else ""
-            RadioRow(c.name, subtitle, selOpponent == c.id) {
-                selOpponent = c.id
-                onSelectOpponent(c.id)
-            }
-        }
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-    }
-    ToggleRow(stringResource(R.string.viewer_qs_halo), h) { h = it; onHalo(it) }
-    Text(
-        stringResource(R.string.viewer_qs_halo_help),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.outline,
-    )
-    ToggleRow(stringResource(R.string.viewer_qs_ghost_seconds), secs) { secs = it; onShowSeconds(it) }
 }
 
 @Composable

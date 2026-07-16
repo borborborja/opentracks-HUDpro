@@ -18,7 +18,6 @@
 
     <!-- Quick-settings sheet -->
     <string name="viewer_qs_tab_map">Mapa</string>
-    <string name="viewer_qs_tab_route">Trasa</string>
     <string name="viewer_qs_tab_options">Možnosti</string>
     <string name="viewer_qs_online_map">Online mapa</string>
     <string name="viewer_qs_offline_map">Offline mapa</string>
@@ -50,9 +49,6 @@
     <string name="viewer_qs_route_meta">%1$.1f km · %2$d bodů</string>
 
     <!-- Competition (ghost) mode -->
-    <string name="viewer_qs_tab_competition">Soutěž</string>
-    <string name="viewer_qs_opponent">Duch (soupeř)</string>
-    <string name="viewer_qs_opponent_best">nejlepší čas</string>
     <string name="viewer_qs_halo">Barevná záře na okraji obrazovky</string>
     <string name="viewer_qs_halo_help">Zelená: jsi před duchem. Červená: jsi za. Modrá: nastejno (do ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Zobrazit odhadované sekundy</string>
@@ -100,7 +96,9 @@
     <string name="viewer_sport_picker_help">Sport určuje HUD, kola a s čím tě porovnáváme.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Nelze změnit během záznamu.</string>
-    <string name="viewer_qs_ghost_enabled">Duch</string>
+    <string name="viewer_qs_ghost_enabled">Závodit s duchem</string>
     <string name="viewer_qs_ghost_enabled_help">Závoď s duchem, kdykoli nějaký je: reference závodu od prvního kola, nebo tvé nejlepší kolo výjezdu.</string>
     <string name="lap_countdown_lap_ahead">KOLO %1$d</string>
+    <string name="viewer_qs_section_laps">Kola</string>
+    <string name="viewer_qs_section_ghost">Duch</string>
 </resources>

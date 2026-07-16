@@ -18,7 +18,6 @@
 
     <!-- Quick-settings sheet -->
     <string name="viewer_qs_tab_map">Mapa</string>
-    <string name="viewer_qs_tab_route">Ruta</string>
     <string name="viewer_qs_tab_options">Opcions</string>
     <string name="viewer_qs_online_map">Mapa online</string>
     <string name="viewer_qs_offline_map">Mapa offline</string>
@@ -50,9 +49,6 @@
     <string name="viewer_qs_route_meta">%1$.1f km · %2$d punts</string>
 
     <!-- Competition (ghost) mode -->
-    <string name="viewer_qs_tab_competition">Competició</string>
-    <string name="viewer_qs_opponent">Fantasma (rival)</string>
-    <string name="viewer_qs_opponent_best">millor marca</string>
     <string name="viewer_qs_halo">Halo de color a la vora</string>
     <string name="viewer_qs_halo_help">Verd: vas per davant del fantasma. Vermell: vas per darrere. Blau: empat (dins de ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Mostra els segons estimats</string>
@@ -99,7 +95,9 @@
     <string name="viewer_sport_picker_help">L\'esport determina el HUD, els parcials i amb quins esforços et poden comparar.</string>
     <string name="viewer_qs_sport">Esport</string>
     <string name="viewer_qs_sport_locked">No es pot canviar mentre graves.</string>
-    <string name="viewer_qs_ghost_enabled">Fantasma</string>
+    <string name="viewer_qs_ghost_enabled">Competeix contra un fantasma</string>
     <string name="viewer_qs_ghost_enabled_help">Competeix contra un fantasma sempre que n\'hi hagi: la referència de la competició des de la primera volta, o la teva millor volta del dia.</string>
     <string name="lap_countdown_lap_ahead">VOLTA %1$d</string>
+    <string name="viewer_qs_section_laps">Voltes</string>
+    <string name="viewer_qs_section_ghost">Fantasma</string>
 </resources>

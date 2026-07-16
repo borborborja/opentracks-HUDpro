@@ -18,7 +18,6 @@
 
     <!-- Quick-settings sheet -->
     <string name="viewer_qs_tab_map">Carte</string>
-    <string name="viewer_qs_tab_route">Itinéraire</string>
     <string name="viewer_qs_tab_options">Options</string>
     <string name="viewer_qs_online_map">Carte en ligne</string>
     <string name="viewer_qs_offline_map">Carte hors ligne</string>
@@ -50,9 +49,6 @@
     <string name="viewer_qs_route_meta">%1$.1f km · %2$d points</string>
 
     <!-- Competition (ghost) mode -->
-    <string name="viewer_qs_tab_competition">Compétition</string>
-    <string name="viewer_qs_opponent">Fantôme (adversaire)</string>
-    <string name="viewer_qs_opponent_best">meilleur temps</string>
     <string name="viewer_qs_halo">Halo de couleur au bord de l\'écran</string>
     <string name="viewer_qs_halo_help">Vert : vous êtes devant le fantôme. Rouge : vous êtes derrière. Bleu : à égalité (à ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Afficher les secondes estimées</string>
@@ -100,7 +96,9 @@
     <string name="viewer_sport_picker_help">Le sport définit le HUD, les tours et les efforts auxquels vous êtes comparé.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Non modifiable pendant l\'enregistrement.</string>
-    <string name="viewer_qs_ghost_enabled">Fantôme</string>
+    <string name="viewer_qs_ghost_enabled">Courir contre un fantôme</string>
     <string name="viewer_qs_ghost_enabled_help">Courez contre un fantôme dès qu\'il y en a un : la référence de la compétition dès le premier tour, ou votre meilleur tour de la sortie.</string>
     <string name="lap_countdown_lap_ahead">TOUR %1$d</string>
+    <string name="viewer_qs_section_laps">Tours</string>
+    <string name="viewer_qs_section_ghost">Fantôme</string>
 </resources>
