@@ -74,9 +74,6 @@
     <string name="data_record_start">Registra</string>
     <string name="data_record_lap">Volta</string>
     <string name="data_record_lap_end">Fi voltes</string>
-    <string name="lap_compete_prompt">Competeixes contra la teva millor volta?</string>
-    <string name="lap_compete_yes">Competeix</string>
-    <string name="lap_compete_no">No</string>
     <string name="data_chart_speed">Gràfica de velocitat</string>
     <string name="data_chart_elevation">Perfil d\'altitud</string>
     <string name="data_toggle_auto_pause">Auto-pausa</string>
@@ -102,4 +99,6 @@
     <string name="viewer_sport_picker_help">L\'esport determina el HUD, els parcials i amb quins esforços et poden comparar.</string>
     <string name="viewer_qs_sport">Esport</string>
     <string name="viewer_qs_sport_locked">No es pot canviar mentre graves.</string>
+    <string name="viewer_qs_ghost_enabled">Fantasma</string>
+    <string name="viewer_qs_ghost_enabled_help">Competeix contra un fantasma sempre que n\'hi hagi: la referència de la competició des de la primera volta, o la teva millor volta del dia.</string>
 </resources>

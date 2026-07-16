@@ -75,9 +75,6 @@
     <string name="data_record_start">Kaydet</string>
     <string name="data_record_lap">Tur</string>
     <string name="data_record_lap_end">Turları bitir</string>
-    <string name="lap_compete_prompt">En iyi turunla yarış?</string>
-    <string name="lap_compete_yes">Yarış</string>
-    <string name="lap_compete_no">Hayır</string>
     <string name="data_chart_speed">Hız grafiği</string>
     <string name="data_chart_elevation">Yükseklik profili</string>
     <string name="data_toggle_auto_pause">Otomatik duraklat</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">Spor; HUD\'u, turları ve neyle karşılaştırıldığını belirler.</string>
     <string name="viewer_qs_sport">Spor</string>
     <string name="viewer_qs_sport_locked">Kayıt sırasında değiştirilemez.</string>
+    <string name="viewer_qs_ghost_enabled">Hayalet</string>
+    <string name="viewer_qs_ghost_enabled_help">Kovalayacak biri olduğunda hayaletle yarış: ilk turdan itibaren yarışın referansı ya da bu çıkıştaki en iyi turun.</string>
 </resources>

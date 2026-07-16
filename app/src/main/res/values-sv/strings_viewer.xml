@@ -75,9 +75,6 @@
     <string name="data_record_start">Spela in</string>
     <string name="data_record_lap">Varv</string>
     <string name="data_record_lap_end">Avsluta varv</string>
-    <string name="lap_compete_prompt">Tävla mot ditt bästa varv?</string>
-    <string name="lap_compete_yes">Tävla</string>
-    <string name="lap_compete_no">Nej</string>
     <string name="data_chart_speed">Fartdiagram</string>
     <string name="data_chart_elevation">Höjdprofil</string>
     <string name="data_toggle_auto_pause">Auto-paus</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">Sporten styr HUD, varv och vad du jämförs med.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Kan inte ändras under inspelning.</string>
+    <string name="viewer_qs_ghost_enabled">Spöke</string>
+    <string name="viewer_qs_ghost_enabled_help">Kör mot ett spöke när det finns ett: tävlingens referens från första varvet, eller ditt bästa varv under passet.</string>
 </resources>

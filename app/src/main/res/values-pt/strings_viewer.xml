@@ -75,9 +75,6 @@
     <string name="data_record_start">Gravar</string>
     <string name="data_record_lap">Volta</string>
     <string name="data_record_lap_end">Terminar voltas</string>
-    <string name="lap_compete_prompt">Correr contra a tua melhor volta?</string>
-    <string name="lap_compete_yes">Competir</string>
-    <string name="lap_compete_no">Não</string>
     <string name="data_chart_speed">Gráfico de velocidade</string>
     <string name="data_chart_elevation">Perfil de elevação</string>
     <string name="data_toggle_auto_pause">Pausa automática</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">O desporto define o HUD, as parciais e com que esforços podes ser comparado.</string>
     <string name="viewer_qs_sport">Desporto</string>
     <string name="viewer_qs_sport_locked">Não pode ser alterado durante a gravação.</string>
+    <string name="viewer_qs_ghost_enabled">Fantasma</string>
+    <string name="viewer_qs_ghost_enabled_help">Compete contra um fantasma sempre que houver: a referência da competição desde a primeira volta, ou a tua melhor volta da saída.</string>
 </resources>

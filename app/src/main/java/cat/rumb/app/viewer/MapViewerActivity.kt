@@ -178,14 +178,14 @@ class MapViewerActivity : ComponentActivity() {
     private var ghostHaloOn = true
     private var ghostSecondsOn = true
 
-    // Live "race your laps": ephemeral per-recording state. The ghost is the best previous lap,
-    // re-based to each lap's start. No persistence — the saved track stays a normal lapped track.
+    // Racing your laps. Two origins: a LAP competition seeds the ghost from its stored reference in
+    // onCreate (and owns it for the whole session), or — outside a competition — the best lap of the
+    // current recording becomes the ghost, re-based to each lap's start. No persistence either way:
+    // the saved track stays a normal lapped track. Gated by prefs.ghostEnabled, never by a prompt.
     private var lapCompeting = false
     private var lapGhost: cat.rumb.app.data.competition.GhostEngine? = null
     private var bestLapMs: Long? = null
     private var lastSeenLapCount = 0
-    private var lapCompetePrompted = false
-    private val competePromptFlow = MutableStateFlow(false)
     // Competition id awaiting confirmation because a recording is in progress (null = no prompt).
     private val confirmCompetitionFlow = MutableStateFlow<Long?>(null)
     // Sport mode: shown when recording is requested with no sport chosen yet, or from settings.
@@ -239,7 +239,7 @@ class MapViewerActivity : ComponentActivity() {
                 val refPts = runCatching { cat.rumb.app.data.gpx.Gpx.read(comp.referenceGpx.byteInputStream()).points }.getOrDefault(emptyList())
                 if (comp.type == cat.rumb.app.data.tracks.CompetitionType.LAP) {
                     circuitMode = true
-                    if (cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
+                    if (prefs.ghostEnabled && cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
                         lapGhost = cat.rumb.app.data.competition.GhostEngine(refPts)
                         lapCompeting = true
                     }
@@ -256,7 +256,7 @@ class MapViewerActivity : ComponentActivity() {
                     DebugLog.i("Competi", "mode competició LAP · id=$compId · ${refPts.size} punts")
                 } else {
                     competing = true
-                    if (cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
+                    if (prefs.ghostEnabled && cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
                         ghostEngine = cat.rumb.app.data.competition.GhostEngine(refPts)
                     }
                     pendingRouteRefPts = refPts
@@ -492,6 +492,12 @@ class MapViewerActivity : ComponentActivity() {
                                     DebugLog.i("UI", "quick-settings · compte enrere de volta → $b")
                                     prefs.lapCountdown = b
                                 },
+                                ghostEnabled = prefs.ghostEnabled,
+                                onGhostEnabled = { b ->
+                                    DebugLog.i("UI", "quick-settings · fantasma → $b")
+                                    prefs.ghostEnabled = b
+                                    applyGhostEnabled(b)
+                                },
                             )
                         }
                         val pendingSave by saveDialogFlow.collectAsState()
@@ -526,20 +532,6 @@ class MapViewerActivity : ComponentActivity() {
                         // Circuit lap countdown: nothing to cancel — it tracks the finish line.
                         val lapCountdown by lapCountdownFlow.collectAsState()
                         lapCountdown?.let { value -> CountdownOverlay(value) {} }
-                        // "Race your laps?" prompt on the 2nd (or later) lap. Shown over map and Dades.
-                        val showCompete by competePromptFlow.collectAsState()
-                        if (showCompete) {
-                            LapCompetePrompt(
-                                onYes = {
-                                    lapCompeting = true
-                                    competePromptFlow.value = false
-                                    DebugLog.i("Record", "carrera de vueltas activada")
-                                    refreshRecordingHud()
-                                },
-                                onNo = { competePromptFlow.value = false },
-                                modifier = Modifier.align(Alignment.TopCenter).padding(top = 56.dp),
-                            )
-                        }
                         // Sport mode: asked once, before the first recording.
                         val askSport by sportPickerFlow.collectAsState()
                         if (askSport) {
@@ -874,6 +866,32 @@ class MapViewerActivity : ComponentActivity() {
         DebugLog.i("Viewer", "esport actiu → $sportId")
     }
 
+    /**
+     * Applies the ghost setting without leaving the viewer. Turning it off drops whatever is being
+     * chased right now; turning it back on re-seeds a competition's ghost from the reference already
+     * parsed at entry ([pendingRouteRefPts]). A free lap ghost isn't re-seeded here — it rebuilds
+     * itself from the next completed lap.
+     */
+    private fun applyGhostEnabled(on: Boolean) {
+        if (!on) {
+            lapCompeting = false
+            lapGhost = null
+            ghostEngine = null
+            controller?.setGhost(null)
+        } else if (competitionId > 0) {
+            val refPts = pendingRouteRefPts
+            if (refPts != null && cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
+                if (circuitMode) {
+                    lapGhost = cat.rumb.app.data.competition.GhostEngine(refPts)
+                    lapCompeting = true
+                } else {
+                    ghostEngine = cat.rumb.app.data.competition.GhostEngine(refPts)
+                }
+            }
+        }
+        refreshRecordingHud()
+    }
+
     /** Best current GPS accuracy (m): prefers the hot warm-GPS fix, falls back to the map component. */
     private fun bestAccuracyM(ctrl: MapLibreController): Float? {
         val warm = lastWarmAccuracyM
@@ -935,13 +953,16 @@ class MapViewerActivity : ComponentActivity() {
         announceScheduler?.reset()
         announcedTurns.clear()
         offRouteAlerter.reset()
-        // Lap racing is per-recording and ephemeral.
-        lapCompeting = false
-        lapGhost = null
-        bestLapMs = null
+        // A free lap ghost is built from THIS recording's best lap, so it must not survive into the
+        // next one. A competition's ghost is the opposite: seeded from its stored reference when the
+        // viewer entered the competition, and there is nothing to rebuild it afterwards — wiping it
+        // here left every LAP competition ghostless the moment you pressed record.
+        if (!circuitMode) {
+            lapCompeting = false
+            lapGhost = null
+            bestLapMs = null
+        }
         lastSeenLapCount = 0
-        lapCompetePrompted = false
-        competePromptFlow.value = false
         requestNotificationPermission()
         DebugLog.i("Record", "native start")
         RecordingService.start(this)
@@ -1455,16 +1476,14 @@ class MapViewerActivity : ComponentActivity() {
                             DebugLog.i("Record", "ghost de vuelta actualizado · millor ${lastLap}ms")
                         }
                     }
-                    // Not for distance splits: chasing "your best km" on a point-to-point run is
-                    // nonsense, and with splits on this would ask on every single outing. The prompt
-                    // is for going round the same loop, where laps are actually comparable.
-                    val distanceSplits = ViewerPreferences.get(this@MapViewerActivity)
-                        .autoLapEveryMFor(ViewerPreferences.get(this@MapViewerActivity).activeSportId) > 0f
-                    if (ls.lapCount >= 2 && !lapCompeting && !lapCompetePrompted &&
-                        lapGhost != null && !distanceSplits
-                    ) {
-                        competePromptFlow.value = true
-                        lapCompetePrompted = true
+                    // Chase the best lap as soon as there is one — no prompt, just the setting.
+                    // Still not for distance splits: those laps are kilometres of a point-to-point
+                    // run, not trips round the same loop, so "your best km" is nothing to race.
+                    val prefs = ViewerPreferences.get(this@MapViewerActivity)
+                    val distanceSplits = prefs.autoLapEveryMFor(prefs.activeSportId) > 0f
+                    if (prefs.ghostEnabled && !lapCompeting && lapGhost != null && !distanceSplits) {
+                        lapCompeting = true
+                        DebugLog.i("Record", "carrera de vueltas activada · ghost ${bestLapMs}ms")
                     }
                 }
             }
@@ -1738,36 +1757,6 @@ private fun StartPointPill(state: MapViewerActivity.StartPointState, modifier: a
             .background(bg)
             .padding(horizontal = 16.dp, vertical = 8.dp),
     )
-}
-
-/** Transient "race your laps?" prompt shown on the 2nd+ lap (over map or Dades). */
-@Composable
-private fun LapCompetePrompt(onYes: () -> Unit, onNo: () -> Unit, modifier: androidx.compose.ui.Modifier) {
-    androidx.compose.foundation.layout.Column(
-        modifier
-            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
-            .background(androidx.compose.ui.graphics.Color(0xF21D3557))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-    ) {
-        androidx.compose.material3.Text(
-            androidx.compose.ui.res.stringResource(R.string.lap_compete_prompt),
-            color = androidx.compose.ui.graphics.Color.White,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-        )
-        androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
-            androidx.compose.material3.TextButton(onClick = onNo) {
-                androidx.compose.material3.Text(
-                    androidx.compose.ui.res.stringResource(R.string.lap_compete_no),
-                    color = androidx.compose.ui.graphics.Color.White,
-                )
-            }
-            androidx.compose.material3.Button(onClick = onYes) {
-                androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.lap_compete_yes))
-            }
-        }
-    }
 }
 
 /** Asks what you're about to do. Reuses the save dialog's catalogue, so no new icons or strings. */

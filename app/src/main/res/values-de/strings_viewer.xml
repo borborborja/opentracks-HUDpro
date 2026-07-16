@@ -75,9 +75,6 @@
     <string name="data_record_start">Aufzeichnen</string>
     <string name="data_record_lap">Runde</string>
     <string name="data_record_lap_end">Runden beenden</string>
-    <string name="lap_compete_prompt">Gegen deine beste Runde antreten?</string>
-    <string name="lap_compete_yes">Antreten</string>
-    <string name="lap_compete_no">Nein</string>
     <string name="data_chart_speed">Tempodiagramm</string>
     <string name="data_chart_elevation">Höhenprofil</string>
     <string name="data_toggle_auto_pause">Auto-Pause</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">Die Sportart bestimmt HUD, Runden und womit du verglichen wirst.</string>
     <string name="viewer_qs_sport">Sportart</string>
     <string name="viewer_qs_sport_locked">Während der Aufzeichnung nicht änderbar.</string>
+    <string name="viewer_qs_ghost_enabled">Geist</string>
+    <string name="viewer_qs_ghost_enabled_help">Fahr gegen einen Geist, sobald es einen gibt: die Referenz des Wettkampfs ab der ersten Runde oder deine beste Runde der Tour.</string>
 </resources>

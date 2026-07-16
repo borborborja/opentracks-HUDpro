@@ -75,9 +75,6 @@
     <string name="data_record_start">Enregistrer</string>
     <string name="data_record_lap">Tour</string>
     <string name="data_record_lap_end">Fin des tours</string>
-    <string name="lap_compete_prompt">Courir contre votre meilleur tour ?</string>
-    <string name="lap_compete_yes">Concourir</string>
-    <string name="lap_compete_no">Non</string>
     <string name="data_chart_speed">Graphique de vitesse</string>
     <string name="data_chart_elevation">Profil altimétrique</string>
     <string name="data_toggle_auto_pause">Pause auto</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">Le sport définit le HUD, les tours et les efforts auxquels vous êtes comparé.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Non modifiable pendant l\'enregistrement.</string>
+    <string name="viewer_qs_ghost_enabled">Fantôme</string>
+    <string name="viewer_qs_ghost_enabled_help">Courez contre un fantôme dès qu\'il y en a un : la référence de la compétition dès le premier tour, ou votre meilleur tour de la sortie.</string>
 </resources>

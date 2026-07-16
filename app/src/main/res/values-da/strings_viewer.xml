@@ -75,9 +75,6 @@
     <string name="data_record_start">Optag</string>
     <string name="data_record_lap">Omgang</string>
     <string name="data_record_lap_end">Afslut omgange</string>
-    <string name="lap_compete_prompt">Kør mod din bedste omgang?</string>
-    <string name="lap_compete_yes">Konkurrér</string>
-    <string name="lap_compete_no">Nej</string>
     <string name="data_chart_speed">Fartdiagram</string>
     <string name="data_chart_elevation">Højdeprofil</string>
     <string name="data_toggle_auto_pause">Auto-pause</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">Sporten bestemmer HUD, omgange og hvad du sammenlignes med.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Kan ikke ændres under optagelse.</string>
+    <string name="viewer_qs_ghost_enabled">Spøgelse</string>
+    <string name="viewer_qs_ghost_enabled_help">Kør mod et spøgelse når der er et: konkurrencens reference fra første omgang, eller din bedste omgang på turen.</string>
 </resources>

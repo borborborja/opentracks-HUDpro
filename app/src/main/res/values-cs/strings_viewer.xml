@@ -75,9 +75,6 @@
     <string name="data_record_start">Nahrávat</string>
     <string name="data_record_lap">Okruh</string>
     <string name="data_record_lap_end">Ukončit okruhy</string>
-    <string name="lap_compete_prompt">Závodit s tvým nejlepším okruhem?</string>
-    <string name="lap_compete_yes">Soutěžit</string>
-    <string name="lap_compete_no">Ne</string>
     <string name="data_chart_speed">Graf rychlosti</string>
     <string name="data_chart_elevation">Výškový profil</string>
     <string name="data_toggle_auto_pause">Auto-pauza</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">Sport určuje HUD, kola a s čím tě porovnáváme.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Nelze změnit během záznamu.</string>
+    <string name="viewer_qs_ghost_enabled">Duch</string>
+    <string name="viewer_qs_ghost_enabled_help">Závoď s duchem, kdykoli nějaký je: reference závodu od prvního kola, nebo tvé nejlepší kolo výjezdu.</string>
 </resources>

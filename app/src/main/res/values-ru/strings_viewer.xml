@@ -75,9 +75,6 @@
     <string name="data_record_start">Запись</string>
     <string name="data_record_lap">Круг</string>
     <string name="data_record_lap_end">Завершить круги</string>
-    <string name="lap_compete_prompt">Гонка против лучшего круга?</string>
-    <string name="lap_compete_yes">Соревноваться</string>
-    <string name="lap_compete_no">Нет</string>
     <string name="data_chart_speed">График скорости</string>
     <string name="data_chart_elevation">Профиль высоты</string>
     <string name="data_toggle_auto_pause">Автопауза</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">Вид спорта задаёт HUD, круги и то, с чем вас сравнивают.</string>
     <string name="viewer_qs_sport">Вид спорта</string>
     <string name="viewer_qs_sport_locked">Нельзя изменить во время записи.</string>
+    <string name="viewer_qs_ghost_enabled">Призрак</string>
+    <string name="viewer_qs_ghost_enabled_help">Гонка с призраком, когда есть с кем: эталон соревнования с первого круга или ваш лучший круг за выезд.</string>
 </resources>

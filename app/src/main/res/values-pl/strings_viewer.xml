@@ -75,9 +75,6 @@
     <string name="data_record_start">Nagrywaj</string>
     <string name="data_record_lap">Okrążenie</string>
     <string name="data_record_lap_end">Zakończ okrążenia</string>
-    <string name="lap_compete_prompt">Ścigać się z najlepszym okrążeniem?</string>
-    <string name="lap_compete_yes">Rywalizuj</string>
-    <string name="lap_compete_no">Nie</string>
     <string name="data_chart_speed">Wykres prędkości</string>
     <string name="data_chart_elevation">Profil wysokości</string>
     <string name="data_toggle_auto_pause">Automatyczna pauza</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">Sport określa HUD, okrążenia i z czym jesteś porównywany.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Nie można zmienić podczas nagrywania.</string>
+    <string name="viewer_qs_ghost_enabled">Duch</string>
+    <string name="viewer_qs_ghost_enabled_help">Ścigaj się z duchem, gdy tylko jest: referencja zawodów od pierwszego okrążenia lub twoje najlepsze okrążenie wyjazdu.</string>
 </resources>

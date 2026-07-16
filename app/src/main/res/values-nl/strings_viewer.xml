@@ -75,9 +75,6 @@
     <string name="data_record_start">Opnemen</string>
     <string name="data_record_lap">Ronde</string>
     <string name="data_record_lap_end">Rondes beëindigen</string>
-    <string name="lap_compete_prompt">Racen tegen je beste ronde?</string>
-    <string name="lap_compete_yes">Racen</string>
-    <string name="lap_compete_no">Nee</string>
     <string name="data_chart_speed">Snelheidsgrafiek</string>
     <string name="data_chart_elevation">Hoogteprofiel</string>
     <string name="data_toggle_auto_pause">Auto-pauze</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">De sport bepaalt de HUD, de rondes en waarmee je wordt vergeleken.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Niet te wijzigen tijdens opnemen.</string>
+    <string name="viewer_qs_ghost_enabled">Ghost</string>
+    <string name="viewer_qs_ghost_enabled_help">Race tegen een ghost zodra er een is: de referentie van de competitie vanaf de eerste ronde, of je beste ronde van de rit.</string>
 </resources>

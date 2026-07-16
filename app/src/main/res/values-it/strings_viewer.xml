@@ -75,9 +75,6 @@
     <string name="data_record_start">Registra</string>
     <string name="data_record_lap">Giro</string>
     <string name="data_record_lap_end">Termina giri</string>
-    <string name="lap_compete_prompt">Gareggia col tuo miglior giro?</string>
-    <string name="lap_compete_yes">Gareggia</string>
-    <string name="lap_compete_no">No</string>
     <string name="data_chart_speed">Grafico velocità</string>
     <string name="data_chart_elevation">Profilo altimetrico</string>
     <string name="data_toggle_auto_pause">Pausa automatica</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">Lo sport determina l\'HUD, i parziali e con quali sforzi vieni confrontato.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Non modificabile durante la registrazione.</string>
+    <string name="viewer_qs_ghost_enabled">Fantasma</string>
+    <string name="viewer_qs_ghost_enabled_help">Gareggia contro un fantasma quando ce n\'è uno: il riferimento della gara dal primo giro, o il tuo miglior giro dell\'uscita.</string>
 </resources>

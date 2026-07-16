@@ -91,6 +91,8 @@ fun ViewerQuickSettings(
     onTurnVoice: (Boolean) -> Unit = {},
     lapCountdown: Boolean = false,
     onLapCountdown: (Boolean) -> Unit = {},
+    ghostEnabled: Boolean = true,
+    onGhostEnabled: (Boolean) -> Unit = {},
     lapManagement: Boolean = true,
     onLapManagement: (Boolean) -> Unit = {},
     autoLapByPosition: Boolean = false,
@@ -133,7 +135,7 @@ fun ViewerQuickSettings(
                 0 -> MapTab(selBase, offlineMaps) { id -> selBase = id; onSelectBaseMap(id) }
                 1 -> FollowTab(
                     selFollow, tracks, competitions, currentCompetitionId, turnVoice, onTurnVoice,
-                    lapCountdown, onLapCountdown, onStartCompetition,
+                    lapCountdown, onLapCountdown, ghostEnabled, onGhostEnabled, onStartCompetition,
                 ) { id -> selFollow = id; onSelectFollow(id) }
                 3 -> CompetitionQsTab(
                     ghostCandidates, opponentId, onSelectOpponent,
@@ -192,6 +194,8 @@ private fun FollowTab(
     onTurnVoice: (Boolean) -> Unit = {},
     lapCountdown: Boolean = false,
     onLapCountdown: (Boolean) -> Unit = {},
+    ghostEnabled: Boolean = true,
+    onGhostEnabled: (Boolean) -> Unit = {},
     onStartCompetition: (Long) -> Unit = {},
     onSelect: (Long) -> Unit,
 ) {
@@ -253,8 +257,15 @@ private fun FollowTab(
                 selected = c.id == currentCompetitionId,
             ) { onStartCompetition(c.id) }
         }
-        // Lap-only setting: it counts you into a circuit's finish line, so it belongs here.
+        // Racing settings: decided here, once, instead of asked while you're crossing the line.
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
+        var ghost by remember { mutableStateOf(ghostEnabled) }
+        ToggleRow(stringResource(R.string.viewer_qs_ghost_enabled), ghost) { ghost = it; onGhostEnabled(it) }
+        Text(
+            stringResource(R.string.viewer_qs_ghost_enabled_help),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
         var lapCd by remember { mutableStateOf(lapCountdown) }
         ToggleRow(stringResource(R.string.viewer_qs_lap_countdown), lapCd) { lapCd = it; onLapCountdown(it) }
         Text(

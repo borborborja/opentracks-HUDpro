@@ -75,9 +75,6 @@
     <string name="data_record_start">Înregistrează</string>
     <string name="data_record_lap">Tură</string>
     <string name="data_record_lap_end">Termină turele</string>
-    <string name="lap_compete_prompt">Cursă cu cea mai bună tură?</string>
-    <string name="lap_compete_yes">Concurează</string>
-    <string name="lap_compete_no">Nu</string>
     <string name="data_chart_speed">Grafic viteză</string>
     <string name="data_chart_elevation">Profil altimetric</string>
     <string name="data_toggle_auto_pause">Pauză automată</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">Sportul stabilește HUD-ul, tururile și cu ce ești comparat.</string>
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Nu poate fi schimbat în timpul înregistrării.</string>
+    <string name="viewer_qs_ghost_enabled">Fantomă</string>
+    <string name="viewer_qs_ghost_enabled_help">Concurează cu o fantomă ori de câte ori există una: referința competiției de la primul tur, sau cel mai bun tur al ieșirii.</string>
 </resources>

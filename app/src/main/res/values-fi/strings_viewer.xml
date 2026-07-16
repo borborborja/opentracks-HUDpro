@@ -75,9 +75,6 @@
     <string name="data_record_start">Tallenna</string>
     <string name="data_record_lap">Kierros</string>
     <string name="data_record_lap_end">Lopeta kierrokset</string>
-    <string name="lap_compete_prompt">Kilpaile parasta kierrostasi vastaan?</string>
-    <string name="lap_compete_yes">Kilpaile</string>
-    <string name="lap_compete_no">Ei</string>
     <string name="data_chart_speed">Nopeuskaavio</string>
     <string name="data_chart_elevation">Korkeusprofiili</string>
     <string name="data_toggle_auto_pause">Automaattinen tauko</string>
@@ -103,4 +100,6 @@
     <string name="viewer_sport_picker_help">Laji määrää HUDin, kierrokset ja mihin sinua verrataan.</string>
     <string name="viewer_qs_sport">Laji</string>
     <string name="viewer_qs_sport_locked">Ei voi vaihtaa tallennuksen aikana.</string>
+    <string name="viewer_qs_ghost_enabled">Haamu</string>
+    <string name="viewer_qs_ghost_enabled_help">Kilpaile haamua vastaan aina kun sellainen on: kilpailun vertailukierros ensimmäisestä kierroksesta tai lenkin paras kierroksesi.</string>
 </resources>

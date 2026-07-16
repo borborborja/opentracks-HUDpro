@@ -247,6 +247,15 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_LAP_COUNTDOWN, false)
         set(value) = prefs.edit().putBoolean(KEY_LAP_COUNTDOWN, value).apply()
 
+    /**
+     * Race a ghost whenever there is a reference to chase. Decided once here rather than asked
+     * mid-lap: the prompt it replaces popped up while crossing the line, the worst possible moment,
+     * and it could only appear on the 2nd lap — a competition's ghost is ready from the first one.
+     */
+    var ghostEnabled: Boolean
+        get() = prefs.getBoolean(KEY_GHOST_ENABLED, true)
+        set(value) = prefs.edit().putBoolean(KEY_GHOST_ENABLED, value).apply()
+
     /** User's weight (kg), drives the MET calorie estimate. */
     var userWeightKg: Int
         get() = prefs.getInt(KEY_USER_WEIGHT, 75)
@@ -452,6 +461,7 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_USER_WEIGHT = "user_weight_kg"
         private const val KEY_REC_COUNTDOWN = "rec_countdown"
         private const val KEY_LAP_COUNTDOWN = "lap_countdown"
+        private const val KEY_GHOST_ENABLED = "ghost_enabled"
         private const val KEY_ACTIVE_SPORT = "active_sport_id"
         private const val KEY_HUD_ADOPTED = "hud_layout_adopted"
         private const val KEY_LAST_INSTALL_ID = "last_install_work_id"
