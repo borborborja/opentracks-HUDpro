@@ -652,4 +652,165 @@ class TrackRecorderTest {
         assertThat(ranges.count { it.kind == cat.rumb.app.data.tracks.LapKind.LAP }).isEqualTo(2)
         assertThat(ranges.count { it.kind == cat.rumb.app.data.tracks.LapKind.RETURN }).isEqualTo(1)
     }
+
+    // --- Loop autodetection ---
+
+    private val mPerDegLat = 111_320.0
+    private fun eastDeg(m: Double) = m / (mPerDegLat * Math.cos(Math.toRadians(41.0)))
+    private fun northDeg(m: Double) = m / mPerDegLat
+
+    /** ~11 m-spaced (lat,lon) fixes along a straight leg between two (northM, eastM) offsets. */
+    private fun legFixes(from: Pair<Double, Double>, to: Pair<Double, Double>): List<Pair<Double, Double>> {
+        val distM = Math.hypot(to.first - from.first, to.second - from.second)
+        val steps = maxOf(1, (distM / 11.0).toInt())
+        return (1..steps).map { i ->
+            val n = from.first + (to.first - from.first) * i / steps
+            val e = from.second + (to.second - from.second) * i / steps
+            (41.0 + northDeg(n)) to (2.0 + eastDeg(e))
+        }
+    }
+
+    /** Fixes for one clockwise lap of a [side]-metre square from its SW corner. */
+    private fun squareFixes(side: Double): List<Pair<Double, Double>> =
+        legFixes(0.0 to 0.0, side to 0.0) + legFixes(side to 0.0, side to side) +
+            legFixes(side to side, 0.0 to side) + legFixes(0.0 to side, 0.0 to 0.0)
+
+    /** Feeds [fixes] one per second from [sec], returning the recorder (for chaining assertions). */
+    private fun TrackRecorder.feed(fixes: List<Pair<Double, Double>>, sec: LongArray): TrackRecorder {
+        for ((lat, lon) in fixes) { onLocation(lat, lon, 100.0, null, null, 5f, at(sec[0])); sec[0]++ }
+        return this
+    }
+
+    private fun TrackRecorder.leg(from: Pair<Double, Double>, to: Pair<Double, Double>, sec: LongArray) =
+        feed(legFixes(from, to), sec)
+
+    private fun TrackRecorder.square(side: Double, sec: LongArray) = feed(squareFixes(side), sec)
+
+    private fun loopCfg() = RecorderConfig(autoLapByPosition = true, autoDetectLoop = true, autoLapMinLapMs = 0)
+
+    /** Feeds fixes until the loop is detected; returns the snapshot at that fix. Fails if never. */
+    private fun TrackRecorder.feedUntilDetected(fixes: List<Pair<Double, Double>>, sec: LongArray): RecorderState {
+        for ((lat, lon) in fixes) {
+            onLocation(lat, lon, 100.0, null, null, 5f, at(sec[0])); sec[0]++
+            val s = snapshot(at(sec[0]))
+            if (s.detectedLoopM != null) return s
+        }
+        error("loop never detected")
+    }
+
+    @Test
+    fun detectingALoopOpensLapOneRetroactivelyAtTheStart() {
+        // An approach from "home" (500 m south) then two laps of a 400 m square. Detection fires on
+        // lap 2 and back-dates START to where the loop began, so the approach stays approach.
+        val r = TrackRecorder(loopCfg())
+        r.start(t0)
+        r.warmUp()
+        val sec = longArrayOf(0)
+        r.leg(-500.0 to 0.0, 0.0 to 0.0, sec) // approach: 500 m south → SW corner
+        r.square(400.0, sec)
+        val s = r.feedUntilDetected(squareFixes(400.0), sec) // second lap, stop the instant it fires
+
+        assertThat(s.lapCount).isEqualTo(2) // START(P0) + SPLIT(P1): you're a lap in
+        assertThat(s.lapMarks.count { it.type == LapMarkType.START }).isEqualTo(1)
+        assertThat(s.lapMarks.count { it.type == LapMarkType.SPLIT }).isEqualTo(1)
+        // The user's own words: the approach must not be swallowed into lap 1.
+        val ranges = cat.rumb.app.data.tracks.Laps.fromMarks(s.lapMarks, s.points().map { it.id })
+        assertThat(ranges.first().kind).isEqualTo(cat.rumb.app.data.tracks.LapKind.APPROACH)
+        assertThat(ranges.first { it.kind == cat.rumb.app.data.tracks.LapKind.LAP }.startIdx).isGreaterThan(0)
+    }
+
+    @Test
+    fun aDetectedLoopFeedsTheCoverageGuard() {
+        // After detection, the loop's length (~1600 m) is the yardstick. Give up ~90 m out from the
+        // line and come back: ~180 m is well under 80% of 1600, so it must NOT count — proving the
+        // guard read the detected length, not the 100 m fallback (which 180 m would clear).
+        val r = TrackRecorder(loopCfg())
+        r.start(t0)
+        r.warmUp()
+        val sec = longArrayOf(0)
+        r.square(400.0, sec)
+        r.feedUntilDetected(squareFixes(400.0), sec)
+        // Ride out to the SW line and give up 90 m past it.
+        r.leg(400.0 to 400.0, 0.0 to 0.0, sec) // finish lap 2 back at the line (a real split)
+        val splitsBefore = r.snapshot(at(sec[0])).lapMarks.count { it.type == LapMarkType.SPLIT }
+        r.leg(0.0 to 0.0, 90.0 to 0.0, sec)
+        r.leg(90.0 to 0.0, 0.0 to 0.0, sec)
+        val s = r.snapshot(at(sec[0]))
+        assertThat(s.lapMarks.count { it.type == LapMarkType.SPLIT }).isEqualTo(splitsBefore) // no new lap
+        assertThat(s.lapMarks.any { it.type == LapMarkType.ABORT }).isTrue()
+    }
+
+    @Test
+    fun outAndBackIsNeverDetectedAsALoop() {
+        // The star false-positive to avoid: 2 km out and back is a retrace, not a lap.
+        val r = TrackRecorder(loopCfg())
+        r.start(t0)
+        r.warmUp()
+        val sec = longArrayOf(0)
+        r.leg(0.0 to 0.0, 2000.0 to 0.0, sec)
+        r.leg(2000.0 to 0.0, 0.0 to 0.0, sec)
+        assertThat(r.snapshot(at(sec[0])).lapMarks).isEmpty()
+        assertThat(r.snapshot(at(sec[0])).lapsActive).isFalse()
+    }
+
+    @Test
+    fun aManualFlagStandsDetectionDown() {
+        // If you declare your own line, detection must not also fire and open a second block.
+        val r = TrackRecorder(loopCfg())
+        r.start(t0)
+        r.warmUp()
+        val sec = longArrayOf(0)
+        r.onLocation(41.0, 2.0, 100.0, null, null, 5f, at(sec[0])); sec[0]++
+        r.lap(at(sec[0])) // manual START at the SW corner
+        r.square(400.0, sec)
+        r.square(400.0, sec)
+        assertThat(r.snapshot(at(sec[0])).lapMarks.count { it.type == LapMarkType.START }).isEqualTo(1)
+    }
+
+    @Test
+    fun distanceSplitsDisableDetection() {
+        // Splits own the laps: start() opens the block immediately, so detection is gated out and the
+        // whole track is laps with no approach.
+        val cfg = RecorderConfig(autoLapByPosition = true, autoDetectLoop = true, autoLapEveryM = 1000.0)
+        val r = TrackRecorder(cfg)
+        r.start(t0)
+        r.warmUp()
+        val sec = longArrayOf(0)
+        r.square(400.0, sec)
+        r.square(400.0, sec)
+        val ranges = cat.rumb.app.data.tracks.Laps.fromMarks(
+            r.snapshot(at(sec[0])).lapMarks, r.snapshot(at(sec[0])).points().map { it.id },
+        )
+        assertThat(ranges.none { it.kind == cat.rumb.app.data.tracks.LapKind.APPROACH }).isTrue()
+    }
+
+    @Test
+    fun endLapsStopsRedetection() {
+        // End-Laps means "done with laps"; re-detecting on the next loop would be obnoxious.
+        val r = TrackRecorder(loopCfg())
+        r.start(t0)
+        r.warmUp()
+        val sec = longArrayOf(0)
+        r.square(400.0, sec)
+        r.square(400.0, sec) // detected
+        r.endLaps(at(sec[0]))
+        r.square(400.0, sec)
+        r.square(400.0, sec) // must not re-detect
+        assertThat(r.snapshot(at(sec[0])).lapsActive).isFalse()
+    }
+
+    @Test
+    fun theDetectedLoopLengthIsAnnouncedOnceThenCleared() {
+        val r = TrackRecorder(loopCfg())
+        r.start(t0)
+        r.warmUp()
+        val sec = longArrayOf(0)
+        r.square(400.0, sec)
+        val s = r.feedUntilDetected(squareFixes(400.0), sec)
+        assertThat(s.detectedLoopM).isNotNull() // the snapshot at the detecting fix carries it…
+        assertThat(s.detectedLoopM!!).isBetween(1400.0, 1800.0) // …and it's the loop, not two
+        // …the next fix clears it, so the banner shows once.
+        r.onLocation(41.0, 2.0, 100.0, null, null, 5f, at(sec[0])); sec[0]++
+        assertThat(r.snapshot(at(sec[0])).detectedLoopM).isNull()
+    }
 }

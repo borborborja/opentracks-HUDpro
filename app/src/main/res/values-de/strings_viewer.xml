@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">RUNDE %1$d</string>
     <string name="viewer_qs_section_laps">Runden</string>
     <string name="viewer_qs_section_ghost">Geist</string>
+    <string name="viewer_qs_auto_detect_loop">Runde automatisch erkennen</string>
+    <string name="viewer_qs_auto_detect_loop_help">Erkennt den Rundkurs an deiner Bewegung und startet dort die Runden — ohne Flaggendruck, und die Runde muss nicht am Aufzeichnungsstart beginnen. Andersherum: Flagge drücken.</string>
+    <string name="viewer_loop_detected">Runde erkannt · %1$s</string>
 </resources>

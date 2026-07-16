@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">ΓΥΡΟΣ %1$d</string>
     <string name="viewer_qs_section_laps">Γύροι</string>
     <string name="viewer_qs_section_ghost">Φάντασμα</string>
+    <string name="viewer_qs_auto_detect_loop">Αυτόματος εντοπισμός γύρου</string>
+    <string name="viewer_qs_auto_detect_loop_help">Βρίσκει τον γύρο από την κίνησή σου και ξεκινά εκεί τους γύρους — χωρίς σημαία, και ο βρόχος δεν χρειάζεται να ξεκινά εκεί που ξεκίνησε η καταγραφή. Αντίστροφα, πάτα τη σημαία.</string>
+    <string name="viewer_loop_detected">Εντοπίστηκε γύρος · %1$s</string>
 </resources>

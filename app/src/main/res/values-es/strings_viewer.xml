@@ -100,4 +100,7 @@
     <string name="lap_countdown_lap_ahead">VUELTA %1$d</string>
     <string name="viewer_qs_section_laps">Vueltas</string>
     <string name="viewer_qs_section_ghost">Fantasma</string>
+    <string name="viewer_qs_auto_detect_loop">Detectar el bucle automáticamente</string>
+    <string name="viewer_qs_auto_detect_loop_help">Encuentra el circuito por tu movimiento e inicia las vueltas allí — sin pulsar la bandera, y el bucle no tiene que empezar donde empieza el registro. Si lo haces al revés, pulsa la bandera.</string>
+    <string name="viewer_loop_detected">Bucle detectado · %1$s</string>
 </resources>

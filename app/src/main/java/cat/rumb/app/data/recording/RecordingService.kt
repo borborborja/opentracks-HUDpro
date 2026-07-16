@@ -447,6 +447,8 @@ class RecordingService : Service() {
             autoLapMinLapMs = if (prefs.circuitActive) prefs.circuitMinLapMs else 20_000,
             autoLapMinLapM = if (prefs.circuitActive) prefs.circuitMinLapM else 100.0,
             lapRefDistanceM = if (prefs.circuitActive) prefs.circuitRefDistanceM else 0.0,
+            // Only for free laps: a competition already has its line, and it forces circuitActive.
+            autoDetectLoop = prefs.autoDetectLoop && !prefs.circuitActive,
         )
 
         private const val ACTION_START = "cat.rumb.app.recording.START"

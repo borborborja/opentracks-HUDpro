@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">KOLO %1$d</string>
     <string name="viewer_qs_section_laps">Kola</string>
     <string name="viewer_qs_section_ghost">Duch</string>
+    <string name="viewer_qs_auto_detect_loop">Rozpoznat okruh automaticky</string>
+    <string name="viewer_qs_auto_detect_loop_help">Najde okruh z tvého pohybu a tam spustí kola — bez vlajky, a smyčka nemusí začínat tam, kde nahrávání. Opačným směrem stiskni vlajku.</string>
+    <string name="viewer_loop_detected">Okruh rozpoznán · %1$s</string>
 </resources>

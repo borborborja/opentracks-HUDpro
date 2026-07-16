@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">KIERROS %1$d</string>
     <string name="viewer_qs_section_laps">Kierrokset</string>
     <string name="viewer_qs_section_ghost">Haamu</string>
+    <string name="viewer_qs_auto_detect_loop">Tunnista kierros automaattisesti</string>
+    <string name="viewer_qs_auto_detect_loop_help">Löytää radan liikkeestäsi ja aloittaa kierrokset siitä — ei lippua, eikä lenkin tarvitse alkaa tallennuksen alusta. Toiseen suuntaan paina lippua.</string>
+    <string name="viewer_loop_detected">Kierros tunnistettu · %1$s</string>
 </resources>

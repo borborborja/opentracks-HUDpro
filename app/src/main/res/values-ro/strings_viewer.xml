@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">TURUL %1$d</string>
     <string name="viewer_qs_section_laps">Tururi</string>
     <string name="viewer_qs_section_ghost">Fantomă</string>
+    <string name="viewer_qs_auto_detect_loop">Detectează bucla automat</string>
+    <string name="viewer_qs_auto_detect_loop_help">Găsește circuitul din mișcarea ta și pornește tururile acolo — fără steag, iar bucla nu trebuie să înceapă unde a început înregistrarea. Invers, apasă steagul.</string>
+    <string name="viewer_loop_detected">Buclă detectată · %1$s</string>
 </resources>

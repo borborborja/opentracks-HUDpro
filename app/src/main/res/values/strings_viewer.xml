@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">LAP %1$d</string>
     <string name="viewer_qs_section_laps">Laps</string>
     <string name="viewer_qs_section_ghost">Ghost</string>
+    <string name="viewer_qs_auto_detect_loop">Auto-detect the loop</string>
+    <string name="viewer_qs_auto_detect_loop_help">Finds the circuit from your movement and starts laps at it — no flag press, and the loop needn\'t start where the recording did. Ride it the other way round and press the flag instead.</string>
+    <string name="viewer_loop_detected">Loop detected · %1$s</string>
 </resources>

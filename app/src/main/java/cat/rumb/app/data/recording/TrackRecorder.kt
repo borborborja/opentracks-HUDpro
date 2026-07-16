@@ -65,6 +65,12 @@ data class RecorderConfig(
      * 0 = unknown (an ad-hoc circuit with no reference): the old distance guard stands.
      */
     val lapRefDistanceM: Double = 0.0,
+    /**
+     * Detect a circuit from your movement and open laps at it, so you don't have to press the flag.
+     * Rides on [autoLapByPosition] (it seeds the same machinery); a competition's preset line and
+     * distance splits both win over it.
+     */
+    val autoDetectLoop: Boolean = false,
 )
 
 /** Immutable snapshot of an ongoing/finished native recording, consumed by the viewer pipeline. */
@@ -90,6 +96,12 @@ data class RecorderState(
      */
     val lapLine: GeoPoint? = null,
     val lapLineRadiusM: Double = 0.0,
+    /**
+     * Length (m) of a loop the engine just auto-detected, on the first snapshot after it fires;
+     * null otherwise. The viewer announces it once — without it the detection is invisible magic and
+     * you can't tell a real 780 m loop from a spurious 1.5 km one.
+     */
+    val detectedLoopM: Double? = null,
 ) {
     val isRecording: Boolean get() = !isFinished
     fun points(): List<Trackpoint> = segments.flatten()
@@ -158,6 +170,10 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
     private var lapsEnded = false
     /** Next exact multiple of [RecorderConfig.autoLapEveryM] at which a distance split is due. */
     private var nextSplitDistanceM = Double.MAX_VALUE
+
+    // Loop autodetection. Built lazily on the first fix that qualifies, dropped the moment it fires.
+    private var loopDetector: LoopDetector? = null
+    private var justDetectedLoopM: Double? = null // carried to the next snapshot, then cleared
 
     fun start(time: Instant) {
         check(startedAt == null) { "already started" }
@@ -251,6 +267,9 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         time: Instant,
     ): Trackpoint? {
         if (paused || finished || startedAt == null) return null
+        // The loop-detected banner rides on one snapshot (the publish right after the fix that
+        // fired); clear it as the next fix arrives so it announces once, not forever.
+        justDetectedLoopM = null
         if (accuracyM > config.maxAccuracyM) {
             DebugLog.d("Motor", "fix refusat: precisió ${fmt(accuracyM)}m > màx ${config.maxAccuracyM}m")
             return null
@@ -363,12 +382,41 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
             while (nextSplitDistanceM <= distanceM) nextSplitDistanceM += config.autoLapEveryM
         }
 
+        // Loop autodetection: seed the free-lap machinery when a circuit is detected, then get out.
+        // It equals "the user pressed the flag at P0, one lap ago", so everything after is the same
+        // path onLapLineProximity already handles — no fourth branch.
+        maybeDetectLoop(point.id, here, time)
+
         // The start/finish line, whichever kind it is. Two nearly identical copies of this used to
         // live here — a circuit one and a free one — and that is exactly how the free one was left
         // half-fixed: the coverage rule and the abandoned-lap handling only ever reached the circuit.
         // One line, one state machine, one set of rules.
         activeLapLine()?.let { onLapLineProximity(it, here, time) }
         return point
+    }
+
+    /**
+     * Runs the loop detector when armed, and on a match seeds laps RETROACTIVELY at the point the
+     * loop actually started (P0). START goes there — not "now" — so the approach leg from home stays
+     * APPROACH and lap 1 is the real loop; placing it now would swallow the whole first lap into the
+     * approach and lose its time. And SPLIT goes at P1: you are already a lap past P0, so lap 1 must
+     * close or the next crossing would make it a double lap. [requiredLapDistanceM] then reads the
+     * loop's length straight off these two marks — no reference to carry around.
+     */
+    private fun maybeDetectLoop(seq: Long, here: GeoPoint, time: Instant) {
+        if (!config.autoDetectLoop || !config.autoLapByPosition ||
+            config.presetLapLine != null || config.autoLapEveryM > 0.0 ||
+            lapsActive || lapsEnded
+        ) {
+            return
+        }
+        val det = loopDetector ?: LoopDetector().also { loopDetector = it }
+        val match = det.onFix(seq, here, distanceM, totalMs(time)) ?: return
+        loopDetector = null
+        startLapsAt(match.startSeq, match.startPoint, match.startDistM, match.startTotalMs)
+        splitAt(match.closeSeq, match.closeDistM, match.closeTotalMs)
+        justDetectedLoopM = match.lapLengthM
+        DebugLog.i("Motor", "bucle detectat · ${fmt(match.lapLengthM)}m · línia al punt #${match.startSeq}")
     }
 
     private fun totalMs(now: Instant): Long = (accumulatedActive + activeDuration(now)).inWholeMilliseconds
@@ -467,30 +515,45 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
         )
     }
 
-    /** Closes the current lap and opens the next. Shared by the manual flag and position auto-lap. */
-    private fun split(now: Instant) {
-        lastLapMs = totalMs(now) - lapStartTotalMs
-        lapMarks.add(LapMark(seq, distanceM, totalMs(now), LapMarkType.SPLIT))
+    /** Closes the current lap and opens the next, at the current fix. */
+    private fun split(now: Instant) = splitAt(seq, distanceM, totalMs(now))
+
+    /**
+     * Closes the current lap and opens the next at a GIVEN boundary, which loop detection places
+     * retroactively at an earlier point. `seq` here is that point's own id, whereas [split] passes
+     * the field `seq` (already incremented → the next point's id); under [Laps.fromMarks]' "first
+     * point with seq ≥ mark.seq" rule both land correctly, one point (~10 m) apart.
+     */
+    private fun splitAt(atSeq: Long, atDistM: Double, atTotalMs: Long) {
+        lastLapMs = atTotalMs - lapStartTotalMs
+        lapMarks.add(LapMark(atSeq, atDistM, atTotalMs, LapMarkType.SPLIT))
         lapCount++
-        lapStartDistanceM = distanceM
-        lapStartTotalMs = totalMs(now)
+        lapStartDistanceM = atDistM
+        lapStartTotalMs = atTotalMs
         DebugLog.i("Motor", "vuelta $lapCount · última ${lastLapMs}ms")
     }
 
-    /** Explicitly begins the lap block (also invoked by the first [lap] press). */
-    fun startLaps(now: Instant) {
+    /** Explicitly begins the lap block at the current fix (also invoked by the first [lap] press). */
+    fun startLaps(now: Instant) = startLapsAt(seq, lastLatLong, distanceM, totalMs(now))
+
+    /**
+     * Begins the lap block at a GIVEN point. Loop detection calls this with P0 — the point the loop
+     * started, one lap back — so the finish line and lap 1 are anchored there, not at the fix that
+     * happened to confirm the loop.
+     */
+    private fun startLapsAt(atSeq: Long, atPoint: GeoPoint?, atDistM: Double, atTotalMs: Long) {
         if (finished || lapsActive) return
         lapsActive = true
         lapCount = 1
         lastLapMs = null
-        lapStartDistanceM = distanceM
-        lapStartTotalMs = totalMs(now)
-        lapMarks.add(LapMark(seq, distanceM, totalMs(now), LapMarkType.START))
+        lapStartDistanceM = atDistM
+        lapStartTotalMs = atTotalMs
+        lapMarks.add(LapMark(atSeq, atDistM, atTotalMs, LapMarkType.START))
         // First distance boundary, measured from where the block actually opened.
-        nextSplitDistanceM = if (config.autoLapEveryM > 0) distanceM + config.autoLapEveryM else Double.MAX_VALUE
-        // Position auto-lap: the current spot is the start/finish line. Start disarmed so the first
-        // crossing can't fire until we've left the radius (and past the min-lap guards).
-        lapLine = lastLatLong
+        nextSplitDistanceM = if (config.autoLapEveryM > 0) atDistM + config.autoLapEveryM else Double.MAX_VALUE
+        // Position auto-lap: this spot is the start/finish line. Start disarmed so the first crossing
+        // can't fire until we've left the radius (and past the min-lap guards).
+        lapLine = atPoint
         lapLineArmed = false
         lapsEnded = false
         DebugLog.i("Motor", "vueltas iniciadas · vuelta 1" + if (config.autoLapByPosition) " · línia auto @${lapLine != null}" else "")
@@ -499,9 +562,11 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
     /** Ends the lap block: closes the current lap; what follows is the return (not a lap). */
     fun endLaps(now: Instant) {
         if (finished || !lapsActive) return
-        // Circuit mode: a lap ends when the meta is crossed, not when the button is pressed. Anchor
-        // END to the last crossing so the stretch from the meta to here becomes RETURN, not a lap.
-        if (config.presetLapLine != null) { endCircuitLapsAtLastCrossing(); return }
+        // Whenever a line owns the laps — a competition's preset OR a free/detected line — a lap ends
+        // by crossing the meta, not by pressing the button. Anchor END to the last crossing so the
+        // stretch from meta to here is RETURN, not a lap. Manual laps (no line) end here, at "now":
+        // there's no meta, your press defines them.
+        if (activeLapLine() != null) { endCircuitLapsAtLastCrossing(); return }
         lastLapMs = totalMs(now) - lapStartTotalMs
         lapMarks.add(LapMark(seq, distanceM, totalMs(now), LapMarkType.END))
         lapsActive = false
@@ -600,9 +665,9 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
 
     fun stop(time: Instant) {
         if (finished) return
-        // Circuit mode: if the user finishes without pressing "end laps" (or a few seconds after the
-        // last meta), close the lap block at that last crossing so the trailing stretch is a RETURN.
-        if (config.presetLapLine != null && lapsActive) endCircuitLapsAtLastCrossing()
+        // Line-owned laps: if the user finishes without "end laps" (or a few seconds after the last
+        // meta), close the block at that crossing so the trailing stretch is a RETURN, not a lap.
+        if (activeLapLine() != null && lapsActive) endCircuitLapsAtLastCrossing()
         accumulatedActive += activeDuration(time)
         activeSince = null
         finished = true
@@ -647,6 +712,7 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
             lapMarks = lapMarks.toList(),
             lapLine = activeLapLine(),
             lapLineRadiusM = config.autoLapRadiusM,
+            detectedLoopM = justDetectedLoopM,
         )
     }
 

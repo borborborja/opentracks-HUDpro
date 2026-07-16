@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">TOUR %1$d</string>
     <string name="viewer_qs_section_laps">Tours</string>
     <string name="viewer_qs_section_ghost">Fantôme</string>
+    <string name="viewer_qs_auto_detect_loop">Détecter la boucle automatiquement</string>
+    <string name="viewer_qs_auto_detect_loop_help">Trouve le circuit d\'après votre mouvement et y lance les tours — sans appuyer sur le drapeau, et la boucle peut commencer ailleurs qu\'au départ. En sens inverse, appuyez sur le drapeau.</string>
+    <string name="viewer_loop_detected">Boucle détectée · %1$s</string>
 </resources>

@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">RONDE %1$d</string>
     <string name="viewer_qs_section_laps">Rondes</string>
     <string name="viewer_qs_section_ghost">Ghost</string>
+    <string name="viewer_qs_auto_detect_loop">Detecteer de ronde automatisch</string>
+    <string name="viewer_qs_auto_detect_loop_help">Vindt het circuit uit je beweging en start daar de rondes — geen vlag, en de ronde hoeft niet te beginnen waar de opname begon. Andersom: druk op de vlag.</string>
+    <string name="viewer_loop_detected">Ronde gedetecteerd · %1$s</string>
 </resources>

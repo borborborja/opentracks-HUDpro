@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">КОЛО %1$d</string>
     <string name="viewer_qs_section_laps">Кола</string>
     <string name="viewer_qs_section_ghost">Привид</string>
+    <string name="viewer_qs_auto_detect_loop">Визначати коло автоматично</string>
+    <string name="viewer_qs_auto_detect_loop_help">Знаходить коло за твоїм рухом і відкриває там кола — без прапорця, і петля може починатися не там, де запис. У зворотний бік — натисни прапорець.</string>
+    <string name="viewer_loop_detected">Коло визначено · %1$s</string>
 </resources>

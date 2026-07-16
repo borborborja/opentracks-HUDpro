@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">VOLTA %1$d</string>
     <string name="viewer_qs_section_laps">Voltas</string>
     <string name="viewer_qs_section_ghost">Fantasma</string>
+    <string name="viewer_qs_auto_detect_loop">Detetar o circuito automaticamente</string>
+    <string name="viewer_qs_auto_detect_loop_help">Encontra o circuito pelo teu movimento e inicia as voltas aí — sem premir a bandeira, e o circuito não tem de começar onde começa a gravação. Ao contrário, prime a bandeira.</string>
+    <string name="viewer_loop_detected">Circuito detetado · %1$s</string>
 </resources>

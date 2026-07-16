@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">TUR %1$d</string>
     <string name="viewer_qs_section_laps">Turlar</string>
     <string name="viewer_qs_section_ghost">Hayalet</string>
+    <string name="viewer_qs_auto_detect_loop">Turu otomatik algıla</string>
+    <string name="viewer_qs_auto_detect_loop_help">Pistin turunu hareketinden bulur ve turları orada başlatır — bayrak yok, ve döngü kaydın başladığı yerde başlamak zorunda değil. Ters yönde bayrağa bas.</string>
+    <string name="viewer_loop_detected">Tur algılandı · %1$s</string>
 </resources>

@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">КРУГ %1$d</string>
     <string name="viewer_qs_section_laps">Круги</string>
     <string name="viewer_qs_section_ghost">Призрак</string>
+    <string name="viewer_qs_auto_detect_loop">Определять круг автоматически</string>
+    <string name="viewer_qs_auto_detect_loop_help">Находит круг по вашему движению и открывает там круги — без флажка, и петля может начинаться не там, где запись. В обратную сторону — нажмите флажок.</string>
+    <string name="viewer_loop_detected">Круг определён · %1$s</string>
 </resources>

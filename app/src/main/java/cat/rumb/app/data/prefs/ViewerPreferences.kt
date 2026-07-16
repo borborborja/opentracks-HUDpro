@@ -92,6 +92,11 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         get() = prefs.getBoolean(KEY_AUTO_LAP_BY_POSITION, false)
         set(value) = prefs.edit().putBoolean(KEY_AUTO_LAP_BY_POSITION, value).apply()
 
+    /** Find the circuit from your movement and open laps at it — no flag press, no meta at the start. */
+    var autoDetectLoop: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_DETECT_LOOP, false)
+        set(value) = prefs.edit().putBoolean(KEY_AUTO_DETECT_LOOP, value).apply()
+
     // Transient circuit-mode config, set by the viewer before starting a circuit recording and read
     // by RecordingService.configFrom. Doubles are stored via raw long bits (SharedPreferences lacks
     // Double) to keep lat/lng precision. Cleared on save/stop.
@@ -446,6 +451,7 @@ class ViewerPreferences private constructor(private val prefs: SharedPreferences
         private const val KEY_REC_AUTO_PAUSE = "rec_auto_pause"
         private const val KEY_LAP_MANAGEMENT = "lap_management"
         private const val KEY_AUTO_LAP_BY_POSITION = "auto_lap_by_position"
+        private const val KEY_AUTO_DETECT_LOOP = "auto_detect_loop"
         private const val KEY_CIRCUIT_ACTIVE = "circuit_active"
         private const val KEY_CIRCUIT_LAT = "circuit_line_lat"
         private const val KEY_CIRCUIT_LNG = "circuit_line_lng"

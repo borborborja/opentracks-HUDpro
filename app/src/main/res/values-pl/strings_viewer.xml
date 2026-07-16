@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">OKRĄŻENIE %1$d</string>
     <string name="viewer_qs_section_laps">Okrążenia</string>
     <string name="viewer_qs_section_ghost">Duch</string>
+    <string name="viewer_qs_auto_detect_loop">Wykryj pętlę automatycznie</string>
+    <string name="viewer_qs_auto_detect_loop_help">Znajduje pętlę z twojego ruchu i tam startuje okrążenia — bez flagi, a pętla nie musi zaczynać się tam, gdzie nagranie. W drugą stronę użyj flagi.</string>
+    <string name="viewer_loop_detected">Wykryto pętlę · %1$s</string>
 </resources>

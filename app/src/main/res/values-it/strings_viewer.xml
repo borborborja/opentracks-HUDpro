@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">GIRO %1$d</string>
     <string name="viewer_qs_section_laps">Giri</string>
     <string name="viewer_qs_section_ghost">Fantasma</string>
+    <string name="viewer_qs_auto_detect_loop">Rileva il giro automaticamente</string>
+    <string name="viewer_qs_auto_detect_loop_help">Trova il circuito dal tuo movimento e avvia i giri lì — senza premere la bandiera, e il giro non deve iniziare dove inizia la registrazione. Al contrario, premi la bandiera.</string>
+    <string name="viewer_loop_detected">Giro rilevato · %1$s</string>
 </resources>

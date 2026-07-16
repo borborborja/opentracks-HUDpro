@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">VARV %1$d</string>
     <string name="viewer_qs_section_laps">Varv</string>
     <string name="viewer_qs_section_ghost">Spöke</string>
+    <string name="viewer_qs_auto_detect_loop">Upptäck varvet automatiskt</string>
+    <string name="viewer_qs_auto_detect_loop_help">Hittar banan från din rörelse och startar varv där — ingen flagga, och slingan behöver inte börja där inspelningen gjorde. Åt andra hållet: tryck på flaggan.</string>
+    <string name="viewer_loop_detected">Varv upptäckt · %1$s</string>
 </resources>

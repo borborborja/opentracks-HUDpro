@@ -93,6 +93,8 @@ fun ViewerQuickSettings(
     onLapManagement: (Boolean) -> Unit = {},
     autoLapByPosition: Boolean = false,
     onAutoLapByPosition: (Boolean) -> Unit = {},
+    autoDetectLoop: Boolean = false,
+    onAutoDetectLoop: (Boolean) -> Unit = {},
     autoLapEveryM: Float = 0f,
     onAutoLapEveryM: (Float) -> Unit = {},
     sportLabel: String? = null,
@@ -115,6 +117,7 @@ fun ViewerQuickSettings(
     // come back showing its old value while the pref underneath was right.
     var lapMgmt by remember { mutableStateOf(lapManagement) }
     var autoLap by remember { mutableStateOf(autoLapByPosition) }
+    var detectLoop by remember { mutableStateOf(autoDetectLoop) }
     var lapEveryM by remember { mutableStateOf(autoLapEveryM) }
     var lapCd by remember { mutableStateOf(lapCountdown) }
     var ghost by remember { mutableStateOf(ghostEnabled) }
@@ -151,6 +154,8 @@ fun ViewerQuickSettings(
                     onLapManagement = { lapMgmt = it; onLapManagement(it) },
                     autoLapByPosition = autoLap,
                     onAutoLapByPosition = { autoLap = it; onAutoLapByPosition(it) },
+                    autoDetectLoop = detectLoop,
+                    onAutoDetectLoop = { detectLoop = it; onAutoDetectLoop(it) },
                     autoLapEveryM = lapEveryM,
                     onAutoLapEveryM = { lapEveryM = it; onAutoLapEveryM(it) },
                     halo = haloOn,
@@ -212,6 +217,8 @@ private fun FollowTab(
     onLapManagement: (Boolean) -> Unit = {},
     autoLapByPosition: Boolean = false,
     onAutoLapByPosition: (Boolean) -> Unit = {},
+    autoDetectLoop: Boolean = false,
+    onAutoDetectLoop: (Boolean) -> Unit = {},
     autoLapEveryM: Float = 0f,
     onAutoLapEveryM: (Float) -> Unit = {},
     halo: Boolean = true,
@@ -291,6 +298,8 @@ private fun FollowTab(
         onLapManagement = onLapManagement,
         autoLapByPosition = autoLapByPosition,
         onAutoLapByPosition = onAutoLapByPosition,
+        autoDetectLoop = autoDetectLoop,
+        onAutoDetectLoop = onAutoDetectLoop,
         autoLapEveryM = autoLapEveryM,
         onAutoLapEveryM = onAutoLapEveryM,
         lapCountdown = lapCountdown,
@@ -315,6 +324,8 @@ private fun LapsSection(
     onLapManagement: (Boolean) -> Unit,
     autoLapByPosition: Boolean,
     onAutoLapByPosition: (Boolean) -> Unit,
+    autoDetectLoop: Boolean,
+    onAutoDetectLoop: (Boolean) -> Unit,
     autoLapEveryM: Float,
     onAutoLapEveryM: (Float) -> Unit,
     lapCountdown: Boolean,
@@ -331,6 +342,11 @@ private fun LapsSection(
     if (lapManagement) {
         ToggleRow(stringResource(R.string.viewer_qs_auto_lap), autoLapByPosition, onAutoLapByPosition)
         Hint(R.string.viewer_qs_auto_lap_help)
+        // Auto-detect needs a line to seed, which position auto-lap provides — so it nests here.
+        if (autoLapByPosition) {
+            ToggleRow(stringResource(R.string.viewer_qs_auto_detect_loop), autoDetectLoop, onAutoDetectLoop)
+            Hint(R.string.viewer_qs_auto_detect_loop_help)
+        }
         // Runner splits: a lap every N km, no buttons. Off (0) keeps laps fully manual.
         Hint(R.string.viewer_qs_auto_lap_distance)
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

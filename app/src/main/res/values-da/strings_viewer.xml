@@ -101,4 +101,7 @@
     <string name="lap_countdown_lap_ahead">OMGANG %1$d</string>
     <string name="viewer_qs_section_laps">Omgange</string>
     <string name="viewer_qs_section_ghost">Spøgelse</string>
+    <string name="viewer_qs_auto_detect_loop">Registrér omgangen automatisk</string>
+    <string name="viewer_qs_auto_detect_loop_help">Finder banen ud fra din bevægelse og starter omgange der — ingen flagtryk, og løkken behøver ikke starte, hvor optagelsen gjorde. Modsat vej: tryk på flaget.</string>
+    <string name="viewer_loop_detected">Omgang registreret · %1$s</string>
 </resources>

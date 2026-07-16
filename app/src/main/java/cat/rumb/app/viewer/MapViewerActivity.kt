@@ -461,6 +461,11 @@ class MapViewerActivity : ComponentActivity() {
                                     DebugLog.i("UI", "quick-settings · auto-lap posició → $b")
                                     prefs.autoLapByPosition = b
                                 },
+                                autoDetectLoop = prefs.autoDetectLoop,
+                                onAutoDetectLoop = { b ->
+                                    DebugLog.i("UI", "quick-settings · autodetecció de bucle → $b")
+                                    prefs.autoDetectLoop = b
+                                },
                                 sportLabel = prefs.activeSportId?.let {
                                     cat.rumb.app.manager.screens.activityTypeLabel(
                                         it,
@@ -1455,6 +1460,17 @@ class MapViewerActivity : ComponentActivity() {
                 if (s.startedLowAccuracy && !lowAccuracyToastShown) {
                     lowAccuracyToastShown = true
                     android.widget.Toast.makeText(this@MapViewerActivity, getString(R.string.rec_low_accuracy_start), android.widget.Toast.LENGTH_LONG).show()
+                }
+                // The engine sets this on exactly one snapshot when it auto-detects a loop, so the
+                // user can judge whether it caught the right circuit — otherwise it's silent magic.
+                s.detectedLoopM?.let { m ->
+                    val units = cat.rumb.app.viewer.hud.UnitsStore.load(ViewerPreferences.get(this@MapViewerActivity))
+                    val len = cat.rumb.app.viewer.hud.HudMetric.DISTANCE.value(LiveMetrics(distanceKm = m / 1000.0), units) +
+                        " " + units.distance.label
+                    android.widget.Toast.makeText(
+                        this@MapViewerActivity, getString(R.string.viewer_loop_detected, len),
+                        android.widget.Toast.LENGTH_LONG,
+                    ).show()
                 }
                 processUpdate(s.segments, emptyList(), s.statistics, s.isRecording, ctrl, isPaused = s.isPaused, lapSnapshot = s)
                 if (s.isFinished && saveDialogFlow.value == null) {
