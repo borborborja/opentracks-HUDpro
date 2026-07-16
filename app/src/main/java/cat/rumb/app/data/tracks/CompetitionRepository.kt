@@ -29,6 +29,19 @@ class CompetitionRepository(
     suspend fun setArchived(id: Long, flag: Boolean) = dao.setArchived(id, flag)
     suspend fun delete(id: Long) = withContext(Dispatchers.IO) { dao.deleteAttempts(id); dao.deleteCompetition(id) }
 
+    /**
+     * Removes a single attempt (lap) from a competition. If laps remain, re-points the ghost/best via
+     * [refreshReference] (so deleting the current best promotes the next). The last one leaves an empty
+     * competition whose reference line (for LAP circuits) is kept — the whole competition is deleted
+     * only from its overflow menu, never as a side effect here.
+     */
+    suspend fun deleteAttempt(competitionId: Long, attemptId: Long) = withContext(Dispatchers.IO) {
+        dao.deleteAttempt(attemptId)
+        if (dao.attemptsForOnce(competitionId).isNotEmpty()) {
+            refreshReference(competitionId, dao.getCompetition(competitionId)?.name ?: "")
+        }
+    }
+
     /** A lap slice with its computed time, ready to become a LAP attempt or the reference. */
     private data class LapSlice(val lapIndex: Int, val points: List<GpxPoint>, val stats: TrackStats, val timeMs: Long)
 

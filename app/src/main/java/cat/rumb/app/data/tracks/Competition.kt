@@ -101,4 +101,7 @@ interface CompetitionDao {
 
     @Query("DELETE FROM competition_attempts WHERE competition_id = :competitionId")
     suspend fun deleteAttempts(competitionId: Long)
+
+    @Query("DELETE FROM competition_attempts WHERE id = :id")
+    suspend fun deleteAttempt(id: Long)
 }

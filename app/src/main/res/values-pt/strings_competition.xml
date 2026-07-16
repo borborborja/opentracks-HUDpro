@@ -33,4 +33,5 @@
     <string name="competition_attempt_not_counted">Gravação guardada, mas não conta como tentativa da competição.</string>
     <string name="competition_attempt_wrong_sport">Gravação guardada, mas não conta: é um desporto diferente do da competição.</string>
     <string name="competition_attempt_lap_not_raced">Gravação guardada, mas não conta: nenhuma volta fez o circuito inteiro.</string>
+    <string name="competition_delete_lap_confirm">Delete this lap from the competition?</string>
 </resources>

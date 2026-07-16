@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
@@ -126,6 +127,7 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
     var menuOpen by remember { mutableStateOf(false) }
     var renameTo by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<CompetitionAttemptEntity?>(null) }
 
     Scaffold(
         topBar = {
@@ -200,7 +202,7 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                attempts.forEachIndexed { rank, a -> AttemptRow(rank + 1, a, bestMs) }
+                attempts.forEachIndexed { rank, a -> AttemptRow(rank + 1, a, bestMs, onDelete = { pendingDelete = a }) }
 
                 if (best != null && attempts.size >= 2) {
                     GapCard(best, attempts.filter { it.id != best.id }, pointsById)
@@ -245,6 +247,20 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
                 }) { Text(stringResource(R.string.home_delete)) }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.home_cancel)) } },
+        )
+    }
+    pendingDelete?.let { lap ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text(fmtTime(lap.timeMs)) },
+            text = { Text(stringResource(R.string.competition_delete_lap_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingDelete = null
+                    scope.launch { app.competitionRepository.deleteAttempt(competitionId, lap.id) }
+                }) { Text(stringResource(R.string.home_delete), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.home_cancel)) } },
         )
     }
 }
@@ -343,11 +359,11 @@ private fun HrZonesCard(attempts: List<CompetitionAttemptEntity>, pointsById: Ma
 }
 
 @Composable
-private fun AttemptRow(rank: Int, a: CompetitionAttemptEntity, bestMs: Long?) {
+private fun AttemptRow(rank: Int, a: CompetitionAttemptEntity, bestMs: Long?, onDelete: () -> Unit) {
     val isBest = bestMs != null && a.timeMs == bestMs
     Card {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -376,6 +392,14 @@ private fun AttemptRow(rank: Int, a: CompetitionAttemptEntity, bestMs: Long?) {
                 style = MaterialTheme.typography.labelMedium,
                 color = if (isBest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = stringResource(R.string.home_delete),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
         }
     }
 }
