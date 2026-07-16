@@ -37,6 +37,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -328,26 +329,24 @@ private fun TileConfigDialog(
                         label = { Text(stringResource(R.string.editor_show_graph)) },
                     )
                 }
+                Text(stringResource(R.string.editor_font_size, layout.scaleOf(field) * 100), style = MaterialTheme.typography.labelLarge)
+                Slider(
+                    value = layout.scaleOf(field),
+                    onValueChange = { onUpdate(layout.setScale(field, it)) },
+                    valueRange = DataLayout.MIN_TILE_SCALE..DataLayout.MAX_TILE_SCALE,
+                )
                 Text(stringResource(R.string.editor_value_color), style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    val palette = listOf(null, "#FFD166", "#E63946", "#2A9D8F", "#3A86FF", "#F4A261", "#9B5DE5")
-                    palette.forEach { hex ->
-                        val current = layout.colorOf(field)
-                        val isSel = current == hex || (hex == null && current == null)
-                        Box(
-                            Modifier
-                                .size(30.dp)
-                                .clip(CircleShape)
-                                .background(if (hex == null) MaterialTheme.colorScheme.onSurface else Color(android.graphics.Color.parseColor(hex)))
-                                .border(
-                                    if (isSel) 3.dp else 1.dp,
-                                    if (isSel) MaterialTheme.colorScheme.primary else Color.Gray,
-                                    CircleShape,
-                                )
-                                .clickable { onUpdate(layout.setColor(field, hex)) },
-                        )
-                    }
-                }
+                ColorPickerRow(
+                    current = layout.colorOf(field),
+                    noneSwatch = MaterialTheme.colorScheme.onSurface,
+                    onPick = { hex -> onUpdate(layout.setColor(field, hex)) },
+                )
+                Text(stringResource(R.string.editor_outline_color), style = MaterialTheme.typography.labelLarge)
+                ColorPickerRow(
+                    current = layout.borderOf(field),
+                    noneSwatch = Color.Transparent,
+                    onPick = { hex -> onUpdate(layout.setBorder(field, hex)) },
+                )
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.editor_done)) } },
@@ -524,6 +523,8 @@ private fun EditableTile(
                     unit = if (isClock) "" else metric?.unit(units) ?: "",
                     colorHex = layout.colorOf(field),
                     series = if (layout.hasGraph(field)) DATA_SAMPLE_SPARKLINE else null,
+                    scale = layout.scaleOf(field),
+                    borderHex = layout.borderOf(field),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

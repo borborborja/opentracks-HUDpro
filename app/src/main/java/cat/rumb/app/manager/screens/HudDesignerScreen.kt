@@ -307,28 +307,18 @@ private fun WidgetConfigDialog(
                 )
 
                 Text(stringResource(R.string.editor_value_color), style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    val palette = listOf(null, "#FFD166", "#E63946", "#2A9D8F", "#3A86FF", "#F4A261", "#9B5DE5")
-                    palette.forEach { hex ->
-                        val current = widget.options[HudOption.COLOR]
-                        val selected = current == hex || (hex == null && current == null)
-                        Box(
-                            Modifier
-                                .size(30.dp)
-                                .clip(androidx.compose.foundation.shape.CircleShape)
-                                .background(
-                                    if (hex == null) Color.White
-                                    else Color(android.graphics.Color.parseColor(hex)),
-                                )
-                                .border(
-                                    if (selected) 3.dp else 1.dp,
-                                    if (selected) MaterialTheme.colorScheme.primary else Color.Gray,
-                                    androidx.compose.foundation.shape.CircleShape,
-                                )
-                                .clickable { onUpdate(layout.setWidgetOption(index, HudOption.COLOR, hex)) },
-                        )
-                    }
-                }
+                ColorPickerRow(
+                    current = widget.options[HudOption.COLOR],
+                    noneSwatch = Color.White,
+                    onPick = { hex -> onUpdate(layout.setWidgetOption(index, HudOption.COLOR, hex)) },
+                )
+
+                Text(stringResource(R.string.editor_outline_color), style = MaterialTheme.typography.labelLarge)
+                ColorPickerRow(
+                    current = widget.options[HudOption.BORDER],
+                    noneSwatch = Color.Transparent,
+                    onPick = { hex -> onUpdate(layout.setWidgetOption(index, HudOption.BORDER, hex)) },
+                )
 
                 // History chart toggle (metrics with a live series).
                 val chartable = element?.metric in setOf(

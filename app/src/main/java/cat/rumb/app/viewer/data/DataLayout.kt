@@ -18,12 +18,28 @@ data class DataLayout(
     val spans: Map<String, Int> = emptyMap(),
     /** Value-text color ("#RRGGBB") per metric name; absent = theme default. */
     val colors: Map<String, String> = emptyMap(),
+    /** Per-tile font size multiplier; absent = 1 (mirror of HudWidget.scale). */
+    val scales: Map<String, Float> = emptyMap(),
+    /** Coloured outline ("#RRGGBB") per metric name; absent = no outline. */
+    val borders: Map<String, String> = emptyMap(),
     /** Clock tile format: 24 h (default) or 12 h. */
     val clockH24: Boolean = true,
     /** Field ids showing a mini-sparkline under the value (series-backed metrics only). */
     val graphs: Set<String> = emptySet(),
 ) {
     fun colorOf(field: String): String? = colors[field]
+
+    /** Effective font-size multiplier of [field], clamped to a sane range. */
+    fun scaleOf(field: String): Float = (scales[field] ?: 1f).coerceIn(MIN_TILE_SCALE, MAX_TILE_SCALE)
+
+    fun setScale(field: String, scale: Float): DataLayout =
+        copy(scales = scales + (field to scale.coerceIn(MIN_TILE_SCALE, MAX_TILE_SCALE)))
+
+    fun borderOf(field: String): String? = borders[field]
+
+    /** Sets (or clears with null) the outline colour of [field]. */
+    fun setBorder(field: String, hex: String?): DataLayout =
+        copy(borders = if (hex == null) borders - field else borders + (field to hex))
 
     fun hasGraph(field: String): Boolean = field in graphs
 
@@ -81,6 +97,10 @@ data class DataLayout(
         if (showClock && CLOCK !in fields) copy(fields = fields + CLOCK) else this
 
     companion object {
+        /** Font-size multiplier bounds, matching the HUD widget range. */
+        const val MIN_TILE_SCALE = 0.6f
+        const val MAX_TILE_SCALE = 2.2f
+
         /** Field id of the clock tile (orderable/resizable like a metric). */
         const val CLOCK = "CLOCK"
 

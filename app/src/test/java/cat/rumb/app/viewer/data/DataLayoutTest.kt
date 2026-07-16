@@ -89,6 +89,37 @@ class DataLayoutTest {
     }
 
     @Test
+    fun tileFontScaleDefaultsToOneAndClamps() {
+        val layout = DataLayout(fields = listOf("SPEED"))
+        assertThat(layout.scaleOf("SPEED")).isEqualTo(1f) // untouched → 1
+        assertThat(layout.setScale("SPEED", 1.5f).scaleOf("SPEED")).isEqualTo(1.5f)
+        // Clamped to [MIN_TILE_SCALE, MAX_TILE_SCALE].
+        assertThat(layout.setScale("SPEED", 9f).scaleOf("SPEED")).isEqualTo(DataLayout.MAX_TILE_SCALE)
+        assertThat(layout.setScale("SPEED", 0.1f).scaleOf("SPEED")).isEqualTo(DataLayout.MIN_TILE_SCALE)
+    }
+
+    @Test
+    fun setBorderAddsAndClears() {
+        val layout = DataLayout(fields = listOf("SPEED"))
+        assertThat(layout.borderOf("SPEED")).isNull() // no outline by default
+        val outlined = layout.setBorder("SPEED", "#3A86FF")
+        assertThat(outlined.borderOf("SPEED")).isEqualTo("#3A86FF")
+        assertThat(outlined.setBorder("SPEED", null).borderOf("SPEED")).isNull()
+    }
+
+    @Test
+    fun scalesAndBordersRoundTrip() {
+        val layout = DataLayout(
+            fields = listOf("SPEED"),
+            scales = mapOf("SPEED" to 1.4f),
+            borders = mapOf("SPEED" to "#2A9D8F"),
+        )
+        val j = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+        val restored = j.decodeFromString(DataLayout.serializer(), j.encodeToString(DataLayout.serializer(), layout))
+        assertThat(restored).isEqualTo(layout)
+    }
+
+    @Test
     fun legacyJsonWithoutColorsAndClockDecodes() {
         val legacy = """{"fields":["SPEED"],"columns":2,"showClock":true,"spans":{"SPEED":2}}"""
         val decoded = Json { ignoreUnknownKeys = true }.decodeFromString(DataLayout.serializer(), legacy)

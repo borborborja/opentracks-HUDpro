@@ -1,6 +1,7 @@
 package cat.rumb.app.viewer.hud
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -294,6 +295,12 @@ private fun optionColor(options: Map<String, String>): Color =
         runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrNull()
     } ?: Color.White
 
+/** Outline color from the widget's options, or null when no outline is set. */
+private fun optionBorder(options: Map<String, String>): Color? =
+    options[HudOption.BORDER]?.let { hex ->
+        runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrNull()
+    }
+
 /** Amber pill shown while recording until the first precise GPS fix is accepted. */
 @Composable
 private fun GpsWaitingPill() {
@@ -327,11 +334,19 @@ private fun HudTile(metric: HudMetric, data: HudData, scale: Float, options: Map
     val units = data.units
     val unitLabel = metric.unit(units)
     val valueColor = optionColor(options)
+    val borderColor = optionBorder(options)
     val chartSeries = if (options[HudOption.CHART] == "1") seriesFor(metric, data) else emptyList()
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(14.dp))
             .background(Color(0xB0000000))
+            .then(
+                if (borderColor != null) {
+                    Modifier.border((2f * scale).dp, borderColor, RoundedCornerShape(14.dp))
+                } else {
+                    Modifier
+                },
+            )
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Text(
@@ -396,10 +411,18 @@ private fun ClockTile(scale: Float, options: Map<String, String>) {
             kotlinx.coroutines.delay(1000)
         }
     }
+    val borderColor = optionBorder(options)
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(14.dp))
             .background(Color(0xB0000000))
+            .then(
+                if (borderColor != null) {
+                    Modifier.border((2f * scale).dp, borderColor, RoundedCornerShape(14.dp))
+                } else {
+                    Modifier
+                },
+            )
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Text(

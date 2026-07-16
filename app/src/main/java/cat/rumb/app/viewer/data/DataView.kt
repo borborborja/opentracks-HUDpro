@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -65,6 +66,8 @@ private sealed interface Tile {
         val color: String?,
         val series: List<Float>?,
         override val span: Int,
+        val scale: Float = 1f,
+        val border: String? = null,
     ) : Tile
 
     data class Chart(val label: String, val series: List<Float>, val progress: Float?, val accent: Color, override val span: Int) : Tile
@@ -114,7 +117,10 @@ fun DataView(
         val span = layout.spanOf(field)
         when {
             field == DataLayout.CLOCK ->
-                Tile.Metric(context.getString(R.string.hudel_clock), clock, "", layout.colorOf(field), null, span)
+                Tile.Metric(
+                    context.getString(R.string.hudel_clock), clock, "", layout.colorOf(field), null, span,
+                    scale = layout.scaleOf(field), border = layout.borderOf(field),
+                )
             !data.following && field in followOnly -> null
             !data.competing && field in COMPETITION_FIELDS -> null
             DataChart.byId(field) != null -> {
@@ -145,6 +151,8 @@ fun DataView(
                     color = color,
                     series = if (layout.hasGraph(field)) seriesFor(field, data) else null,
                     span = span,
+                    scale = layout.scaleOf(field),
+                    border = layout.borderOf(field),
                 )
             }
         }
@@ -161,7 +169,7 @@ fun DataView(
             ) {
                 items(tiles, span = { GridItemSpan(it.span) }) { tile ->
                     when (tile) {
-                        is Tile.Metric -> DataTileContent(tile.label, tile.value, tile.unit, tile.color, series = tile.series)
+                        is Tile.Metric -> DataTileContent(tile.label, tile.value, tile.unit, tile.color, series = tile.series, scale = tile.scale, borderHex = tile.border)
                         is Tile.Chart -> ChartTile(tile.label, tile.series, tile.progress, tile.accent)
                         is Tile.Toggle -> {
                             togglesVersion // read so a tap (which bumps it) recomposes this switch
@@ -226,25 +234,38 @@ fun DataTileContent(
     colorHex: String?,
     modifier: Modifier = Modifier,
     series: List<Float>? = null,
+    scale: Float = 1f,
+    borderHex: String? = null,
 ) {
-    Card(modifier) {
+    val outline = borderHex?.let { hex ->
+        runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrNull()
+    }
+    val typo = MaterialTheme.typography
+    Card(modifier, border = outline?.let { BorderStroke((2f * scale).dp, it) }) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 label.uppercase(),
-                style = MaterialTheme.typography.labelMedium,
+                style = typo.labelMedium,
+                fontSize = typo.labelMedium.fontSize * scale,
                 color = MaterialTheme.colorScheme.primary,
             )
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     value,
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = typo.headlineMedium,
+                    fontSize = typo.headlineMedium.fontSize * scale,
                     fontWeight = FontWeight.Bold,
                     color = colorHex?.let { hex ->
                         runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrNull()
                     } ?: Color.Unspecified,
                 )
                 if (unit.isNotEmpty()) {
-                    Text(" $unit", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 4.dp))
+                    Text(
+                        " $unit",
+                        style = typo.bodySmall,
+                        fontSize = typo.bodySmall.fontSize * scale,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
                 }
             }
             if (series != null && series.size >= 2) {

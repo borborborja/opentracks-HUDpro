@@ -197,6 +197,8 @@ data class HudWidget(
 object HudOption {
     /** Hex color ("#RRGGBB") of the value text; absent = white. */
     const val COLOR = "color"
+    /** Hex color ("#RRGGBB") of a coloured outline around the widget; absent = no outline. */
+    const val BORDER = "border"
     /** "1" → show a mini history chart under the value (speed/FC/cadència/potència). */
     const val CHART = "chart"
     /** Clock format: "1" (default) = 24 h, "0" = 12 h. */
