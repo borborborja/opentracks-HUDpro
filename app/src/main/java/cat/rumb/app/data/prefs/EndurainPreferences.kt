@@ -111,6 +111,10 @@ class EndurainPreferences private constructor(
                     EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                     EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
                 )
-            }.getOrDefault(fallback)
+            }.getOrElse {
+                // Never crash, but this is a security downgrade — the password lands in plaintext.
+                cat.rumb.app.data.debug.DebugLog.e("Endurain", "magatzem xifrat no disponible · credencials en clar", it)
+                fallback
+            }
     }
 }
