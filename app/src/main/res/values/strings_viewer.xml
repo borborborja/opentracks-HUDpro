@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Screen-edge color halo</string>
     <string name="viewer_qs_halo_help">Green: you are ahead of the ghost. Red: you are behind. Blue: even (within ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Show estimated seconds</string>
-    <string name="viewer_toast_ghost_failed">Could not load the ghost (track without timestamps)</string>
     <string name="viewer_qs_countdown">3-2-1 countdown when starting</string>
     <string name="countdown_waiting_gps">Waiting for GPS signal…</string>
     <string name="countdown_go">GO!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Can\'t be changed while recording.</string>
     <string name="viewer_qs_ghost_enabled">Race a ghost</string>
-    <string name="viewer_qs_ghost_enabled_help">Race a ghost whenever there is one to chase: a competition\'s reference from the first lap, or your best lap of the outing.</string>
+    <string name="viewer_qs_ghost_enabled_help">Race a ghost whenever there is one to chase. It is rebuilt at every lap, so beating it means the next lap chases the new best.</string>
+    <string name="viewer_qs_ghost_competition">All attempts</string>
+    <string name="viewer_qs_ghost_competition_help">The fastest lap of every attempt in the competition, today\'s included: the moment you beat the record, the next lap chases your own lap instead. Ready from lap 1. Outside a competition there is no record, so your best lap of the outing is used.</string>
+    <string name="viewer_qs_ghost_session">This outing</string>
+    <string name="viewer_qs_ghost_session_help">Only your laps of today, ignoring the stored record. The first lap has no ghost — there is nothing to compare against yet — and from lap 2 it chases your best so far, updated as soon as you beat it.</string>
     <string name="lap_countdown_lap_ahead">LAP %1$d</string>
     <string name="viewer_qs_section_laps">Laps</string>
     <string name="viewer_qs_section_ghost">Ghost</string>

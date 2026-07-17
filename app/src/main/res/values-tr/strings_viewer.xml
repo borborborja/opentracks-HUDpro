@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Ekran kenarı renk halesi</string>
     <string name="viewer_qs_halo_help">Yeşil: hayaletin önündesin. Kırmızı: gerisindesin. Mavi: başabaş (±5 m içinde).</string>
     <string name="viewer_qs_ghost_seconds">Tahmini saniyeleri göster</string>
-    <string name="viewer_toast_ghost_failed">Hayalet yüklenemedi (zaman damgasız kayıt)</string>
     <string name="viewer_qs_countdown">Başlarken 3-2-1 geri sayım</string>
     <string name="countdown_waiting_gps">GPS sinyali bekleniyor…</string>
     <string name="countdown_go">BAŞLA!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Spor</string>
     <string name="viewer_qs_sport_locked">Kayıt sırasında değiştirilemez.</string>
     <string name="viewer_qs_ghost_enabled">Hayaletle yarış</string>
-    <string name="viewer_qs_ghost_enabled_help">Kovalayacak biri olduğunda hayaletle yarış: ilk turdan itibaren yarışın referansı ya da bu çıkıştaki en iyi turun.</string>
+    <string name="viewer_qs_ghost_enabled_help">Kovalayacak biri olduğunda hayaletle yarış. Her turda yeniden kurulur: onu geçersen bir sonraki tur yeni en iyi dereceyi kovalar.</string>
+    <string name="viewer_qs_ghost_competition">Tüm denemeler</string>
+    <string name="viewer_qs_ghost_competition_help">Yarışmadaki tüm denemelerin en hızlı turu, bugünküler dâhil: rekoru kırdığın anda bir sonraki tur kendi turunu kovalar. 1. turdan itibaren hazır. Yarışma dışında rekor yoktur, o zaman çıkışının en iyi turu kullanılır.</string>
+    <string name="viewer_qs_ghost_session">Bu çıkış</string>
+    <string name="viewer_qs_ghost_session_help">Yalnızca bugünkü turların, kayıtlı rekor yok sayılır. İlk turun hayaleti yoktur — henüz kıyaslayacak bir şey yok — ve 2. turdan itibaren o ana kadarki en iyini kovalar, geçtiğin anda güncellenir.</string>
     <string name="lap_countdown_lap_ahead">TUR %1$d</string>
     <string name="viewer_qs_section_laps">Turlar</string>
     <string name="viewer_qs_section_ghost">Hayalet</string>

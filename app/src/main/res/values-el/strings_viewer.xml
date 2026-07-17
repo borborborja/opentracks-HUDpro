@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Χρωματικό φωτοστέφανο στα άκρα οθόνης</string>
     <string name="viewer_qs_halo_help">Πράσινο: είστε μπροστά από το ghost. Κόκκινο: είστε πίσω. Μπλε: ισοπαλία (εντός ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Εμφάνιση εκτιμώμενων δευτερολέπτων</string>
-    <string name="viewer_toast_ghost_failed">Δεν ήταν δυνατή η φόρτωση του ghost (ίχνος χωρίς χρονικές σημάνσεις)</string>
     <string name="viewer_qs_countdown">Αντίστροφη μέτρηση 3-2-1 στην εκκίνηση</string>
     <string name="countdown_waiting_gps">Αναμονή σήματος GPS…</string>
     <string name="countdown_go">ΠΑΜΕ!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Άθλημα</string>
     <string name="viewer_qs_sport_locked">Δεν αλλάζει κατά την εγγραφή.</string>
     <string name="viewer_qs_ghost_enabled">Αγώνας με φάντασμα</string>
-    <string name="viewer_qs_ghost_enabled_help">Αγωνίσου με ένα φάντασμα όποτε υπάρχει: η αναφορά του αγώνα από τον πρώτο γύρο ή ο καλύτερος γύρος σου της εξόδου.</string>
+    <string name="viewer_qs_ghost_enabled_help">Τρέξε ενάντια σε φάντασμα όποτε υπάρχει. Ξαναχτίζεται σε κάθε γύρο: αν το νικήσεις, ο επόμενος γύρος κυνηγά τη νέα καλύτερη επίδοση.</string>
+    <string name="viewer_qs_ghost_competition">Όλες οι προσπάθειες</string>
+    <string name="viewer_qs_ghost_competition_help">Ο γρηγορότερος γύρος από όλες τις προσπάθειες του διαγωνισμού, μαζί με τους σημερινούς: μόλις σπάσεις το ρεκόρ, ο επόμενος γύρος κυνηγά τον δικό σου γύρο. Έτοιμο από τον 1ο γύρο. Εκτός διαγωνισμού δεν υπάρχει ρεκόρ, οπότε χρησιμοποιείται ο καλύτερος γύρος της εξόδου.</string>
+    <string name="viewer_qs_ghost_session">Αυτή η έξοδος</string>
+    <string name="viewer_qs_ghost_session_help">Μόνο οι σημερινοί σου γύροι, αγνοώντας το αποθηκευμένο ρεκόρ. Ο πρώτος γύρος δεν έχει φάντασμα — δεν υπάρχει ακόμη κάτι για σύγκριση — και από τον 2ο γύρο κυνηγά τον καλύτερό σου, που ανανεώνεται μόλις τον ξεπεράσεις.</string>
     <string name="lap_countdown_lap_ahead">ΓΥΡΟΣ %1$d</string>
     <string name="viewer_qs_section_laps">Γύροι</string>
     <string name="viewer_qs_section_ghost">Φάντασμα</string>

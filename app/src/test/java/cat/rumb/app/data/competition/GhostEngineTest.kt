@@ -53,7 +53,7 @@ class GhostEngineTest {
     fun activeTimeRebasedGhostFinishesAtBestLapTime() {
         // A lap ghost re-based to active time (pause gap compressed out, as buildActiveTimeLapPoints
         // does): 10 s of movement whose timestamps already exclude a 60 s recording pause. The ghost's
-        // total duration must equal the active lap time, so it "finishes" exactly at bestLapMs and the
+        // total duration must equal the active lap time, so it "finishes" exactly at that time and the
         // chaser (driven by pause-excluding currentLapTimeMs) sees no lag.
         val g = GhostEngine(steady(11)) // active timestamps 0..10 s
         assertThat(g.totalDurationMs).isEqualTo(10_000) // == active lap time, NOT 10 s + pause

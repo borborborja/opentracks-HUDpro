@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Кольорове сяйво по краях екрана</string>
     <string name="viewer_qs_halo_help">Зелений: ви попереду привида. Червоний: позаду. Синій: нарівні (у межах ±5 м).</string>
     <string name="viewer_qs_ghost_seconds">Показувати орієнтовні секунди</string>
-    <string name="viewer_toast_ghost_failed">Не вдалося завантажити привида (трек без міток часу)</string>
     <string name="viewer_qs_countdown">Відлік 3-2-1 на старті</string>
     <string name="countdown_waiting_gps">Очікування сигналу GPS…</string>
     <string name="countdown_go">СТАРТ!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Вид спорту</string>
     <string name="viewer_qs_sport_locked">Не можна змінити під час запису.</string>
     <string name="viewer_qs_ghost_enabled">Змагатися з привидом</string>
-    <string name="viewer_qs_ghost_enabled_help">Змагайся з привидом, коли є з ким: еталон змагання з першого кола або твоє найкраще коло за виїзд.</string>
+    <string name="viewer_qs_ghost_enabled_help">Змагайся з привидом, щойно є за ким гнатися. Він перебудовується на кожному колі: поб\'єш його — наступне коло женеться за новим найкращим часом.</string>
+    <string name="viewer_qs_ghost_competition">Усі спроби</string>
+    <string name="viewer_qs_ghost_competition_help">Найшвидше коло з усіх спроб змагання, разом із сьогоднішніми: щойно поб\'єш рекорд, наступне коло женеться за твоїм власним колом. Готовий з 1-го кола. Поза змаганням рекорду немає, тож береться твоє найкраще коло за виїзд.</string>
+    <string name="viewer_qs_ghost_session">Цей виїзд</string>
+    <string name="viewer_qs_ghost_session_help">Лише твої сьогоднішні кола, без збереженого рекорду. Перше коло не має привида — поки немає з чим порівнювати — а з 2-го кола він женеться за твоїм найкращим, оновлюючись, щойно ти його поб\'єш.</string>
     <string name="lap_countdown_lap_ahead">КОЛО %1$d</string>
     <string name="viewer_qs_section_laps">Кола</string>
     <string name="viewer_qs_section_ghost">Привид</string>

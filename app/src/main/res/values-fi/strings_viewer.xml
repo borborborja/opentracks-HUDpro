@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Näytön reunan värikehä</string>
     <string name="viewer_qs_halo_help">Vihreä: olet haamun edellä. Punainen: olet jäljessä. Sininen: tasan (±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Näytä arvioidut sekunnit</string>
-    <string name="viewer_toast_ghost_failed">Haamua ei voitu ladata (reitti ilman aikaleimoja)</string>
     <string name="viewer_qs_countdown">3-2-1-lähtölaskenta aloitettaessa</string>
     <string name="countdown_waiting_gps">Odotetaan GPS-signaalia…</string>
     <string name="countdown_go">LÄHDE!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Laji</string>
     <string name="viewer_qs_sport_locked">Ei voi vaihtaa tallennuksen aikana.</string>
     <string name="viewer_qs_ghost_enabled">Kilpaile haamua vastaan</string>
-    <string name="viewer_qs_ghost_enabled_help">Kilpaile haamua vastaan aina kun sellainen on: kilpailun vertailukierros ensimmäisestä kierroksesta tai lenkin paras kierroksesi.</string>
+    <string name="viewer_qs_ghost_enabled_help">Kilpaile haamua vastaan aina kun sellainen on. Se rakennetaan uudelleen joka kierroksella: jos voitat sen, seuraava kierros jahtaa uutta ennätystä.</string>
+    <string name="viewer_qs_ghost_competition">Kaikki yritykset</string>
+    <string name="viewer_qs_ghost_competition_help">Kilpailun kaikkien yritysten nopein kierros, tämänpäiväiset mukaan lukien: heti kun rikot ennätyksen, seuraava kierros jahtaa omaa kierrostasi. Valmiina kierroksesta 1. Kilpailun ulkopuolella ennätystä ei ole, joten käytetään lenkin parasta kierrosta.</string>
+    <string name="viewer_qs_ghost_session">Tämä lenkki</string>
+    <string name="viewer_qs_ghost_session_help">Vain tämän päivän kierroksesi, tallennettu ennätys sivuutetaan. Ensimmäisellä kierroksella ei ole haamua — vertailtavaa ei vielä ole — ja kierroksesta 2 se jahtaa siihenastista parastasi, joka päivittyy heti kun voitat sen.</string>
     <string name="lap_countdown_lap_ahead">KIERROS %1$d</string>
     <string name="viewer_qs_section_laps">Kierrokset</string>
     <string name="viewer_qs_section_ghost">Haamu</string>

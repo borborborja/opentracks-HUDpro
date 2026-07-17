@@ -178,17 +178,21 @@ class MapViewerActivity : ComponentActivity() {
 
     // Competition (ghost race) mode: race a previously recorded reference or one of its attempts.
     private var competing = false
-    private var ghostEngine: cat.rumb.app.data.competition.GhostEngine? = null
     private var ghostHaloOn = true
     private var ghostSecondsOn = true
+    private var ghostOn = true
+    private var ghostSource = cat.rumb.app.data.competition.GhostSource.COMPETITION
 
-    // Racing your laps. Two origins: a LAP competition seeds the ghost from its stored reference in
-    // onCreate (and owns it for the whole session), or — outside a competition — the best lap of the
-    // current recording becomes the ghost, re-based to each lap's start. No persistence either way:
-    // the saved track stays a normal lapped track. Gated by prefs.ghostEnabled, never by a prompt.
-    private var lapCompeting = false
-    private var lapGhost: cat.rumb.app.data.competition.GhostEngine? = null
-    private var bestLapMs: Long? = null
+    // The ghosts that MAY exist, rather than the one being chased: which one that is falls out of
+    // [GhostSource.pick], so there is no active-ghost field to keep in sync. Both lap ghosts are
+    // candidates on every lap — a lap you ride today is an attempt too, the leaderboard just doesn't
+    // know until you save — which is why beating the record promotes your own lap immediately.
+    /** ROUTE competition: the whole-track record. Null outside one. */
+    private var routeGhost: cat.rumb.app.data.competition.GhostEngine? = null
+    /** LAP competition: the record, i.e. the fastest lap of every attempt filed. Null outside one. */
+    private var lapRecordGhost: cat.rumb.app.data.competition.GhostEngine? = null
+    /** The best lap of THIS recording, re-based to each lap's start. Never persisted. */
+    private var sessionGhost: cat.rumb.app.data.competition.GhostEngine? = null
     private var lastSeenLapCount = 0
     /** Last arrow visibility pushed to the map, so the style is only re-applied when it changes. */
     private var lastArrowsShown: Boolean? = null
@@ -212,6 +216,21 @@ class MapViewerActivity : ComponentActivity() {
     // ROUTE competition: the inline reference route to draw once the map controller is ready.
     private var pendingRouteRefPts: List<cat.rumb.app.data.gpx.GpxPoint>? = null
     private var startPillStarted = false
+
+    /** The lap ghost to chase right now: the user's pick between the record and today's best lap. */
+    private val lapGhost: cat.rumb.app.data.competition.GhostEngine?
+        get() = cat.rumb.app.data.competition.GhostSource.pick(ghostSource, lapRecordGhost, sessionGhost, ghostOn)
+
+    private val ghostEngine: cat.rumb.app.data.competition.GhostEngine?
+        get() = routeGhost?.takeIf { ghostOn }
+
+    /**
+     * Racing a lap ghost: there is one to chase, and the laps are trips round the same loop. Distance
+     * splits are kilometres of a point-to-point run, so "your best km" is nothing to race — but a
+     * competition's laps are always line-driven, so they are exempt from that gate.
+     */
+    private val lapCompeting: Boolean
+        get() = lapGhost != null && (circuitMode || ViewerPreferences.get(this).let { it.autoLapEveryMFor(it.activeSportId) } <= 0f)
 
     /** Starts the competition pre-start pill once (idempotent — safe against the map/DB load race). */
     private fun maybeStartStartPill(ctrl: MapLibreController) {
@@ -246,6 +265,8 @@ class MapViewerActivity : ComponentActivity() {
         // someone who had turned the halo off still got one.
         ghostHaloOn = prefs.competitionHalo
         ghostSecondsOn = prefs.competitionShowSeconds
+        ghostOn = prefs.ghostEnabled
+        ghostSource = cat.rumb.app.data.competition.GhostSource.byName(prefs.ghostSource)
         val compId = intent.getLongExtra(EXTRA_COMPETITION_ID, -1L)
         if (compId > 0) {
             competitionId = compId
@@ -255,9 +276,8 @@ class MapViewerActivity : ComponentActivity() {
                 val refPts = runCatching { cat.rumb.app.data.gpx.Gpx.read(comp.referenceGpx.byteInputStream()).points }.getOrDefault(emptyList())
                 if (comp.type == cat.rumb.app.data.tracks.CompetitionType.LAP) {
                     circuitMode = true
-                    if (prefs.ghostEnabled && cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
-                        lapGhost = cat.rumb.app.data.competition.GhostEngine(refPts)
-                        lapCompeting = true
+                    if (cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
+                        lapRecordGhost = cat.rumb.app.data.competition.GhostEngine(refPts)
                     }
                     prefs.circuitLineLat = comp.lineLat ?: 0.0
                     prefs.circuitLineLng = comp.lineLng ?: 0.0
@@ -276,8 +296,8 @@ class MapViewerActivity : ComponentActivity() {
                     DebugLog.i("Competi", "mode competició LAP · id=$compId · ${refPts.size} punts")
                 } else {
                     competing = true
-                    if (prefs.ghostEnabled && cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
-                        ghostEngine = cat.rumb.app.data.competition.GhostEngine(refPts)
+                    if (cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
+                        routeGhost = cat.rumb.app.data.competition.GhostEngine(refPts)
                     }
                     pendingRouteRefPts = refPts
                     controller?.let {
@@ -541,6 +561,12 @@ class MapViewerActivity : ComponentActivity() {
                                     DebugLog.i("UI", "quick-settings · fantasma → $b")
                                     prefs.ghostEnabled = b
                                     applyGhostEnabled(b)
+                                },
+                                ghostSource = cat.rumb.app.data.competition.GhostSource.byName(prefs.ghostSource),
+                                onGhostSource = { s ->
+                                    DebugLog.i("UI", "quick-settings · origen del fantasma → $s")
+                                    prefs.ghostSource = s.name
+                                    applyGhostSource(s)
                                 },
                             )
                         }
@@ -1006,33 +1032,44 @@ class MapViewerActivity : ComponentActivity() {
     }
 
     /**
-     * Applies the ghost setting without leaving the viewer. Turning it off drops whatever is being
-     * chased right now; turning it back on re-seeds a competition's ghost from the reference already
-     * parsed at entry ([pendingRouteRefPts]).
-     *
-     * A free lap ghost cannot be re-seeded from anything stored, so it rebuilds itself from the next
-     * lap that beats [bestLapMs] — which is why turning the ghost off must clear that best too, or
-     * the next lap would have to beat a record whose ghost no longer exists.
+     * Applies the ghost settings without leaving the viewer. Nothing to re-seed on either: the ghost
+     * being chased is derived from the candidates ([lapGhost]), so switching only changes which one
+     * the next tick picks. The dot is cleared here because the tick that would move it only runs
+     * while recording — without this it would sit frozen wherever the old ghost left it.
      */
     private fun applyGhostEnabled(on: Boolean) {
-        if (!on) {
-            lapCompeting = false
-            lapGhost = null
-            bestLapMs = null
-            ghostEngine = null
-            controller?.setGhost(null)
-        } else if (competitionId > 0) {
-            val refPts = pendingRouteRefPts
-            if (refPts != null && cat.rumb.app.data.competition.GhostEngine.isTimed(refPts)) {
-                if (circuitMode) {
-                    lapGhost = cat.rumb.app.data.competition.GhostEngine(refPts)
-                    lapCompeting = true
-                } else {
-                    ghostEngine = cat.rumb.app.data.competition.GhostEngine(refPts)
-                }
-            }
-        }
+        ghostOn = on
+        controller?.setGhost(null)
         refreshRecordingHud()
+    }
+
+    private fun applyGhostSource(source: cat.rumb.app.data.competition.GhostSource) {
+        ghostSource = source
+        controller?.setGhost(null)
+        refreshRecordingHud()
+    }
+
+    /**
+     * Slices the just-closed lap and keeps it when it is the session's fastest so far. Runs for EVERY
+     * lap, competition or not: a lap you ride today is an attempt too — the leaderboard just doesn't
+     * know until you save — so beating the record must promote your own lap on the very next lap,
+     * not next time you enter the competition.
+     */
+    private fun rememberBestSessionLap(ls: cat.rumb.app.data.recording.RecorderState) {
+        // opensLap, not START|SPLIT: an ABORT opens a lap too. Miss it and the slice for
+        // START·ABORT·SPLIT spans the abandoned attempt AND the retry — a ghost whose shape and
+        // time disagree.
+        val opens = ls.lapMarks.filter { it.type.opensLap }
+        if (opens.size < 2) return
+        val slice = buildActiveTimeLapPoints(ls.segments, opens[opens.size - 2].seq, opens[opens.size - 1].seq)
+        if (!cat.rumb.app.data.competition.GhostEngine.isTimed(slice)) return
+        // Compare the ghosts by how long each takes to run its lap, rather than against the recorder's
+        // lastLapMs: that keeps a single clock — the slice's own — on both sides of the comparison.
+        sessionGhost = cat.rumb.app.data.competition.GhostSource.faster(
+            sessionGhost,
+            cat.rumb.app.data.competition.GhostEngine(slice),
+        )
+        DebugLog.i("Record", "millor volta de la sessió · ${sessionGhost?.totalDurationMs}ms")
     }
 
     /** Best current GPS accuracy (m): prefers the hot warm-GPS fix, falls back to the map component. */
@@ -1096,15 +1133,9 @@ class MapViewerActivity : ComponentActivity() {
         announceScheduler?.reset()
         announcedTurns.clear()
         offRouteAlerter.reset()
-        // A free lap ghost is built from THIS recording's best lap, so it must not survive into the
-        // next one. A competition's ghost is the opposite: seeded from its stored reference when the
-        // viewer entered the competition, and there is nothing to rebuild it afterwards — wiping it
-        // here left every LAP competition ghostless the moment you pressed record.
-        if (!circuitMode) {
-            lapCompeting = false
-            lapGhost = null
-            bestLapMs = null
-        }
+        // The session ghost is THIS recording's best lap, so it must not survive into the next one.
+        // A competition's record is stored and lives in its own field, so it needs no protecting here.
+        sessionGhost = null
         lastSeenLapCount = 0
         sensorWarnAcknowledged = false // the next recording gets its own sensor check
         requestNotificationPermission()
@@ -1465,28 +1496,6 @@ class MapViewerActivity : ComponentActivity() {
         cat.rumb.app.data.map.RoutePrefetchWorker.enqueue(this, trackId, src.id, minZ, maxZ)
     }
 
-    /** (Re)builds the ghost engine from track [id]'s GPX (fails on untimed tracks → toast). */
-    private fun loadGhost(id: Long) {
-        lifecycleScope.launch {
-            runCatching {
-                cat.rumb.app.data.competition.GhostEngine(
-                    RumbApplication.from(this@MapViewerActivity).trackRepository.loadGpxRoute(id),
-                )
-            }.onSuccess {
-                ghostEngine = it
-                DebugLog.i("Competi", "ghost carregat · id=$id · ${it.totalMeters.toInt()}m · ${it.totalDurationMs / 1000}s")
-            }.onFailure { e ->
-                ghostEngine = null
-                android.widget.Toast.makeText(
-                    this@MapViewerActivity,
-                    getString(R.string.viewer_toast_ghost_failed),
-                    android.widget.Toast.LENGTH_SHORT,
-                ).show()
-                DebugLog.w("Competi", "ghost fallit · id=$id · ${e.message}")
-            }
-        }
-    }
-
     /** True recording state: driven by the native engine. */
     private fun isRecordingNow(): Boolean = cat.rumb.app.data.recording.NativeRecording.isActive
 
@@ -1633,7 +1642,7 @@ class MapViewerActivity : ComponentActivity() {
             )
         }
 
-        // Lap racing: when a new lap starts, keep a ghost of the best previous lap and offer to race.
+        // Lap racing: every closed lap is a candidate ghost for the next one.
         lapSnapshot?.let { ls ->
             if (!ls.lapsActive) {
                 // Lap block ended (End-Laps): reset so a restarted block (lapCount → 1) is detected
@@ -1641,35 +1650,7 @@ class MapViewerActivity : ComponentActivity() {
                 lastSeenLapCount = 0
             } else if (ls.lapCount > lastSeenLapCount) {
                 lastSeenLapCount = ls.lapCount
-                // Slice the just-completed lap (between the last two open marks) and, if it's the
-                // fastest so far, make it the ghost to chase. In circuit mode the ghost is the
-                // circuit's stored best lap, so we never overwrite it from the current session.
-                if (!circuitMode) {
-                    // opensLap, not START|SPLIT: an ABORT opens a lap too. Miss it and the slice for
-                    // START·ABORT·SPLIT spans the abandoned attempt AND the retry, while lastLapMs
-                    // covers only the retry — a ghost whose shape and time disagree.
-                    val opens = ls.lapMarks.filter { it.type.opensLap }
-                    val lastLap = ls.lastLapMs
-                    if (opens.size >= 2 && lastLap != null && (bestLapMs == null || lastLap < bestLapMs!!)) {
-                        val startSeq = opens[opens.size - 2].seq
-                        val endSeq = opens[opens.size - 1].seq
-                        val slice = buildActiveTimeLapPoints(ls.segments, startSeq, endSeq)
-                        if (cat.rumb.app.data.competition.GhostEngine.isTimed(slice)) {
-                            bestLapMs = lastLap
-                            lapGhost = cat.rumb.app.data.competition.GhostEngine(slice)
-                            DebugLog.i("Record", "ghost de vuelta actualizado · millor ${lastLap}ms")
-                        }
-                    }
-                    // Chase the best lap as soon as there is one — no prompt, just the setting.
-                    // Still not for distance splits: those laps are kilometres of a point-to-point
-                    // run, not trips round the same loop, so "your best km" is nothing to race.
-                    val prefs = ViewerPreferences.get(this@MapViewerActivity)
-                    val distanceSplits = prefs.autoLapEveryMFor(prefs.activeSportId) > 0f
-                    if (prefs.ghostEnabled && !lapCompeting && lapGhost != null && !distanceSplits) {
-                        lapCompeting = true
-                        DebugLog.i("Record", "carrera de vueltas activada · ghost ${bestLapMs}ms")
-                    }
-                }
+                rememberBestSessionLap(ls)
             }
         }
 

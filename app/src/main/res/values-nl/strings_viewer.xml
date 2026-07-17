@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Kleurhalo langs schermrand</string>
     <string name="viewer_qs_halo_help">Groen: je ligt voor op de ghost. Rood: je ligt achter. Blauw: gelijk (binnen ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Geschatte seconden tonen</string>
-    <string name="viewer_toast_ghost_failed">Kan de ghost niet laden (track zonder tijdstempels)</string>
     <string name="viewer_qs_countdown">3-2-1-aftelling bij de start</string>
     <string name="countdown_waiting_gps">Wachten op GPS-signaal…</string>
     <string name="countdown_go">GO!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Niet te wijzigen tijdens opnemen.</string>
     <string name="viewer_qs_ghost_enabled">Race tegen een ghost</string>
-    <string name="viewer_qs_ghost_enabled_help">Race tegen een ghost zodra er een is: de referentie van de competitie vanaf de eerste ronde, of je beste ronde van de rit.</string>
+    <string name="viewer_qs_ghost_enabled_help">Race tegen een ghost zodra er een is. Hij wordt elke ronde opnieuw opgebouwd: versla je hem, dan jaagt de volgende ronde op de nieuwe besttijd.</string>
+    <string name="viewer_qs_ghost_competition">Alle pogingen</string>
+    <string name="viewer_qs_ghost_competition_help">De snelste ronde van alle pogingen in de competitie, die van vandaag inbegrepen: zodra je het record verbreekt, jaagt de volgende ronde op je eigen ronde. Klaar vanaf ronde 1. Buiten een competitie is er geen record en telt je beste ronde van de rit.</string>
+    <string name="viewer_qs_ghost_session">Deze rit</string>
+    <string name="viewer_qs_ghost_session_help">Alleen je rondes van vandaag, zonder het opgeslagen record. De eerste ronde heeft geen ghost — er is nog niets om je mee te vergelijken — en vanaf ronde 2 jaagt hij op je beste tot nu toe, bijgewerkt zodra je hem verslaat.</string>
     <string name="lap_countdown_lap_ahead">RONDE %1$d</string>
     <string name="viewer_qs_section_laps">Rondes</string>
     <string name="viewer_qs_section_ghost">Ghost</string>

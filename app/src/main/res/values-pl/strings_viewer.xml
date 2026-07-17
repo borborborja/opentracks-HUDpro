@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Kolorowa poświata przy krawędzi ekranu</string>
     <string name="viewer_qs_halo_help">Zielony: jesteś przed duchem. Czerwony: jesteś z tyłu. Niebieski: równo (w zakresie ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Pokaż szacowane sekundy</string>
-    <string name="viewer_toast_ghost_failed">Nie udało się wczytać ducha (ślad bez znaczników czasu)</string>
     <string name="viewer_qs_countdown">Odliczanie 3-2-1 na starcie</string>
     <string name="countdown_waiting_gps">Oczekiwanie na sygnał GPS…</string>
     <string name="countdown_go">START!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Nie można zmienić podczas nagrywania.</string>
     <string name="viewer_qs_ghost_enabled">Ścigaj się z duchem</string>
-    <string name="viewer_qs_ghost_enabled_help">Ścigaj się z duchem, gdy tylko jest: referencja zawodów od pierwszego okrążenia lub twoje najlepsze okrążenie wyjazdu.</string>
+    <string name="viewer_qs_ghost_enabled_help">Ścigaj się z duchem, kiedy tylko jest z kim. Jest przebudowywany na każdym okrążeniu: gdy go pobijesz, następne okrążenie goni nowy najlepszy czas.</string>
+    <string name="viewer_qs_ghost_competition">Wszystkie próby</string>
+    <string name="viewer_qs_ghost_competition_help">Najszybsze okrążenie ze wszystkich prób w zawodach, w tym dzisiejszych: gdy tylko pobijesz rekord, następne okrążenie goni twoje własne okrążenie. Gotowe od okrążenia 1. Poza zawodami nie ma rekordu, więc liczy się twoje najlepsze okrążenie wyjazdu.</string>
+    <string name="viewer_qs_ghost_session">Ten wyjazd</string>
+    <string name="viewer_qs_ghost_session_help">Tylko twoje dzisiejsze okrążenia, bez zapisanego rekordu. Pierwsze okrążenie nie ma ducha — nie ma jeszcze z czym porównywać — a od okrążenia 2 goni twoje najlepsze, aktualizowane gdy tylko je pobijesz.</string>
     <string name="lap_countdown_lap_ahead">OKRĄŻENIE %1$d</string>
     <string name="viewer_qs_section_laps">Okrążenia</string>
     <string name="viewer_qs_section_ghost">Duch</string>

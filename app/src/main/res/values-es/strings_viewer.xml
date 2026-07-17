@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Halo de color en el borde</string>
     <string name="viewer_qs_halo_help">Verde: vas por delante del fantasma. Rojo: vas por detrás. Azul: empate (dentro de ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Mostrar los segundos estimados</string>
-    <string name="viewer_toast_ghost_failed">No se ha podido cargar el fantasma (track sin marcas de tiempo)</string>
     <string name="viewer_qs_countdown">Cuenta atrás 3-2-1 al registrar</string>
     <string name="countdown_waiting_gps">Esperando señal GPS…</string>
     <string name="countdown_go">¡YA!</string>
@@ -96,7 +95,11 @@
     <string name="viewer_qs_sport">Deporte</string>
     <string name="viewer_qs_sport_locked">No se puede cambiar mientras grabas.</string>
     <string name="viewer_qs_ghost_enabled">Competir contra un fantasma</string>
-    <string name="viewer_qs_ghost_enabled_help">Compite contra un fantasma siempre que lo haya: la referencia de la competición desde la primera vuelta, o tu mejor vuelta de la salida.</string>
+    <string name="viewer_qs_ghost_enabled_help">Compite contra un fantasma siempre que lo haya. Se reconstruye en cada vuelta: si lo bates, la vuelta siguiente persigue la nueva mejor marca.</string>
+    <string name="viewer_qs_ghost_competition">Todos los intentos</string>
+    <string name="viewer_qs_ghost_competition_help">La vuelta más rápida de todos los intentos de la competición, incluidas las de hoy: en cuanto bates el récord, la vuelta siguiente persigue tu propia vuelta. Listo desde la vuelta 1. Fuera de una competición no hay récord y se usa tu mejor vuelta de la salida.</string>
+    <string name="viewer_qs_ghost_session">Esta salida</string>
+    <string name="viewer_qs_ghost_session_help">Solo tus vueltas de hoy, ignorando el récord guardado. La primera vuelta no tiene fantasma —aún no hay nada con que compararte— y desde la vuelta 2 persigue tu mejor, actualizada en cuanto la bates.</string>
     <string name="lap_countdown_lap_ahead">VUELTA %1$d</string>
     <string name="viewer_qs_section_laps">Vueltas</string>
     <string name="viewer_qs_section_ghost">Fantasma</string>

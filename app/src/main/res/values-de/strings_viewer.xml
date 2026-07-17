@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Farbiger Rand am Bildschirmrand</string>
     <string name="viewer_qs_halo_help">Grün: du bist vor dem Ghost. Rot: du bist zurück. Blau: gleichauf (innerhalb ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Geschätzte Sekunden anzeigen</string>
-    <string name="viewer_toast_ghost_failed">Ghost konnte nicht geladen werden (Track ohne Zeitstempel)</string>
     <string name="viewer_qs_countdown">3-2-1-Countdown beim Start</string>
     <string name="countdown_waiting_gps">Warte auf GPS-Signal…</string>
     <string name="countdown_go">LOS!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Sportart</string>
     <string name="viewer_qs_sport_locked">Während der Aufzeichnung nicht änderbar.</string>
     <string name="viewer_qs_ghost_enabled">Gegen einen Geist fahren</string>
-    <string name="viewer_qs_ghost_enabled_help">Fahr gegen einen Geist, sobald es einen gibt: die Referenz des Wettkampfs ab der ersten Runde oder deine beste Runde der Tour.</string>
+    <string name="viewer_qs_ghost_enabled_help">Tritt gegen einen Geist an, wann immer es einen gibt. Er wird bei jeder Runde neu aufgebaut: Schlägst du ihn, jagt die nächste Runde die neue Bestzeit.</string>
+    <string name="viewer_qs_ghost_competition">Alle Versuche</string>
+    <string name="viewer_qs_ghost_competition_help">Die schnellste Runde aller Versuche des Wettbewerbs, die von heute eingeschlossen: Sobald du den Rekord schlägst, jagt die nächste Runde deine eigene Runde. Ab Runde 1 bereit. Außerhalb eines Wettbewerbs gibt es keinen Rekord, dann zählt deine beste Runde der Ausfahrt.</string>
+    <string name="viewer_qs_ghost_session">Diese Ausfahrt</string>
+    <string name="viewer_qs_ghost_session_help">Nur deine Runden von heute, ohne den gespeicherten Rekord. Die erste Runde hat keinen Geist — es gibt noch nichts zum Vergleichen — und ab Runde 2 jagt sie deine bisher beste, aktualisiert sobald du sie schlägst.</string>
     <string name="lap_countdown_lap_ahead">RUNDE %1$d</string>
     <string name="viewer_qs_section_laps">Runden</string>
     <string name="viewer_qs_section_ghost">Geist</string>

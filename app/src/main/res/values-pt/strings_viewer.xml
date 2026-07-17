@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Halo de cor na borda do ecrã</string>
     <string name="viewer_qs_halo_help">Verde: estás à frente do ghost. Vermelho: estás atrás. Azul: empatado (dentro de ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Mostrar segundos estimados</string>
-    <string name="viewer_toast_ghost_failed">Não foi possível carregar o ghost (percurso sem marcas de tempo)</string>
     <string name="viewer_qs_countdown">Contagem 3-2-1 ao iniciar</string>
     <string name="countdown_waiting_gps">A aguardar sinal de GPS…</string>
     <string name="countdown_go">JÁ!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Desporto</string>
     <string name="viewer_qs_sport_locked">Não pode ser alterado durante a gravação.</string>
     <string name="viewer_qs_ghost_enabled">Competir contra um fantasma</string>
-    <string name="viewer_qs_ghost_enabled_help">Compete contra um fantasma sempre que houver: a referência da competição desde a primeira volta, ou a tua melhor volta da saída.</string>
+    <string name="viewer_qs_ghost_enabled_help">Compete contra um fantasma sempre que houver. É reconstruído a cada volta: se o bateres, a volta seguinte persegue o novo melhor.</string>
+    <string name="viewer_qs_ghost_competition">Todas as tentativas</string>
+    <string name="viewer_qs_ghost_competition_help">A volta mais rápida de todas as tentativas da competição, incluindo as de hoje: assim que bates o recorde, a volta seguinte persegue a tua própria volta. Pronto desde a volta 1. Fora de uma competição não há recorde e usa-se a tua melhor volta da saída.</string>
+    <string name="viewer_qs_ghost_session">Esta saída</string>
+    <string name="viewer_qs_ghost_session_help">Só as tuas voltas de hoje, ignorando o recorde guardado. A primeira volta não tem fantasma — ainda não há nada com que te comparares — e a partir da volta 2 persegue a tua melhor, atualizada assim que a bates.</string>
     <string name="lap_countdown_lap_ahead">VOLTA %1$d</string>
     <string name="viewer_qs_section_laps">Voltas</string>
     <string name="viewer_qs_section_ghost">Fantasma</string>

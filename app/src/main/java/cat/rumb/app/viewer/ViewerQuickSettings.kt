@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import cat.rumb.app.R
+import cat.rumb.app.data.competition.GhostSource
 import cat.rumb.app.data.map.MapSource
 import cat.rumb.app.data.map.OfflineMap
 import cat.rumb.app.data.tracks.CompetitionEntity
@@ -89,6 +90,8 @@ fun ViewerQuickSettings(
     onLapCountdown: (Boolean) -> Unit = {},
     ghostEnabled: Boolean = true,
     onGhostEnabled: (Boolean) -> Unit = {},
+    ghostSource: GhostSource = GhostSource.COMPETITION,
+    onGhostSource: (GhostSource) -> Unit = {},
     lapManagement: Boolean = true,
     onLapManagement: (Boolean) -> Unit = {},
     autoLapByPosition: Boolean = false,
@@ -121,6 +124,7 @@ fun ViewerQuickSettings(
     var lapEveryM by remember { mutableStateOf(autoLapEveryM) }
     var lapCd by remember { mutableStateOf(lapCountdown) }
     var ghost by remember { mutableStateOf(ghostEnabled) }
+    var ghostSrc by remember { mutableStateOf(ghostSource) }
     var haloOn by remember { mutableStateOf(halo) }
     var secsOn by remember { mutableStateOf(showSeconds) }
 
@@ -150,6 +154,8 @@ fun ViewerQuickSettings(
                     onLapCountdown = { lapCd = it; onLapCountdown(it) },
                     ghostEnabled = ghost,
                     onGhostEnabled = { ghost = it; onGhostEnabled(it) },
+                    ghostSource = ghostSrc,
+                    onGhostSource = { ghostSrc = it; onGhostSource(it) },
                     lapManagement = lapMgmt,
                     onLapManagement = { lapMgmt = it; onLapManagement(it) },
                     autoLapByPosition = autoLap,
@@ -213,6 +219,8 @@ private fun FollowTab(
     onLapCountdown: (Boolean) -> Unit = {},
     ghostEnabled: Boolean = true,
     onGhostEnabled: (Boolean) -> Unit = {},
+    ghostSource: GhostSource = GhostSource.COMPETITION,
+    onGhostSource: (GhostSource) -> Unit = {},
     lapManagement: Boolean = true,
     onLapManagement: (Boolean) -> Unit = {},
     autoLapByPosition: Boolean = false,
@@ -306,6 +314,8 @@ private fun FollowTab(
         onLapCountdown = onLapCountdown,
         ghostEnabled = ghostEnabled,
         onGhostEnabled = onGhostEnabled,
+        ghostSource = ghostSource,
+        onGhostSource = onGhostSource,
         halo = halo,
         onHalo = onHalo,
         showSeconds = showSeconds,
@@ -332,6 +342,8 @@ private fun LapsSection(
     onLapCountdown: (Boolean) -> Unit,
     ghostEnabled: Boolean,
     onGhostEnabled: (Boolean) -> Unit,
+    ghostSource: GhostSource,
+    onGhostSource: (GhostSource) -> Unit,
     halo: Boolean,
     onHalo: (Boolean) -> Unit,
     showSeconds: Boolean,
@@ -375,6 +387,14 @@ private fun LapsSection(
     ToggleRow(stringResource(R.string.viewer_qs_ghost_enabled), ghostEnabled, onGhostEnabled)
     Hint(R.string.viewer_qs_ghost_enabled_help)
     if (ghostEnabled) {
+        // Which lap to chase. The help under it carries the warning that SESSION's first lap has no
+        // ghost — the one thing about this choice you'd rather not discover mid-lap.
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            GhostSource.entries.forEach { s ->
+                FilterChip(ghostSource == s, { onGhostSource(s) }, label = { Text(stringResource(s.labelRes)) })
+            }
+        }
+        Hint(ghostSource.helpRes)
         ToggleRow(stringResource(R.string.viewer_qs_halo), halo, onHalo)
         Hint(R.string.viewer_qs_halo_help)
         ToggleRow(stringResource(R.string.viewer_qs_ghost_seconds), showSeconds, onShowSeconds)

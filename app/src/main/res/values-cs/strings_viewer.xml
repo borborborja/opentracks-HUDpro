@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Barevná záře na okraji obrazovky</string>
     <string name="viewer_qs_halo_help">Zelená: jsi před duchem. Červená: jsi za. Modrá: nastejno (do ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Zobrazit odhadované sekundy</string>
-    <string name="viewer_toast_ghost_failed">Ducha se nepodařilo načíst (trasa bez časových značek)</string>
     <string name="viewer_qs_countdown">Odpočet 3-2-1 při startu</string>
     <string name="countdown_waiting_gps">Čekání na signál GPS…</string>
     <string name="countdown_go">START!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Nelze změnit během záznamu.</string>
     <string name="viewer_qs_ghost_enabled">Závodit s duchem</string>
-    <string name="viewer_qs_ghost_enabled_help">Závoď s duchem, kdykoli nějaký je: reference závodu od prvního kola, nebo tvé nejlepší kolo výjezdu.</string>
+    <string name="viewer_qs_ghost_enabled_help">Závoď s duchem, kdykoli je s kým. Přestavuje se každé kolo: když ho porazíš, další kolo honíš nový nejlepší čas.</string>
+    <string name="viewer_qs_ghost_competition">Všechny pokusy</string>
+    <string name="viewer_qs_ghost_competition_help">Nejrychlejší kolo ze všech pokusů v soutěži, včetně dnešních: jakmile překonáš rekord, další kolo honíš své vlastní kolo. Připraveno od 1. kola. Mimo soutěž žádný rekord není, použije se tvé nejlepší kolo výjezdu.</string>
+    <string name="viewer_qs_ghost_session">Tento výjezd</string>
+    <string name="viewer_qs_ghost_session_help">Jen tvá dnešní kola, bez uloženého rekordu. První kolo ducha nemá — zatím není s čím srovnávat — a od 2. kola honíš své dosud nejlepší, aktualizované jakmile ho překonáš.</string>
     <string name="lap_countdown_lap_ahead">KOLO %1$d</string>
     <string name="viewer_qs_section_laps">Kola</string>
     <string name="viewer_qs_section_ghost">Duch</string>

@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Halo de couleur au bord de l\'écran</string>
     <string name="viewer_qs_halo_help">Vert : vous êtes devant le fantôme. Rouge : vous êtes derrière. Bleu : à égalité (à ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Afficher les secondes estimées</string>
-    <string name="viewer_toast_ghost_failed">Impossible de charger le fantôme (trace sans horodatage)</string>
     <string name="viewer_qs_countdown">Décompte 3-2-1 au départ</string>
     <string name="countdown_waiting_gps">En attente du signal GPS…</string>
     <string name="countdown_go">PARTEZ !</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Non modifiable pendant l\'enregistrement.</string>
     <string name="viewer_qs_ghost_enabled">Courir contre un fantôme</string>
-    <string name="viewer_qs_ghost_enabled_help">Courez contre un fantôme dès qu\'il y en a un : la référence de la compétition dès le premier tour, ou votre meilleur tour de la sortie.</string>
+    <string name="viewer_qs_ghost_enabled_help">Affronte un fantôme dès qu\'il y en a un. Il est reconstruit à chaque tour : si tu le bats, le tour suivant poursuit le nouveau meilleur temps.</string>
+    <string name="viewer_qs_ghost_competition">Tous les essais</string>
+    <string name="viewer_qs_ghost_competition_help">Le tour le plus rapide de tous les essais de la compétition, ceux d\'aujourd\'hui compris : dès que tu bats le record, le tour suivant poursuit ton propre tour. Prêt dès le tour 1. Hors compétition il n\'y a pas de record, c\'est ton meilleur tour de la sortie qui sert.</string>
+    <string name="viewer_qs_ghost_session">Cette sortie</string>
+    <string name="viewer_qs_ghost_session_help">Seulement tes tours d\'aujourd\'hui, sans le record enregistré. Le premier tour n\'a pas de fantôme — il n\'y a encore rien à quoi te comparer — et à partir du tour 2 il poursuit ton meilleur, mis à jour dès que tu le bats.</string>
     <string name="lap_countdown_lap_ahead">TOUR %1$d</string>
     <string name="viewer_qs_section_laps">Tours</string>
     <string name="viewer_qs_section_ghost">Fantôme</string>

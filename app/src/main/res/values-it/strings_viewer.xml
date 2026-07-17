@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Alone colorato ai bordi dello schermo</string>
     <string name="viewer_qs_halo_help">Verde: sei davanti al ghost. Rosso: sei indietro. Blu: pari (entro ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Mostra secondi stimati</string>
-    <string name="viewer_toast_ghost_failed">Impossibile caricare il ghost (traccia senza timestamp)</string>
     <string name="viewer_qs_countdown">Conto alla rovescia 3-2-1 alla partenza</string>
     <string name="countdown_waiting_gps">In attesa del segnale GPS…</string>
     <string name="countdown_go">VIA!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Non modificabile durante la registrazione.</string>
     <string name="viewer_qs_ghost_enabled">Gareggia contro un fantasma</string>
-    <string name="viewer_qs_ghost_enabled_help">Gareggia contro un fantasma quando ce n\'è uno: il riferimento della gara dal primo giro, o il tuo miglior giro dell\'uscita.</string>
+    <string name="viewer_qs_ghost_enabled_help">Corri contro un fantasma ogni volta che ce n\'è uno. Viene ricostruito a ogni giro: se lo batti, il giro dopo insegue il nuovo record.</string>
+    <string name="viewer_qs_ghost_competition">Tutti i tentativi</string>
+    <string name="viewer_qs_ghost_competition_help">Il giro più veloce di tutti i tentativi della competizione, compresi quelli di oggi: appena batti il record, il giro dopo insegue il tuo giro. Pronto dal giro 1. Fuori da una competizione non c\'è record e si usa il tuo giro migliore dell\'uscita.</string>
+    <string name="viewer_qs_ghost_session">Questa uscita</string>
+    <string name="viewer_qs_ghost_session_help">Solo i tuoi giri di oggi, ignorando il record salvato. Il primo giro non ha fantasma — non c\'è ancora niente con cui confrontarti — e dal giro 2 insegue il tuo migliore, aggiornato appena lo batti.</string>
     <string name="lap_countdown_lap_ahead">GIRO %1$d</string>
     <string name="viewer_qs_section_laps">Giri</string>
     <string name="viewer_qs_section_ghost">Fantasma</string>

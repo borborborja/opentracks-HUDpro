@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Цветовое свечение по краям экрана</string>
     <string name="viewer_qs_halo_help">Зелёный: вы впереди призрака. Красный: позади. Синий: наравне (в пределах ±5 м).</string>
     <string name="viewer_qs_ghost_seconds">Показывать оценку в секундах</string>
-    <string name="viewer_toast_ghost_failed">Не удалось загрузить призрак (трек без меток времени)</string>
     <string name="viewer_qs_countdown">Отсчёт 3-2-1 при старте</string>
     <string name="countdown_waiting_gps">Ожидание сигнала GPS…</string>
     <string name="countdown_go">СТАРТ!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Вид спорта</string>
     <string name="viewer_qs_sport_locked">Нельзя изменить во время записи.</string>
     <string name="viewer_qs_ghost_enabled">Гонка с призраком</string>
-    <string name="viewer_qs_ghost_enabled_help">Гонка с призраком, когда есть с кем: эталон соревнования с первого круга или ваш лучший круг за выезд.</string>
+    <string name="viewer_qs_ghost_enabled_help">Гонка с призраком, когда есть с кем. Он перестраивается на каждом круге: побьёте его — следующий круг гонится за новым лучшим временем.</string>
+    <string name="viewer_qs_ghost_competition">Все попытки</string>
+    <string name="viewer_qs_ghost_competition_help">Самый быстрый круг из всех попыток соревнования, включая сегодняшние: как только вы побьёте рекорд, следующий круг гонится за вашим собственным кругом. Готов с 1-го круга. Вне соревнования рекорда нет, берётся ваш лучший круг за выезд.</string>
+    <string name="viewer_qs_ghost_session">Этот выезд</string>
+    <string name="viewer_qs_ghost_session_help">Только ваши сегодняшние круги, без сохранённого рекорда. У первого круга нет призрака — пока не с чем сравнивать — а со 2-го круга он гонится за вашим лучшим, обновляясь, как только вы его побьёте.</string>
     <string name="lap_countdown_lap_ahead">КРУГ %1$d</string>
     <string name="viewer_qs_section_laps">Круги</string>
     <string name="viewer_qs_section_ghost">Призрак</string>

@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Färghalo vid skärmkant</string>
     <string name="viewer_qs_halo_help">Grön: du är före ghosten. Röd: du är efter. Blå: jämnt (inom ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Visa uppskattade sekunder</string>
-    <string name="viewer_toast_ghost_failed">Kunde inte ladda ghosten (spår utan tidsstämplar)</string>
     <string name="viewer_qs_countdown">3-2-1-nedräkning vid start</string>
     <string name="countdown_waiting_gps">Väntar på GPS-signal…</string>
     <string name="countdown_go">KÖR!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Kan inte ändras under inspelning.</string>
     <string name="viewer_qs_ghost_enabled">Kör mot ett spöke</string>
-    <string name="viewer_qs_ghost_enabled_help">Kör mot ett spöke när det finns ett: tävlingens referens från första varvet, eller ditt bästa varv under passet.</string>
+    <string name="viewer_qs_ghost_enabled_help">Tävla mot ett spöke när det finns ett. Det byggs om varje varv: slår du det jagar nästa varv den nya bästa tiden.</string>
+    <string name="viewer_qs_ghost_competition">Alla försök</string>
+    <string name="viewer_qs_ghost_competition_help">Det snabbaste varvet av alla försök i tävlingen, dagens inräknade: så snart du slår rekordet jagar nästa varv ditt eget varv. Klart från varv 1. Utanför en tävling finns inget rekord, så ditt bästa varv under turen används.</string>
+    <string name="viewer_qs_ghost_session">Den här turen</string>
+    <string name="viewer_qs_ghost_session_help">Bara dina varv i dag, utan det sparade rekordet. Första varvet har inget spöke — det finns inget att jämföra med än — och från varv 2 jagar det ditt bästa hittills, uppdaterat så snart du slår det.</string>
     <string name="lap_countdown_lap_ahead">VARV %1$d</string>
     <string name="viewer_qs_section_laps">Varv</string>
     <string name="viewer_qs_section_ghost">Spöke</string>

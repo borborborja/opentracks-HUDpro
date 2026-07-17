@@ -52,7 +52,6 @@
     <string name="viewer_qs_halo">Farvet glorie ved skærmkant</string>
     <string name="viewer_qs_halo_help">Grøn: du er foran ghosten. Rød: du er bagud. Blå: lige (inden for ±5 m).</string>
     <string name="viewer_qs_ghost_seconds">Vis anslåede sekunder</string>
-    <string name="viewer_toast_ghost_failed">Kunne ikke indlæse ghosten (spor uden tidsstempler)</string>
     <string name="viewer_qs_countdown">3-2-1-nedtælling ved start</string>
     <string name="countdown_waiting_gps">Venter på GPS-signal…</string>
     <string name="countdown_go">GO!</string>
@@ -97,7 +96,11 @@
     <string name="viewer_qs_sport">Sport</string>
     <string name="viewer_qs_sport_locked">Kan ikke ændres under optagelse.</string>
     <string name="viewer_qs_ghost_enabled">Kør mod et spøgelse</string>
-    <string name="viewer_qs_ghost_enabled_help">Kør mod et spøgelse når der er et: konkurrencens reference fra første omgang, eller din bedste omgang på turen.</string>
+    <string name="viewer_qs_ghost_enabled_help">Kør mod et spøgelse, når der er et. Det bygges om hver omgang: slår du det, jagter næste omgang den nye bedste tid.</string>
+    <string name="viewer_qs_ghost_competition">Alle forsøg</string>
+    <string name="viewer_qs_ghost_competition_help">Den hurtigste omgang af alle forsøg i konkurrencen, dagens medregnet: så snart du slår rekorden, jagter næste omgang din egen omgang. Klar fra omgang 1. Uden for en konkurrence findes ingen rekord, så din bedste omgang på turen bruges.</string>
+    <string name="viewer_qs_ghost_session">Denne tur</string>
+    <string name="viewer_qs_ghost_session_help">Kun dine omgange i dag, uden den gemte rekord. Første omgang har intet spøgelse — der er endnu intet at sammenligne med — og fra omgang 2 jagter den din bedste indtil nu, opdateret så snart du slår den.</string>
     <string name="lap_countdown_lap_ahead">OMGANG %1$d</string>
     <string name="viewer_qs_section_laps">Omgange</string>
     <string name="viewer_qs_section_ghost">Spøgelse</string>
