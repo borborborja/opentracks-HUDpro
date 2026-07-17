@@ -16,6 +16,23 @@ class TrackCurveTest {
             GpxPoint(41.0 + it * 0.0001, 2.0, time = t0.plusSeconds(it * secondsPerStep))
         }
 
+    /**
+     * Same 20 steps, but the first half crawled (4 s each) and the second half sprinted (1 s each):
+     * 50 s total, and the half-distance mark falls at 40 s — 80 % of the time.
+     *
+     * A steady track is useless for testing anything that maps time to distance, because both
+     * fractions coincide and a wrong implementation passes. This one prises them apart.
+     */
+    private fun uneven(): List<GpxPoint> {
+        val pts = mutableListOf(GpxPoint(41.0, 2.0, time = t0))
+        var secs = 0L
+        for (i in 1..20) {
+            secs += if (i <= 10) 4 else 1
+            pts.add(GpxPoint(41.0 + i * 0.0001, 2.0, time = t0.plusSeconds(secs)))
+        }
+        return pts
+    }
+
     @Test
     fun needsTwoTimedPoints() {
         assertThat(TrackCurve.of(emptyList())).isNull()
@@ -31,6 +48,48 @@ class TrackCurveTest {
             val d = c.totalDist * f
             assertThat(c.distanceAt(c.timeAt(d))).isCloseTo(d, within(0.5))
         }
+    }
+
+    @Test
+    fun theAnchorLandsUnderTheFinger() {
+        // The invariant the whole screen leans on: drag a chart to fraction f, turn that into an
+        // instant, ask the same curve where it was — and get f back. Without it the crosshair and
+        // the map marker drift apart on every chart that isn't the reference's.
+        // On an uneven track, a fractionAt that reported TIME instead of ground covered fails here.
+        val c = TrackCurve.of(uneven())!!
+        listOf(0f, 0.1f, 0.25f, 0.5f, 0.75f, 0.9f, 1f).forEach { f ->
+            val t = c.timeAt(f * c.totalDist)
+            assertThat(c.fractionAt(t)).isCloseTo(f, within(0.02f))
+        }
+    }
+
+    @Test
+    fun fractionIsGroundCoveredNotTimeElapsed() {
+        // Half the distance of `uneven` is reached at 40 of its 50 s. Distance says 0.5; time would
+        // say 0.8. The chart's x-axis is distance, so 0.5 is the only right answer.
+        val c = TrackCurve.of(uneven())!!
+        assertThat(c.totalTime).isEqualTo(50.0)
+        assertThat(c.fractionAt(40.0)).isCloseTo(0.5f, within(0.02f))
+        assertThat(c.fractionAt(40.0)).isNotCloseTo(0.8f, within(0.05f))
+    }
+
+    @Test
+    fun fractionStaysInsideTheChart() {
+        val c = TrackCurve.of(steady(10, 1))!!
+        assertThat(c.fractionAt(-500.0)).isEqualTo(0f)
+        assertThat(c.fractionAt(c.totalTime + 500.0)).isEqualTo(1f)
+    }
+
+    @Test
+    fun aSlowerRivalsCrosshairSitsBehindTheAnchors() {
+        // Same instant, two paces: the rival's own chart marks it further back, exactly like its
+        // marker on the map. That agreement is the point.
+        val leader = TrackCurve.of(steady(20, 1))!!
+        val rival = TrackCurve.of(uneven())!!
+        val t = leader.timeAt(leader.totalDist) // the leader finished at 20 s
+        // 20 s into `uneven` is half way through its slow half → a quarter of the ground.
+        assertThat(rival.fractionAt(t)).isCloseTo(0.25f, within(0.02f))
+        assertThat(leader.fractionAt(t)).isEqualTo(1f)
     }
 
     @Test

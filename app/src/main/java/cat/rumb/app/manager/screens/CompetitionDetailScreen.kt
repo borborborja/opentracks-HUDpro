@@ -64,7 +64,6 @@ import cat.rumb.app.data.competition.GapSample
 import cat.rumb.app.data.competition.TrackCurve
 import cat.rumb.app.data.tracks.TrackStatsCalculator
 import cat.rumb.app.data.tracks.nearestSampleAt
-import cat.rumb.app.data.tracks.nearestSampleAtFraction
 import cat.rumb.app.data.gpx.Gpx
 import cat.rumb.app.data.gpx.GpxPoint
 import cat.rumb.app.data.map.MapSource
@@ -90,6 +89,19 @@ private val AttemptPalette = listOf(
 
 internal fun attemptColor(rank: Int): String =
     AttemptPalette[((rank - 1).coerceAtLeast(0)) % AttemptPalette.size]
+
+/** How close the camera gets when it starts following the attempt you're dragging. */
+private const val FOLLOW_ZOOM = 16.0
+
+/**
+ * Where the finger is: which chart it is on (null = the strip anchored to the map), and the instant
+ * that chart's track was at that point.
+ *
+ * Sharing the INSTANT rather than a fraction is what lets every chart and every marker agree while
+ * each track runs at its own pace: a fraction means different places on different attempts, so the
+ * crosshair and the map marker would drift apart on any chart but the reference's.
+ */
+private data class Scrub(val anchorId: Long?, val seconds: Double)
 
 /** Where a ticked attempt was at the scrubbed instant, and how far that is from the leader. */
 private data class RaceMark(
@@ -134,7 +146,6 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
     val mapView = rememberMapViewWithLifecycle()
     var mapController by remember { mutableStateOf<RouteEditorController?>(null) }
     var refPoints by remember { mutableStateOf<List<GpxPoint>>(emptyList()) }
-    var mapFramed by remember(competitionId) { mutableStateOf(false) }
     LaunchedEffect(competition?.referenceGpx) {
         val gpx = competition?.referenceGpx
         refPoints = if (gpx.isNullOrBlank()) emptyList() else withContext(Dispatchers.Default) {
@@ -143,10 +154,7 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
     }
     LaunchedEffect(mapController, refPoints, competition?.lineLat, competition?.lineLng) {
         val c = mapController ?: return@LaunchedEffect
-        if (refPoints.size >= 2) {
-            c.setRoute(refPoints)
-            if (!mapFramed) { c.frame(refPoints); mapFramed = true }
-        }
+        if (refPoints.size >= 2) c.setRoute(refPoints)
         // LAP: mark the meta (start/finish line) on the lap.
         val lat = competition?.lineLat
         val lng = competition?.lineLng
@@ -168,31 +176,48 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
     // Ticked attempts get their line drawn on the map; none by default, so the map opens as before.
     var checkedIds by remember(competitionId) { mutableStateOf(emptySet<Long>()) }
     var expandedId by remember(competitionId) { mutableStateOf<Long?>(null) }
-    // Scrub position as a fraction of the REFERENCE's distance — one value shared by the anchored
-    // strip, the gap chart and every expanded mini-chart, so dragging any of them moves the map.
-    var scrub by remember(competitionId) { mutableStateOf<Float?>(null) }
+    var scrub by remember(competitionId) { mutableStateOf<Scrub?>(null) }
 
-    // The race as it looked at the scrubbed moment: the leader sits under the finger, and every
-    // ticked rival is drawn where IT was at that same instant — that gap is the whole point, and
-    // placing rivals at the same DISTANCE instead would stack them all on one spot.
+    /** The chart you touch becomes the anchor: its track is the one under your finger. */
+    fun scrubFrom(anchorId: Long?, f: Float?) {
+        val curve = if (anchorId == null) refCurve else curvesById[anchorId]
+        scrub = if (f == null || curve == null) {
+            null
+        } else {
+            Scrub(anchorId, curve.timeAt(f.coerceIn(0f, 1f) * curve.totalDist))
+        }
+    }
+
+    /** Where a chart should draw its crosshair: wherever ITS track was at the shared instant. */
+    fun highlightOf(curve: TrackCurve?): Float? {
+        val s = scrub ?: return null
+        return curve?.fractionAt(s.seconds)
+    }
+
+    // The race as it looked at the scrubbed moment: the anchored track sits under the finger (its
+    // own distanceAt(timeAt(d)) is d again), and everyone else is drawn where THEY were at that same
+    // instant. Placing them at the same DISTANCE instead would stack every marker on one spot.
     val race = remember(scrub, checkedIds, curvesById, samplesById, refCurve, ranked) {
-        val f = scrub ?: return@remember emptyList()
-        val lead = refCurve ?: return@remember emptyList()
-        val d = f.coerceIn(0f, 1f) * lead.totalDist
-        val t = lead.timeAt(d)
+        val s = scrub ?: return@remember emptyList()
+        val leadDist = refCurve?.distanceAt(s.seconds) ?: 0.0
         ranked.filter { it.id in checkedIds }.mapNotNull { a ->
             val curve = curvesById[a.id] ?: return@mapNotNull null
             val samples = samplesById[a.id].orEmpty()
-            val theirDist = curve.distanceAt(t)
+            val theirDist = curve.distanceAt(s.seconds)
             val sample = nearestSampleAt(samples, theirDist) ?: return@mapNotNull null
             RaceMark(
                 attemptId = a.id,
                 number = rankOf[a.id] ?: 0,
                 point = GeoPoint(sample.lat, sample.lon),
-                aheadM = theirDist - d,
-                gapSeconds = curve.timeAt(d) - t,
+                aheadM = theirDist - leadDist,
+                gapSeconds = curve.timeAt(leadDist) - s.seconds,
             )
         }
+    }
+
+    /** The reference plus every ticked line — what the overview has to fit. */
+    val framePoints = remember(refPoints, checkedIds, pointsById) {
+        refPoints + ranked.filter { it.id in checkedIds }.flatMap { pointsById[it.id].orEmpty() }
     }
 
     LaunchedEffect(mapController, checkedIds, pointsById) {
@@ -204,14 +229,49 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
             },
         )
     }
+
+    // --- Camera. One effect per reason, so it's clear what makes it move. ---
+
+    // Ticking re-frames: you just asked to see something that wasn't there. This also covers the
+    // first framing when the screen opens, which is why no "already framed once" flag is needed.
+    LaunchedEffect(mapController, framePoints) {
+        mapController?.frame(framePoints)
+    }
+
+    // Putting the finger on the anchored strip pulls back out to the whole circuit.
+    val onStrip = scrub != null && scrub?.anchorId == null
+    LaunchedEffect(mapController, onStrip) {
+        if (onStrip) mapController?.frame(framePoints)
+    }
+
+    // Dragging an attempt's own charts follows IT. Zoom once when the finger lands and only centre
+    // after that, so pinching to adjust while following isn't fought on every move.
+    var zoomedFor by remember(competitionId) { mutableStateOf<Long?>(null) }
+    LaunchedEffect(mapController, race, scrub) {
+        val c = mapController ?: return@LaunchedEffect
+        val anchorId = scrub?.anchorId
+        if (anchorId == null) { zoomedFor = null; return@LaunchedEffect }
+        val mark = race.firstOrNull { it.attemptId == anchorId } ?: return@LaunchedEffect
+        if (zoomedFor != anchorId) {
+            c.centerOn(mark.point, FOLLOW_ZOOM)
+            zoomedFor = anchorId
+        } else {
+            c.centerOn(mark.point)
+        }
+    }
     // Keyed on `scrub` as well as `race`: with nothing ticked every race is the same emptyList()
     // singleton, so keying on race alone would leave the reference's marker frozen mid-drag.
     LaunchedEffect(mapController, race, scrub) {
         val c = mapController ?: return@LaunchedEffect
         c.setLabels(race.map { MapLabel(it.point, it.number, attemptColor(it.number)) })
-        // The reference's own position under the finger, when nothing is ticked to carry a badge.
-        val f = scrub
-        c.setHighlight(if (f != null && race.isEmpty()) nearestSampleAtFraction(refSamples, f)?.let { GeoPoint(it.lat, it.lon) } else null)
+        // Nothing ticked to carry a badge: fall back to the plain dot on the reference.
+        val s = scrub
+        val generic = if (s != null && race.isEmpty()) {
+            nearestSampleAt(refSamples, refCurve?.distanceAt(s.seconds) ?: 0.0)?.let { GeoPoint(it.lat, it.lon) }
+        } else {
+            null
+        }
+        c.setHighlight(generic)
     }
 
     var menuOpen by remember { mutableStateOf(false) }
@@ -282,8 +342,8 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
                     // One lane: this strip is the drag surface anchored to the map, not a dashboard.
                     StackedTrackChart(
                         samples = refSamples,
-                        highlightFraction = scrub,
-                        onScrub = { scrub = it },
+                        highlightFraction = highlightOf(refCurve),
+                        onScrub = { scrubFrom(null, it) },
                         modifier = Modifier.fillMaxWidth().height(72.dp),
                         maxLanes = 1,
                     )
@@ -316,14 +376,16 @@ fun CompetitionDetailScreen(competitionId: Long, onBack: () -> Unit, onStartComp
                             expanded = expandedId == a.id,
                             onExpand = { expandedId = if (expandedId == a.id) null else a.id },
                             samples = samplesById[a.id].orEmpty(),
-                            scrub = scrub,
-                            onScrub = { scrub = it },
+                            scrub = highlightOf(curvesById[a.id]),
+                            onScrub = { scrubFrom(a.id, it) },
                             onDelete = { pendingDelete = a },
                         )
                     }
 
                     if (best != null && attempts.size >= 2) {
-                        GapCard(best, attempts.filter { it.id != best.id }, pointsById, scrub)
+                        // The gap curve's x-axis is distance along the best, so it reads the
+                        // reference's crosshair — same instant, same place.
+                        GapCard(best, attempts.filter { it.id != best.id }, pointsById, highlightOf(refCurve))
                         Card {
                             Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(stringResource(R.string.comp_evolution_title), style = MaterialTheme.typography.titleSmall)

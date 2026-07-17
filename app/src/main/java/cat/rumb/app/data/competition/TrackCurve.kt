@@ -51,6 +51,21 @@ class TrackCurve private constructor(
         return dist[lo - 1] + (dist[lo] - dist[lo - 1]) * ((seconds - t0) / (t1 - t0))
     }
 
+    /**
+     * How far along its own track this one was at [seconds], as a 0..1 fraction of its own length —
+     * i.e. where to draw its crosshair. Feeding a chart's own scrub back through here returns the
+     * fraction you dragged to, which is what keeps the anchor's marker under the finger.
+     *
+     * Ground covered, NOT time elapsed: the charts' x-axis is distance, and on an uneven pace the
+     * two are nothing alike. No clamping here — [distanceAt] already bounds it, and re-clamping
+     * would hide a broken clamp instead of letting it fail.
+     */
+    fun fractionAt(seconds: Double): Float {
+        val total = totalDist
+        if (total <= 0.0) return 0f
+        return (distanceAt(seconds) / total).toFloat()
+    }
+
     /** First index i with [axis]`[i] >= value`. Both axes are non-decreasing by construction. */
     private fun lowerBound(axis: DoubleArray, value: Double): Int {
         var lo = 0

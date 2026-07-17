@@ -167,6 +167,23 @@ class RouteEditorController(private val map: MapLibreMap) {
     }
 
     /**
+     * Centres on [point]. With [zoom] it zooms too; without it the current zoom survives, so zooming
+     * once when the finger lands and then only centring lets you pinch while it follows.
+     *
+     * moveCamera, not animateCamera: a finger is dragging this, and animations would queue up behind
+     * the gesture instead of keeping up with it. Every framing call in the app is instant for the
+     * same reason.
+     */
+    fun centerOn(point: GeoPoint, zoom: Double? = null) {
+        val target = LatLng(point.latitude, point.longitude)
+        if (zoom == null) {
+            map.moveCamera(org.maplibre.android.camera.CameraUpdateFactory.newLatLng(target))
+        } else {
+            map.moveCamera(org.maplibre.android.camera.CameraUpdateFactory.newLatLngZoom(target, zoom))
+        }
+    }
+
+    /**
      * Draws the route. With [values] (one per point: altitude, HR or speed), the line renders as
      * 2-point segments colored along a blue→red ramp over the value range; null values fall back to
      * neighbors, and an all-null list renders solid.
