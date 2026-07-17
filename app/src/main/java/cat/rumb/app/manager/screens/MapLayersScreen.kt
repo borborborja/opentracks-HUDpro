@@ -40,6 +40,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -72,7 +73,9 @@ fun MapLayersScreen(
     val context = LocalContext.current
     val prefs = remember { ViewerPreferences.get(context) }
     val store = remember { OfflineMapStore.get(context) }
-    var tab by remember { mutableIntStateOf(0) }
+    // Saveable: downloading an area or opening the sectors of a map disposes this composition, and a
+    // plain remember would drop you back on the first tab instead of the one you left from.
+    var tab by rememberSaveable { mutableIntStateOf(0) }
     var baseMapId by remember { mutableStateOf(prefs.baseMapId) }
 
     DetailScaffold(title = stringResource(R.string.maps_title), onBack = onBack) { modifier ->

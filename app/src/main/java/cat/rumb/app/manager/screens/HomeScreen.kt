@@ -72,6 +72,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -145,11 +146,14 @@ fun HomeScreen(
 
     val all by remember { app.trackRepository.observeSummaries() }.collectAsStateWithLifecycle(initialValue = emptyList())
     val competitions by remember { app.competitionRepository.observeCompetitions() }.collectAsStateWithLifecycle(initialValue = emptyList())
-    var tab by remember { mutableIntStateOf(0) }
+    // Saveable, not remember: drilling into a detail route disposes this whole composition, so a
+    // plain remember would snap back to tab 0 ("Recorded") on the way back — from the Competition
+    // tab you'd return to a screen you never opened.
+    var tab by rememberSaveable { mutableIntStateOf(0) }
     val kind = if (tab == 0) TrackKind.TRAINING else TrackKind.ROUTE
 
     var viewMode by remember { mutableStateOf(prefs.routeViewMode) }
-    var currentFolder by remember { mutableStateOf<String?>(null) }
+    var currentFolder by rememberSaveable { mutableStateOf<String?>(null) }
     // Sort/filter, persisted per tab.
     var sort by remember(tab) {
         mutableStateOf(cat.rumb.app.data.tracks.TrackSort.byName(if (tab == 0) prefs.trackSortTraining else prefs.trackSortRoute))

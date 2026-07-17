@@ -50,6 +50,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -105,7 +106,9 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val prefs = remember { ViewerPreferences.get(context) }
-    var tab by remember { mutableIntStateOf(0) }
+    // Saveable: opening a sub-screen (sensors, debug log, Endurain) disposes this composition, and a
+    // plain remember would drop you back on the first tab instead of the one you left from.
+    var tab by rememberSaveable { mutableIntStateOf(0) }
 
     DetailScaffold(title = stringResource(R.string.settings_title), onBack = onBack) { modifier ->
         Column(modifier.fillMaxSize()) {
