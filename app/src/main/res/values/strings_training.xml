@@ -26,6 +26,8 @@
     <string name="laps_edit_clear">Delete all laps</string>
     <string name="laps_edit_clear_confirm">This turns it back into a plain track with no laps. It can\'t be undone.</string>
     <string name="training_lap_n">Lap %1$d</string>
+    <string name="training_splits_title">Splits</string>
+    <string name="training_split_n">Split %1$d</string>
     <string name="training_action_compare">Compare</string>
     <string name="compare_title">Compare</string>
     <string name="compare_mode_laps">Laps</string>

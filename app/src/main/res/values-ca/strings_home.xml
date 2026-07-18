@@ -42,6 +42,7 @@
     <string name="home_route_detail_format">%1$.1f km · %2$d punts · %3$s</string>
     <string name="home_distance_km">%1$.1f km</string>
     <string name="home_laps_count">%1$d voltes</string>
+    <string name="home_splits_count">%1$d parcials</string>
     <string name="home_laps_best">millor</string>
     <string name="home_folder_routes_count">%1$d rutes</string>
     <string name="home_cd_active_route">Ruta activa</string>

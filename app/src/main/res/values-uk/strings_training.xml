@@ -26,6 +26,8 @@
     <string name="laps_edit_clear">Видалити всі кола</string>
     <string name="laps_edit_clear_confirm">Знову стане звичайним треком без кіл. Скасувати не можна.</string>
     <string name="training_lap_n">Коло %1$d</string>
+    <string name="training_splits_title">Відрізки</string>
+    <string name="training_split_n">Відрізок %1$d</string>
     <string name="training_action_compare">Порівняти</string>
     <string name="compare_title">Порівняння</string>
     <string name="compare_mode_laps">Кола</string>

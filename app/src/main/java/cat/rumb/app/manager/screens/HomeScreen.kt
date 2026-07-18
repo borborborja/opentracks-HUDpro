@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
@@ -761,6 +762,10 @@ private fun RouteRow(
     // Recorded laps within this track (approach/return excluded). ≥2 → offer the lap dropdown.
     val lapCount = remember(t.laps) { Laps.decode(t.laps).count { it.kind == LapKind.LAP } }
     val hasLaps = kind == TrackKind.TRAINING && lapCount >= 2
+    // Automatic per-distance splits get a plain indicator, never the circuit flag/dropdown — they
+    // aren't laps. Shown only when the track isn't already a lapped one.
+    val splitCount = remember(t.laps) { Laps.decode(t.laps).count { it.kind == LapKind.SPLIT } }
+    val hasSplits = kind == TrackKind.TRAINING && !hasLaps && splitCount >= 1
     val expanded = expandedLaps[t.id] == true
     Card {
         Column {
@@ -815,6 +820,20 @@ private fun RouteRow(
                             if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                             contentDescription = stringResource(R.string.home_laps_count, lapCount),
                         )
+                    }
+                } else if (hasSplits) {
+                    // Splits: a plain count, no chevron/dropdown — the per-km analysis is in the detail.
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(end = 8.dp),
+                    ) {
+                        Icon(
+                            Icons.Filled.Straighten,
+                            contentDescription = stringResource(R.string.home_splits_count, splitCount),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text("$splitCount", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 RouteMenu(t, kind, actions)

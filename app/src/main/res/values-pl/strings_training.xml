@@ -26,6 +26,8 @@
     <string name="laps_edit_clear">Usuń wszystkie okrążenia</string>
     <string name="laps_edit_clear_confirm">Znów staje się zwykłą trasą bez okrążeń. Nie można cofnąć.</string>
     <string name="training_lap_n">Okrążenie %1$d</string>
+    <string name="training_splits_title">Międzyczasy</string>
+    <string name="training_split_n">Międzyczas %1$d</string>
     <string name="training_action_compare">Porównaj</string>
     <string name="compare_title">Porównaj</string>
     <string name="compare_mode_laps">Okrążenia</string>

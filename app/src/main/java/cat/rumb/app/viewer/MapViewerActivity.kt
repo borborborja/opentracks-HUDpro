@@ -1302,8 +1302,11 @@ class MapViewerActivity : ComponentActivity() {
                     followedRouteId = cat.rumb.app.data.prefs.ViewerPreferences.get(this@MapViewerActivity)
                         .activeFollowTrackId.takeIf { it > 0 },
                 )
-                // Persist lap ranges (boundary marks → point indices in the saved list).
+                // Persist lap ranges (boundary marks → point indices in the saved list). A ride in
+                // distance-split mode records the same boundary marks as a lapped one, so classify
+                // from the recorder's own mode: those are splits (per-km), not laps.
                 val ranges = cat.rumb.app.data.tracks.Laps.fromMarks(state.lapMarks, kept.map { it.id })
+                    .let { if (state.distanceSplits) cat.rumb.app.data.tracks.Laps.reclassifyAsSplits(it) else it }
                 if (ranges.isNotEmpty()) {
                     RumbApplication.from(this@MapViewerActivity).trackRepository
                         .setLaps(newId, cat.rumb.app.data.tracks.Laps.encode(ranges))

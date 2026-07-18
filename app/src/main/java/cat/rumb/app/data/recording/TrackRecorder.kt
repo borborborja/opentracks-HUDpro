@@ -127,6 +127,12 @@ data class RecorderState(
      * you can't tell a real 780 m loop from a spurious 1.5 km one.
      */
     val detectedLoopM: Double? = null,
+    /**
+     * The lap block was opened by distance auto-lap (runner splits), not by a line/button. The save
+     * path uses this to classify the ranges as [cat.rumb.app.data.tracks.LapKind.SPLIT] rather than
+     * LAP — the marks themselves can't say why a boundary was placed.
+     */
+    val distanceSplits: Boolean = false,
 ) {
     val isRecording: Boolean get() = !isFinished
     fun points(): List<Trackpoint> = segments.flatten()
@@ -738,6 +744,7 @@ class TrackRecorder(private val config: RecorderConfig = RecorderConfig()) {
             lapLine = activeLapLine(),
             lapLineRadiusM = config.autoLapRadiusM,
             detectedLoopM = justDetectedLoopM,
+            distanceSplits = config.autoLapEveryM > 0,
         )
     }
 

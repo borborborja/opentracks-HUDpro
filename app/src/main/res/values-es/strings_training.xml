@@ -26,6 +26,8 @@
     <string name="laps_edit_clear">Eliminar todas las vueltas</string>
     <string name="laps_edit_clear_confirm">Vuelve a ser un track normal sin vueltas. No se puede deshacer.</string>
     <string name="training_lap_n">Vuelta %1$d</string>
+    <string name="training_splits_title">Parciales</string>
+    <string name="training_split_n">Parcial %1$d</string>
     <string name="training_action_compare">Comparar</string>
     <string name="compare_title">Comparar</string>
     <string name="compare_mode_laps">Vueltas</string>

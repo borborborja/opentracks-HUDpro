@@ -26,6 +26,8 @@
     <string name="laps_edit_clear">Alle Runden löschen</string>
     <string name="laps_edit_clear_confirm">Wird wieder eine normale Aufzeichnung ohne Runden. Nicht umkehrbar.</string>
     <string name="training_lap_n">Runde %1$d</string>
+    <string name="training_splits_title">Splits</string>
+    <string name="training_split_n">Split %1$d</string>
     <string name="training_action_compare">Vergleichen</string>
     <string name="compare_title">Vergleichen</string>
     <string name="compare_mode_laps">Runden</string>

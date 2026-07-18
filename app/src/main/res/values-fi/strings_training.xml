@@ -26,6 +26,8 @@
     <string name="laps_edit_clear">Poista kaikki kierrokset</string>
     <string name="laps_edit_clear_confirm">Muuttuu taas tavalliseksi jäljeksi ilman kierroksia. Ei voi perua.</string>
     <string name="training_lap_n">Kierros %1$d</string>
+    <string name="training_splits_title">Väliajat</string>
+    <string name="training_split_n">Väliaika %1$d</string>
     <string name="training_action_compare">Vertaa</string>
     <string name="compare_title">Vertaa</string>
     <string name="compare_mode_laps">Kierrokset</string>

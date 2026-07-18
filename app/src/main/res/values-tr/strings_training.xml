@@ -26,6 +26,8 @@
     <string name="laps_edit_clear">Tüm turları sil</string>
     <string name="laps_edit_clear_confirm">Tekrar tursuz normal bir kayda dönüşür. Geri alınamaz.</string>
     <string name="training_lap_n">Tur %1$d</string>
+    <string name="training_splits_title">Bölümler</string>
+    <string name="training_split_n">Bölüm %1$d</string>
     <string name="training_action_compare">Karşılaştır</string>
     <string name="compare_title">Karşılaştır</string>
     <string name="compare_mode_laps">Turlar</string>

@@ -10,8 +10,10 @@ import kotlinx.serialization.json.Json
 /**
  * What a point range represents within a track that has laps. ABORTED is a lap that was given up
  * before going round: it happened, so it stays in the track, but it is not a lap and never races.
+ * SPLIT is an automatic per-distance chunk (a runner's km): analysable like a lap, but NOT a lap —
+ * it never becomes a circuit or a competition attempt. Every `kind == LAP` filter excludes it.
  */
-enum class LapKind { APPROACH, LAP, RETURN, ABORTED }
+enum class LapKind { APPROACH, LAP, RETURN, ABORTED, SPLIT }
 
 /**
  * A contiguous range of a saved track's points forming one lap (or the approach/return around the
@@ -30,6 +32,15 @@ object Laps {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     fun encode(ranges: List<LapRange>): String = json.encodeToString(ranges)
+
+    /**
+     * Relabels every [LapKind.LAP] range as [LapKind.SPLIT], leaving approach/return/aborted alone.
+     * Used at save time when the recording ran in distance-split mode: [fromMarks] can't tell why a
+     * boundary was placed (all crossings look the same), so the caller classifies from the recorder's
+     * config instead. Pure and isolated so [fromMarks] and its tests stay untouched.
+     */
+    fun reclassifyAsSplits(ranges: List<LapRange>): List<LapRange> =
+        ranges.map { if (it.kind == LapKind.LAP) it.copy(kind = LapKind.SPLIT) else it }
 
     fun decode(raw: String?): List<LapRange> =
         if (raw.isNullOrBlank()) {

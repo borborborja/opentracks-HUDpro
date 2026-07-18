@@ -42,6 +42,7 @@
     <string name="home_route_detail_format">%1$.1f km · %2$d punten · %3$s</string>
     <string name="home_distance_km">%1$.1f km</string>
     <string name="home_laps_count">%1$d rondes</string>
+    <string name="home_splits_count">%1$d splits</string>
     <string name="home_laps_best">beste</string>
     <string name="home_folder_routes_count">%1$d routes</string>
     <string name="home_cd_active_route">Actieve route</string>

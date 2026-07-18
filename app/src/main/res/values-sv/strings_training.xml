@@ -26,6 +26,8 @@
     <string name="laps_edit_clear">Ta bort alla varv</string>
     <string name="laps_edit_clear_confirm">Blir ett vanligt spår utan varv igen. Kan inte ångras.</string>
     <string name="training_lap_n">Varv %1$d</string>
+    <string name="training_splits_title">Delsträckor</string>
+    <string name="training_split_n">Delsträcka %1$d</string>
     <string name="training_action_compare">Jämför</string>
     <string name="compare_title">Jämför</string>
     <string name="compare_mode_laps">Varv</string>

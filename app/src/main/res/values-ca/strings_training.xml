@@ -26,6 +26,8 @@
     <string name="laps_edit_clear">Elimina totes les voltes</string>
     <string name="laps_edit_clear_confirm">Torna a ser un track normal sense voltes. No es pot desfer.</string>
     <string name="training_lap_n">Volta %1$d</string>
+    <string name="training_splits_title">Parcials</string>
+    <string name="training_split_n">Parcial %1$d</string>
     <string name="training_action_compare">Compara</string>
     <string name="compare_title">Compara</string>
     <string name="compare_mode_laps">Voltes</string>

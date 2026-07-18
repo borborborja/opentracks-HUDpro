@@ -26,6 +26,8 @@
     <string name="laps_edit_clear">Elimina tutti i giri</string>
     <string name="laps_edit_clear_confirm">Torna a essere una traccia normale senza giri. Non annullabile.</string>
     <string name="training_lap_n">Giro %1$d</string>
+    <string name="training_splits_title">Parziali</string>
+    <string name="training_split_n">Parziale %1$d</string>
     <string name="training_action_compare">Confronta</string>
     <string name="compare_title">Confronta</string>
     <string name="compare_mode_laps">Giri</string>

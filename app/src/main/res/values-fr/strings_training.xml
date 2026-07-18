@@ -26,6 +26,8 @@
     <string name="laps_edit_clear">Supprimer tous les tours</string>
     <string name="laps_edit_clear_confirm">Redevient une trace normale sans tours. Irréversible.</string>
     <string name="training_lap_n">Tour %1$d</string>
+    <string name="training_splits_title">Fractions</string>
+    <string name="training_split_n">Fraction %1$d</string>
     <string name="training_action_compare">Comparer</string>
     <string name="compare_title">Comparer</string>
     <string name="compare_mode_laps">Tours</string>

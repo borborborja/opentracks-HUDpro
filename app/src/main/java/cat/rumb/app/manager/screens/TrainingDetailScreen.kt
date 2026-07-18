@@ -356,6 +356,24 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
                         )
                     }
                 }
+                // Automatic per-distance splits: same per-item analysis as laps, but they are NOT
+                // laps — no editor, no circuit, no competition. Read-only, reusing LapsSection.
+                val splitList = laps.filter { it.kind == cat.rumb.app.data.tracks.LapKind.SPLIT }
+                if (splitList.isNotEmpty() && points.size >= 2) {
+                    LapsSection(
+                        laps = splitList,
+                        points = points,
+                        titleRes = R.string.training_splits_title,
+                        itemLabelRes = R.string.training_split_n,
+                        onExportLap = { split ->
+                            val slice = points.subList(split.startIdx.coerceIn(0, points.size), split.endIdx.coerceIn(0, points.size))
+                            if (slice.size >= 2) {
+                                val splitName = "${entity?.name ?: "track"} · ${context.getString(R.string.training_split_n, split.index)}"
+                                scope.launch { GpxShare.share(context, splitName, cat.rumb.app.data.gpx.Gpx.write(splitName, slice)) }
+                            }
+                        },
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
             }
         }
@@ -576,13 +594,15 @@ private fun LapsSection(
     points: List<cat.rumb.app.data.gpx.GpxPoint>,
     onExportLap: (cat.rumb.app.data.tracks.LapRange) -> Unit,
     showTitle: Boolean = true,
+    titleRes: Int = R.string.training_laps_title,
+    itemLabelRes: Int = R.string.training_lap_n,
 ) {
     val perLap = remember(points, laps) {
         laps.map { it to TrackStatsCalculator.compute(points.subList(it.startIdx.coerceIn(0, points.size), it.endIdx.coerceIn(0, points.size))) }
     }
     if (showTitle) {
         Text(
-            stringResource(R.string.training_laps_title),
+            stringResource(titleRes),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(top = 4.dp),
         )
@@ -595,7 +615,7 @@ private fun LapsSection(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        stringResource(R.string.training_lap_n, lap.index),
+                        stringResource(itemLabelRes, lap.index),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                     )

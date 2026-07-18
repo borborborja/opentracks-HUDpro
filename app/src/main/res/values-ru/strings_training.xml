@@ -26,6 +26,8 @@
     <string name="laps_edit_clear">Удалить все круги</string>
     <string name="laps_edit_clear_confirm">Снова станет обычным треком без кругов. Отменить нельзя.</string>
     <string name="training_lap_n">Круг %1$d</string>
+    <string name="training_splits_title">Отрезки</string>
+    <string name="training_split_n">Отрезок %1$d</string>
     <string name="training_action_compare">Сравнить</string>
     <string name="compare_title">Сравнение</string>
     <string name="compare_mode_laps">Круги</string>
