@@ -86,6 +86,25 @@ class MiScaleParserTest {
         assertThat(f.stabilized).isTrue()
     }
 
+    /** Bytes as hex → ByteArray, for pasting real captured frames. */
+    private fun hex(s: String): ByteArray =
+        s.trim().split(" ").map { it.toInt(16).toByte() }.toByteArray()
+
+    @Test
+    fun realCapturedFramesFromAn2016Scale() {
+        // Actual frames logged from a Mi Body Composition Scale (XMTZC02HM). Weight settles first,
+        // impedance lands a moment later — the reason completion must wait for the impedance frame.
+        val settledNoImpedance = MiScaleParser.parseMibcs2(hex("02 24 b3 07 01 0d 0c 13 13 00 00 a8 39"))!!
+        assertThat(settledNoImpedance.weightKg).isCloseTo(73.8, within(0.05))
+        assertThat(settledNoImpedance.stabilized).isTrue()
+        assertThat(settledNoImpedance.impedanceOhm).isNull()
+
+        val withImpedance = MiScaleParser.parseMibcs2(hex("02 26 b3 07 01 0d 0c 13 13 dc 01 a8 39"))!!
+        assertThat(withImpedance.weightKg).isCloseTo(73.8, within(0.05))
+        assertThat(withImpedance.stabilized).isTrue()
+        assertThat(withImpedance.impedanceOhm).isEqualTo(476)
+    }
+
     @Test
     fun parseDispatchesByLength() {
         // A 13-byte frame → v2 (impedance possible); a 10-byte one → v1 (no impedance).

@@ -53,6 +53,9 @@ class BleScaleClient(private val context: Context, private val address: String) 
     private var gatt: BluetoothGatt? = null
     private val pendingWrites = ArrayDeque<BluetoothGattDescriptor>()
 
+    /** Last settled weight-only frame, kept so a weight-only scale still completes on disconnect. */
+    private var pendingWeightOnly: ScaleFrame? = null
+
     fun start() {
         if (!hasPermission(context)) { _state.value = ScaleState.Error("no-permission"); return }
         val adapter = (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
@@ -70,6 +73,7 @@ class BleScaleClient(private val context: Context, private val address: String) 
         runCatching { gatt?.disconnect(); gatt?.close() }
         gatt = null
         pendingWrites.clear()
+        pendingWeightOnly = null
         _state.value = ScaleState.Idle
     }
 
@@ -80,6 +84,10 @@ class BleScaleClient(private val context: Context, private val address: String) 
                 g.discoverServices()
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 DebugLog.i("Scale", "BLE: desconnectat ${g.device.address}")
+                // A weight-only scale never sends impedance, so the reading never auto-completes.
+                // On disconnect, fall back to the last settled weight so it still saves (weight + BMI).
+                val pending = pendingWeightOnly
+                if (_state.value !is ScaleState.Done && pending != null) _state.value = ScaleState.Done(pending)
             }
         }
 
@@ -141,11 +149,14 @@ class BleScaleClient(private val context: Context, private val address: String) 
         // weigh-in. Read it in the in-app Debug Log or `adb logcat -s Rumb.Scale`.
         DebugLog.i("Scale", "BLE: trama $uuid len=${data.size} · ${data.joinToString(" ") { "%02x".format(it) }}")
         val frame = MiScaleParser.parse(data) ?: return
+        // The scale settles the WEIGHT a moment before it reports impedance, so completing on the
+        // first stabilized frame would save weight-only and miss the impedance that lands right after
+        // (exactly what happened on the XMTZC02HM). Wait for stabilized-WITH-impedance; keep the
+        // settled weight aside so a scale that never sends impedance still completes on disconnect.
         _state.value = when {
-            frame.weightRemoved -> ScaleState.Connecting // stepped off before finishing
-            // Settled weight completes the reading; impedance rides along if the scale measures it.
-            // A weight-only scale (e.g. the 2016 model) still finishes — you get weight + BMI.
-            frame.stabilized -> ScaleState.Done(frame)
+            frame.weightRemoved -> ScaleState.Connecting
+            frame.stabilized && frame.impedanceOhm != null -> ScaleState.Done(frame)
+            frame.stabilized -> { pendingWeightOnly = frame; ScaleState.Live(frame.weightKg) }
             else -> ScaleState.Live(frame.weightKg)
         }
     }
