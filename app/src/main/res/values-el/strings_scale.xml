@@ -64,4 +64,5 @@
     <string name="scale_stat_max">Μέγ.</string>
     <string name="scale_all_metrics">Όλες οι μετρήσεις</string>
     <string name="scale_tap_breakdown">Πάτα για την ανάλυση</string>
+    <string name="scale_need_two">Η τάση εμφανίζεται μετά από 2 ζυγίσματα.</string>
 </resources>

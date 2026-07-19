@@ -64,4 +64,5 @@
     <string name="scale_stat_max">Max</string>
     <string name="scale_all_metrics">Alla mått</string>
     <string name="scale_tap_breakdown">Tryck för fördelningen</string>
+    <string name="scale_need_two">Trenden visas efter 2 vägningar.</string>
 </resources>

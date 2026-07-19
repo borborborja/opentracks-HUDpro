@@ -64,4 +64,5 @@
     <string name="scale_stat_max">Maks</string>
     <string name="scale_all_metrics">Alle mål</string>
     <string name="scale_tap_breakdown">Tryk for fordelingen</string>
+    <string name="scale_need_two">Tendensen vises efter 2 vejninger.</string>
 </resources>

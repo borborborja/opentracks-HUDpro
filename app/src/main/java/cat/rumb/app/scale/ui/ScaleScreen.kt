@@ -87,6 +87,7 @@ import cat.rumb.app.scale.BodyMetrics
 import cat.rumb.app.scale.Sex
 import cat.rumb.app.scale.WeighInEntity
 import cat.rumb.app.scale.ble.BleScaleClient
+import cat.rumb.app.scale.ble.ScaleFrame
 import cat.rumb.app.scale.ble.ScaleState
 import cat.rumb.app.viewer.hud.drawSeries
 import kotlinx.coroutines.launch
@@ -169,6 +170,9 @@ private fun LiveTab(prefs: ViewerPreferences, weighIns: List<WeighInEntity>, onP
     var client by remember { mutableStateOf<BleScaleClient?>(null) }
     var state by remember { mutableStateOf<ScaleState>(ScaleState.Idle) }
     var saved by remember { mutableStateOf(false) }
+    // The completed reading, frozen so it stays on screen after you step off (which pushes the BLE
+    // back to Connecting). Cleared only when you weigh again or switch who.
+    var lastDone by remember { mutableStateOf<ScaleState.Done?>(null) }
 
     fun heightAgeSex(): Triple<Int, Int, String> =
         if (who == Who.SELF) Triple(prefs.userHeightCm, prefs.userAge, prefs.userSex)
@@ -182,13 +186,18 @@ private fun LiveTab(prefs: ViewerPreferences, weighIns: List<WeighInEntity>, onP
         onDispose { job?.cancel(); c?.stop(); state = ScaleState.Idle }
     }
 
-    // Save your own stabilized reading exactly once — in an effect, not during composition.
-    LaunchedEffect(state, who) {
+    // First stabilized reading: freeze it on screen, save it once (yours only), and release the BLE
+    // so stepping off can't churn it back to Connecting.
+    LaunchedEffect(state) {
         val s = state
-        if (who == Who.SELF && s is ScaleState.Done && !saved) {
-            saved = true
-            val (h, a, sx) = heightAgeSex()
-            app.weightRepository.add(System.currentTimeMillis(), s.frame.weightKg, s.frame.impedanceOhm, h, a, sx)
+        if (s is ScaleState.Done && lastDone == null) {
+            lastDone = s
+            if (who == Who.SELF && !saved) {
+                saved = true
+                val (h, a, sx) = heightAgeSex()
+                app.weightRepository.add(System.currentTimeMillis(), s.frame.weightKg, s.frame.impedanceOhm, h, a, sx)
+            }
+            client?.stop()
         }
     }
 
@@ -197,8 +206,8 @@ private fun LiveTab(prefs: ViewerPreferences, weighIns: List<WeighInEntity>, onP
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(who == Who.SELF, { who = Who.SELF; saved = false }, label = { Text(stringResource(R.string.scale_who_me)) })
-            FilterChip(who == Who.GUEST, { who = Who.GUEST; saved = false }, label = { Text(stringResource(R.string.scale_who_guest)) })
+            FilterChip(who == Who.SELF, { who = Who.SELF; saved = false; lastDone = null }, label = { Text(stringResource(R.string.scale_who_me)) })
+            FilterChip(who == Who.GUEST, { who = Who.GUEST; saved = false; lastDone = null }, label = { Text(stringResource(R.string.scale_who_guest)) })
         }
         if (who == Who.GUEST) {
             Text(stringResource(R.string.scale_guest_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
@@ -212,31 +221,23 @@ private fun LiveTab(prefs: ViewerPreferences, weighIns: List<WeighInEntity>, onP
             Button(
                 onClick = {
                     saved = false
+                    lastDone = null
                     client?.stop()
                     client = BleScaleClient(context, address).also { it.start() }
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(R.string.scale_weigh)) }
 
-            when (val s = state) {
+            // A finished reading (frozen) wins over the live BLE state, so stepping off keeps it shown.
+            val frozen = lastDone
+            val (h, a, sx) = heightAgeSex()
+            if (frozen != null) {
+                ReadingResult(frozen.frame, who == Who.SELF, h, a, sx, weighIns)
+            } else when (val s = state) {
                 is ScaleState.Connecting -> StatusLine(R.string.scale_state_connecting)
                 is ScaleState.Live -> BigWeight(s.weightKg, live = true)
                 is ScaleState.Error -> Text(stringResource(errorRes(s.message)), color = MaterialTheme.colorScheme.error)
-                is ScaleState.Done -> {
-                    val (h, a, sx) = heightAgeSex()
-                    val sex = sexOf(sx)
-                    val metrics = BodyComposition.compute(s.frame.weightKg, s.frame.impedanceOhm, h, a, sex)
-                    // Previous weigh-in (yours only) frames the change; the just-saved reading is the
-                    // list's newest, so step back one when it's already there.
-                    val prior = if (who == Who.SELF) priorTo(weighIns, metrics.weightKg) else null
-                    ReadingHero(metrics, sex, prior?.metrics()?.weightKg)
-                    if (who == Who.SELF) Text(stringResource(R.string.scale_saved), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                    SectionHeader(R.string.scale_section_composition, R.string.scale_estimate_short)
-                    if (metrics.bodyFatPct == null) {
-                        Text(stringResource(R.string.scale_needs_profile), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-                    }
-                    CompositionGrid(metrics, sex, previous = prior?.metrics(), showEstimate = true)
-                }
+                is ScaleState.Done -> ReadingResult(s.frame, who == Who.SELF, h, a, sx, weighIns)
                 ScaleState.Idle -> StatusLine(R.string.scale_state_idle)
             }
         }
@@ -252,6 +253,21 @@ private fun priorTo(weighIns: List<WeighInEntity>, currentWeight: Double): Weigh
     val sorted = weighIns.sortedBy { it.timestamp }
     val last = sorted.lastOrNull() ?: return null
     return if (abs(last.weightKg - currentWeight) < 0.05) sorted.getOrNull(sorted.size - 2) else last
+}
+
+/** The full result of one reading: hero + composition grid, framed against the previous weigh-in. */
+@Composable
+private fun ReadingResult(frame: ScaleFrame, isSelf: Boolean, heightCm: Int, ageYears: Int, sexCode: String, weighIns: List<WeighInEntity>) {
+    val sex = sexOf(sexCode)
+    val metrics = BodyComposition.compute(frame.weightKg, frame.impedanceOhm, heightCm, ageYears, sex)
+    val prior = if (isSelf) priorTo(weighIns, metrics.weightKg) else null
+    ReadingHero(metrics, sex, prior?.metrics()?.weightKg)
+    if (isSelf) Text(stringResource(R.string.scale_saved), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+    SectionHeader(R.string.scale_section_composition, R.string.scale_estimate_short)
+    if (metrics.bodyFatPct == null) {
+        Text(stringResource(R.string.scale_needs_profile), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+    }
+    CompositionGrid(metrics, sex, previous = prior?.metrics(), showEstimate = true)
 }
 
 /** Collapsible card with standardized-weigh-in guidance. */
@@ -627,10 +643,12 @@ private fun StatsTab(weighIns: List<WeighInEntity>) {
     val entries = remember(weighIns) { weighIns.sortedBy { it.timestamp } }
     val metricsSeq = remember(entries) { entries.map { it.metrics() } }
     // Each stat metric with the values it actually has (composition metrics skip weight-only reads).
+    // Any metric with at least one value: a composition metric present in a single reading still
+    // shows here (as a snapshot), instead of Stats collapsing to weight only.
     val available = remember(metricsSeq) {
         STAT_METRICS.mapNotNull { sm ->
             val series = metricsSeq.mapNotNull { sm.value(it)?.toFloat() }
-            if (series.size >= 2) sm to series else null
+            if (series.isNotEmpty()) sm to series else null
         }
     }
     if (available.isEmpty()) {
@@ -640,6 +658,7 @@ private fun StatsTab(weighIns: List<WeighInEntity>) {
     var selected by rememberSaveable { mutableIntStateOf(0) }
     val selectedIdx = selected.coerceIn(0, available.size - 1)
     val (sm, series) = available[selectedIdx]
+    val single = series.size < 2
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -664,23 +683,31 @@ private fun StatsTab(weighIns: List<WeighInEntity>) {
                             if (sm.unit.isNotEmpty()) Text(" ${sm.unit}", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 3.dp))
                         }
                     }
-                    val diff = (series.last() - series.first()).toDouble()
-                    StatDeltaPill(diff, sm.unit, improving = (diff < 0) == sm.betterDown)
+                    if (!single) {
+                        val diff = (series.last() - series.first()).toDouble()
+                        StatDeltaPill(diff, sm.unit, improving = (diff < 0) == sm.betterDown)
+                    }
                 }
-                Canvas(Modifier.fillMaxWidth().height(150.dp)) {
-                    drawAreaChart(series, accent, grid, surface)
-                }
-                Row(Modifier.fillMaxWidth()) {
-                    Text(formatDayMonthYearShort(entries.first().timestamp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, modifier = Modifier.weight(1f))
-                    Text(formatDayMonthYearShort(entries.last().timestamp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, textAlign = TextAlign.End)
+                if (single) {
+                    Text(stringResource(R.string.scale_need_two), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                } else {
+                    Canvas(Modifier.fillMaxWidth().height(150.dp)) {
+                        drawAreaChart(series, accent, grid, surface)
+                    }
+                    Row(Modifier.fillMaxWidth()) {
+                        Text(formatDayMonthYearShort(entries.first().timestamp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, modifier = Modifier.weight(1f))
+                        Text(formatDayMonthYearShort(entries.last().timestamp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, textAlign = TextAlign.End)
+                    }
                 }
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            SummaryCell(R.string.scale_stat_start, series.first().toDouble(), sm.decimals)
-            SummaryCell(R.string.scale_stat_min, series.min().toDouble(), sm.decimals)
-            SummaryCell(R.string.scale_stat_max, series.max().toDouble(), sm.decimals)
+        if (!single) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                SummaryCell(R.string.scale_stat_start, series.first().toDouble(), sm.decimals)
+                SummaryCell(R.string.scale_stat_min, series.min().toDouble(), sm.decimals)
+                SummaryCell(R.string.scale_stat_max, series.max().toDouble(), sm.decimals)
+            }
         }
 
         Row(
@@ -730,18 +757,21 @@ private fun StatDeltaPill(diff: Double, unit: String, improving: Boolean) {
 
 @Composable
 private fun SmallMultiple(sm: StatMetric, series: List<Float>) {
-    val diff = (series.last() - series.first()).toDouble()
+    val single = series.size < 2
+    val diff = if (single) 0.0 else (series.last() - series.first()).toDouble()
     val improving = (diff < 0) == sm.betterDown
     val color = if (improving) ZoneGood else ZoneHigh
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(sm.nameRes), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                Text("${if (diff >= 0) "+" else "−"}${fmt(abs(diff), sm.decimals)}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = color)
+                if (!single) Text("${if (diff >= 0) "+" else "−"}${fmt(abs(diff), sm.decimals)}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = color)
             }
             Text(fmt(series.last().toDouble(), sm.decimals) + if (sm.unit.isNotEmpty()) " ${sm.unit}" else "", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Canvas(Modifier.fillMaxWidth().height(34.dp)) {
-                drawSeries(series, size.width, size.height, color, baselineZero = false)
+            if (!single) {
+                Canvas(Modifier.fillMaxWidth().height(34.dp)) {
+                    drawSeries(series, size.width, size.height, color, baselineZero = false)
+                }
             }
         }
     }
@@ -779,9 +809,10 @@ private fun HistoryTab(weighIns: List<WeighInEntity>, onDelete: (Long) -> Unit) 
                         Column(Modifier.weight(1f)) {
                             Text("%.1f kg".format(w.weightKg), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             Text(
-                                stringResource(if (expanded) R.string.scale_section_composition else R.string.scale_tap_breakdown),
+                                "${timeOf(w.timestamp)} · ${stringResource(if (expanded) R.string.scale_section_composition else R.string.scale_tap_breakdown)}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.outline,
+                                maxLines = 1,
                             )
                         }
                         delta?.let {
@@ -809,7 +840,7 @@ private fun HistoryTab(weighIns: List<WeighInEntity>, onDelete: (Long) -> Unit) 
     pendingDelete?.let { w ->
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
-            title = { Text(formatDayMonthYearShort(w.timestamp)) },
+            title = { Text("${formatDayMonthYearShort(w.timestamp)} · ${timeOf(w.timestamp)}") },
             text = { Text(stringResource(R.string.scale_delete_confirm)) },
             confirmButton = {
                 TextButton(onClick = { onDelete(w.id); pendingDelete = null }) {
@@ -924,6 +955,11 @@ private fun monthOf(ts: Long): String =
     java.time.Instant.ofEpochMilli(ts).atZone(java.time.ZoneId.systemDefault())
         .month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault())
         .trimEnd('.')
+
+private fun timeOf(ts: Long): String =
+    java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+        .withZone(java.time.ZoneId.systemDefault())
+        .format(java.time.Instant.ofEpochMilli(ts))
 
 private fun errorRes(message: String): Int = when (message) {
     "no-permission" -> R.string.scale_err_permission

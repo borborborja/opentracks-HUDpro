@@ -64,4 +64,5 @@
     <string name="scale_stat_max">Max</string>
     <string name="scale_all_metrics">Všechny metriky</string>
     <string name="scale_tap_breakdown">Klepni pro rozpis</string>
+    <string name="scale_need_two">Trend se objeví po 2 váženích.</string>
 </resources>

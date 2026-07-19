@@ -71,4 +71,5 @@
     <string name="scale_stat_max">Max</string>
     <string name="scale_all_metrics">All metrics</string>
     <string name="scale_tap_breakdown">Tap for the breakdown</string>
+    <string name="scale_need_two">The trend appears after 2 weigh-ins.</string>
 </resources>

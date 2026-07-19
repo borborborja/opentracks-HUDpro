@@ -64,4 +64,5 @@
     <string name="scale_stat_max">Макс</string>
     <string name="scale_all_metrics">Усі показники</string>
     <string name="scale_tap_breakdown">Торкнись для розподілу</string>
+    <string name="scale_need_two">Тенденція з\'явиться після 2 зважувань.</string>
 </resources>

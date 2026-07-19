@@ -64,4 +64,5 @@
     <string name="scale_stat_max">Max</string>
     <string name="scale_all_metrics">Toate valorile</string>
     <string name="scale_tap_breakdown">Atinge pentru analiză</string>
+    <string name="scale_need_two">Tendința apare după 2 cântăriri.</string>
 </resources>

@@ -64,4 +64,5 @@
     <string name="scale_stat_max">Max</string>
     <string name="scale_all_metrics">Alle metingen</string>
     <string name="scale_tap_breakdown">Tik voor de uitsplitsing</string>
+    <string name="scale_need_two">De trend verschijnt vanaf 2 metingen.</string>
 </resources>

@@ -64,4 +64,5 @@
     <string name="scale_stat_max">Max</string>
     <string name="scale_all_metrics">Tutte le metriche</string>
     <string name="scale_tap_breakdown">Tocca per il dettaglio</string>
+    <string name="scale_need_two">La tendenza appare da 2 pesate.</string>
 </resources>

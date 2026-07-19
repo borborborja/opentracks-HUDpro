@@ -64,4 +64,5 @@
     <string name="scale_stat_max">Maks</string>
     <string name="scale_all_metrics">Wszystkie metryki</string>
     <string name="scale_tap_breakdown">Dotknij, aby zobaczyć rozkład</string>
+    <string name="scale_need_two">Trend pojawia się po 2 pomiarach.</string>
 </resources>
