@@ -89,6 +89,8 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
     var laps by remember { mutableStateOf<List<cat.rumb.app.data.tracks.LapRange>>(emptyList()) }
     var controller by remember { mutableStateOf<RouteEditorController?>(null) }
     var reloadTick by remember { mutableStateOf(0) }
+    // Weight for the calorie estimate: measured weight as of this activity's date, else the manual one.
+    var kcalWeightKg by remember { mutableStateOf(prefs.userWeightKg) }
 
     var showMenu by remember { mutableStateOf(false) }
     var showShare by remember { mutableStateOf(false) }
@@ -113,6 +115,9 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
         samples = smp
         points = pts
         laps = cat.rumb.app.data.tracks.Laps.decode(e?.laps)
+        kcalWeightKg = app.weightRepository.weightKgFor(
+            pts.firstOrNull()?.time?.toEpochMilli(), prefs.userWeightKg, prefs.weightControlEnabled,
+        )
     }
     // Draw the track once both the map and the data are ready; repaint when the paint mode changes.
     var framed by remember(trackId) { mutableStateOf(false) }
@@ -281,7 +286,7 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
 
                 stats?.let { s ->
                     val kcal = Calories.kcal(
-                        entity?.activityType, prefs.userWeightKg, s.movingTime ?: s.totalTime,
+                        entity?.activityType, kcalWeightKg, s.movingTime ?: s.totalTime,
                         s.avgHr, prefs.userAge, prefs.userSex,
                     )
                     StatsCard(s, kcal)
@@ -385,9 +390,12 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
             onPick = { format ->
                 showShare = false
                 scope.launch {
+                    val w = app.weightRepository.weightKgFor(
+                        points.firstOrNull()?.time?.toEpochMilli(), prefs.userWeightKg, prefs.weightControlEnabled,
+                    )
                     val built = cat.rumb.app.data.gpx.TrackExport.build(
                         format, cat.rumb.app.data.sync.SyncTargets.safeName(entity?.name ?: "activitat"),
-                        points, laps, entity?.activityType, prefs.userWeightKg, prefs.userAge, prefs.userSex,
+                        points, laps, entity?.activityType, w, prefs.userAge, prefs.userSex,
                     )
                     GpxShare.shareFile(context, built.fileName, built.content, built.mime, entity?.name ?: "")
                 }
@@ -488,9 +496,12 @@ private fun TrainingSyncRow(
     fun doSync() {
         scope.launch {
             val up = ViewerPreferences.get(context)
+            val w = app.weightRepository.weightKgFor(
+                points.firstOrNull()?.time?.toEpochMilli(), up.userWeightKg, up.weightControlEnabled,
+            )
             val built = cat.rumb.app.data.gpx.ActivityFile.build(
                 cat.rumb.app.data.sync.SyncTargets.safeName(name), points, laps, activityType,
-                up.userWeightKg, up.userAge, up.userSex,
+                w, up.userAge, up.userSex,
             )
             cat.rumb.app.data.sync.SyncTargets.enqueueAll(context, trackId, built.fileName, built.content)
         }

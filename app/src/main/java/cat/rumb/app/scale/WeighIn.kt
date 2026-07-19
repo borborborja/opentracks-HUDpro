@@ -42,6 +42,9 @@ interface WeighInDao {
     @Query("SELECT * FROM weigh_ins ORDER BY timestamp ASC")
     fun observeAll(): Flow<List<WeighInEntity>>
 
+    @Query("SELECT * FROM weigh_ins ORDER BY timestamp ASC")
+    suspend fun allOnce(): List<WeighInEntity>
+
     @Insert
     suspend fun insert(weighIn: WeighInEntity): Long
 

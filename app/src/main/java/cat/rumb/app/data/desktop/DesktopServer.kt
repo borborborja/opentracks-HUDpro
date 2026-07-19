@@ -149,9 +149,12 @@ class DesktopServer(
         val entity = runBlocking { app.trackRepository.get(id) } ?: return json(Response.Status.NOT_FOUND, OkDto(false))
         val points = runBlocking { app.trackRepository.loadGpxRoute(id) }
         val stats = TrackStatsCalculator.compute(points)
+        val w = runBlocking {
+            app.weightRepository.weightKgFor(points.firstOrNull()?.time?.toEpochMilli(), prefs.userWeightKg, prefs.weightControlEnabled)
+        }
         val detail = TrackDetailDto(
             track = entity.toDto(),
-            stats = stats.toDto(entity.activityType, prefs.userWeightKg),
+            stats = stats.toDto(entity.activityType, w),
             samples = TrackStatsCalculator.samples(points).map { it.toDto() },
         )
         return json(Response.Status.OK, detail)

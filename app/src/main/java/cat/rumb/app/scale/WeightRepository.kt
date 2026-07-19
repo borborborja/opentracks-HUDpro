@@ -16,4 +16,13 @@ class WeightRepository(private val dao: WeighInDao) {
         }
 
     suspend fun delete(id: Long) = withContext(Dispatchers.IO) { dao.delete(id) }
+
+    /**
+     * The body weight (kg) to use for a calculation dated [atTs] (null = now/latest). Returns the
+     * MEASURED weight only when the module is [enabled] and a weigh-in exists; otherwise [manualKg].
+     * See [WeightResolver] — additive by design, so callers are unchanged without the scale.
+     */
+    suspend fun weightKgFor(atTs: Long?, manualKg: Int, enabled: Boolean): Int = withContext(Dispatchers.IO) {
+        if (!enabled) manualKg else WeightResolver.resolve(dao.allOnce(), atTs, manualKg, enabled)
+    }
 }

@@ -465,9 +465,12 @@ fun HomeScreen(
                 scope.launch {
                     val points = app.trackRepository.loadGpxRoute(track.id)
                     val laps = cat.rumb.app.data.tracks.Laps.decode(track.laps)
+                    val w = app.weightRepository.weightKgFor(
+                        points.firstOrNull()?.time?.toEpochMilli(), prefs.userWeightKg, prefs.weightControlEnabled,
+                    )
                     val built = cat.rumb.app.data.gpx.TrackExport.build(
                         format, cat.rumb.app.data.sync.SyncTargets.safeName(track.name),
-                        points, laps, track.activityType, prefs.userWeightKg, prefs.userAge, prefs.userSex,
+                        points, laps, track.activityType, w, prefs.userAge, prefs.userSex,
                     )
                     GpxShare.shareFile(context, built.fileName, built.content, built.mime, track.name)
                 }

@@ -253,6 +253,14 @@ class MapViewerActivity : ComponentActivity() {
         adaptiveZoom = prefs.adaptiveZoom
         turnVoiceOn = prefs.turnVoice
         weightKg = prefs.userWeightKg
+        // Prefer the latest measured weight for the live calorie estimate; falls back to the manual
+        // weight when the scale module is off or has no weigh-ins (so nothing changes without a scale).
+        if (prefs.weightControlEnabled) {
+            lifecycleScope.launch {
+                weightKg = cat.rumb.app.RumbApplication.from(this@MapViewerActivity)
+                    .weightRepository.weightKgFor(null, prefs.userWeightKg, true)
+            }
+        }
         setupAnnouncements(prefs)
 
         // Unified competition mode. Clear any stale circuit prefs first so a normal launch never
@@ -1341,9 +1349,11 @@ class MapViewerActivity : ComponentActivity() {
                 cat.rumb.app.data.tracks.TrackMetadataBackfillWorker.enqueue(this@MapViewerActivity)
                 // TCX (real laps + calories) when the activity has laps, else GPX.
                 val up = cat.rumb.app.data.prefs.ViewerPreferences.get(this@MapViewerActivity)
+                val w = cat.rumb.app.RumbApplication.from(this@MapViewerActivity).weightRepository
+                    .weightKgFor(pts.firstOrNull()?.time?.toEpochMilli(), up.userWeightKg, up.weightControlEnabled)
                 val built = cat.rumb.app.data.gpx.ActivityFile.build(
                     cat.rumb.app.data.sync.SyncTargets.safeName(name), pts, ranges, activityType,
-                    up.userWeightKg, up.userAge, up.userSex,
+                    w, up.userAge, up.userSex,
                 )
                 cat.rumb.app.data.sync.SyncTargets.enqueueAll(this@MapViewerActivity, newId, built.fileName, built.content)
                 DebugLog.i("Record", "desada «$name» · ${pts.size} punts · ${built.fileName} · sync encuat")

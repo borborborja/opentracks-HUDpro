@@ -61,8 +61,11 @@ object SyncTargets {
                 .getOrDefault(emptyList())
             if (points.size < 2) continue
             val laps = cat.rumb.app.data.tracks.Laps.decode(entity.laps)
+            val w = app.weightRepository.weightKgFor(
+                points.firstOrNull()?.time?.toEpochMilli(), up.userWeightKg, up.weightControlEnabled,
+            )
             val built = cat.rumb.app.data.gpx.ActivityFile.build(
-                safeName(entity.name), points, laps, entity.activityType, up.userWeightKg, up.userAge, up.userSex,
+                safeName(entity.name), points, laps, entity.activityType, w, up.userAge, up.userSex,
             )
             SyncStatusStore.mark(context, s.id, SyncService.ENDURAIN, SyncState.PENDING)
             EndurainUploadWorker.enqueue(context, built.content, built.fileName, s.id)
@@ -83,8 +86,11 @@ object SyncTargets {
             if (points.isEmpty()) continue
             val laps = cat.rumb.app.data.tracks.Laps.decode(entity.laps)
             val up = cat.rumb.app.data.prefs.ViewerPreferences.get(context)
+            val w = app.weightRepository.weightKgFor(
+                points.firstOrNull()?.time?.toEpochMilli(), up.userWeightKg, up.weightControlEnabled,
+            )
             val built = cat.rumb.app.data.gpx.ActivityFile.build(
-                safeName(entity.name), points, laps, entity.activityType, up.userWeightKg, up.userAge, up.userSex,
+                safeName(entity.name), points, laps, entity.activityType, w, up.userAge, up.userSex,
             )
             when (row.service) {
                 SyncService.ENDURAIN -> {
