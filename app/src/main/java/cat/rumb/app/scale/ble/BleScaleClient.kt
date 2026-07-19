@@ -85,14 +85,24 @@ class BleScaleClient(private val context: Context, private val address: String) 
 
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
             pendingWrites.clear()
+            // Diagnostic: log the whole GATT so an unknown/older scale's real UUIDs are captured.
+            // Then subscribe to EVERY notify/indicate characteristic — not just the ones we guessed —
+            // so whatever the scale streams reaches handle() and gets logged.
             var found = false
-            for ((service, characteristic) in MEASUREMENTS) {
-                val char = g.getService(service)?.getCharacteristic(characteristic) ?: continue
-                g.setCharacteristicNotification(char, true)
-                char.getDescriptor(CCC_DESCRIPTOR)?.let { pendingWrites.add(it); found = true }
+            for (service in g.services) {
+                for (char in service.characteristics) {
+                    val props = char.properties
+                    val notifiable = props and (BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0
+                    DebugLog.i("Scale", "BLE: char ${service.uuid}/${char.uuid} props=$props notify=$notifiable")
+                    if (!notifiable) continue
+                    val ccc = char.getDescriptor(CCC_DESCRIPTOR) ?: continue
+                    g.setCharacteristicNotification(char, true)
+                    pendingWrites.add(ccc)
+                    found = true
+                }
             }
             if (!found) {
-                DebugLog.w("Scale", "BLE: sense característica de mesura coneguda a ${g.device.address}")
+                DebugLog.w("Scale", "BLE: cap característica notificable a ${g.device.address}")
                 _state.value = ScaleState.Error("unknown-scale")
                 return
             }
@@ -106,11 +116,11 @@ class BleScaleClient(private val context: Context, private val address: String) 
         @Deprecated("pre-T callback")
         override fun onCharacteristicChanged(g: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
             @Suppress("DEPRECATION")
-            handle(characteristic.value ?: return)
+            handle(characteristic.uuid, characteristic.value ?: return)
         }
 
         override fun onCharacteristicChanged(g: BluetoothGatt, characteristic: BluetoothGattCharacteristic, value: ByteArray) {
-            handle(value)
+            handle(characteristic.uuid, value)
         }
     }
 
@@ -126,11 +136,16 @@ class BleScaleClient(private val context: Context, private val address: String) 
         }
     }
 
-    private fun handle(data: ByteArray) {
-        val frame = MiScaleParser.parseMibcs2(data) ?: return
+    private fun handle(uuid: UUID, data: ByteArray) {
+        // Diagnostic: the raw frame, so the exact protocol of an older scale can be pinned from a real
+        // weigh-in. Read it in the in-app Debug Log or `adb logcat -s Rumb.Scale`.
+        DebugLog.i("Scale", "BLE: trama $uuid len=${data.size} · ${data.joinToString(" ") { "%02x".format(it) }}")
+        val frame = MiScaleParser.parse(data) ?: return
         _state.value = when {
-            frame.stabilized && frame.impedanceOhm != null -> ScaleState.Done(frame)
             frame.weightRemoved -> ScaleState.Connecting // stepped off before finishing
+            // Settled weight completes the reading; impedance rides along if the scale measures it.
+            // A weight-only scale (e.g. the 2016 model) still finishes — you get weight + BMI.
+            frame.stabilized -> ScaleState.Done(frame)
             else -> ScaleState.Live(frame.weightKg)
         }
     }

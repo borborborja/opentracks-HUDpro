@@ -66,4 +66,30 @@ class MiScaleParserTest {
         val f = MiScaleParser.parseMibcs2(frame(unitFlags = 0x01, statusFlags = 0x22, impedance = 500, weightRaw = 10000))!!
         assertThat(f.weightKg).isCloseTo(45.359, within(0.01))
     }
+
+    // --- v1 / original scale (10-byte frame, control at [0], weight at [1..2], no impedance) ---
+
+    private fun v1(ctrl: Int, weightRaw: Int): ByteArray {
+        val b = ByteArray(10)
+        b[0] = ctrl.toByte()
+        b[1] = (weightRaw and 0xFF).toByte()
+        b[2] = ((weightRaw shr 8) and 0xFF).toByte()
+        return b
+    }
+
+    @Test
+    fun v1FrameGivesStabilizedWeightWithoutImpedance() {
+        // 75.00 kg → raw 15000; stabilized bit (0x20) in the control byte.
+        val f = MiScaleParser.parseMiScaleV1(v1(ctrl = 0x20, weightRaw = 15000))!!
+        assertThat(f.weightKg).isCloseTo(75.0, within(0.001))
+        assertThat(f.impedanceOhm).isNull()
+        assertThat(f.stabilized).isTrue()
+    }
+
+    @Test
+    fun parseDispatchesByLength() {
+        // A 13-byte frame → v2 (impedance possible); a 10-byte one → v1 (no impedance).
+        assertThat(MiScaleParser.parse(frame(statusFlags = 0x22, impedance = 500, weightRaw = 15000))!!.impedanceOhm).isEqualTo(500)
+        assertThat(MiScaleParser.parse(v1(ctrl = 0x20, weightRaw = 15000))!!.impedanceOhm).isNull()
+    }
 }

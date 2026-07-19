@@ -48,6 +48,27 @@ object MiScaleParser {
         return ScaleFrame(weightKg, impedance, stabilized, weightRemoved)
     }
 
+    /**
+     * The ORIGINAL Mi Body Composition Scale (XMTZC02HM, 2016) and Mi Scale use a shorter frame:
+     * control byte at `[0]`, weight uint16 LE at `[1..2]`, and NO impedance in this frame. Some units
+     * of this generation only ever expose weight over BLE. Returns weight with impedance null.
+     */
+    fun parseMiScaleV1(data: ByteArray): ScaleFrame? {
+        if (data.size < 3) return null
+        val ctrl = data[0].toInt() and 0xFF
+        val weightRaw = u16(data, 1)
+        val weightKg = when {
+            ctrl and UNIT_LB != 0 -> weightRaw / 100.0 * LB_TO_KG
+            ctrl and UNIT_CATTY != 0 -> weightRaw / 100.0 * CATTY_TO_KG
+            else -> weightRaw / 200.0
+        }
+        return ScaleFrame(weightKg, impedanceOhm = null, stabilized = ctrl and STABILIZED != 0, weightRemoved = ctrl and WEIGHT_REMOVED != 0)
+    }
+
+    /** Best-effort dispatch: the 13-byte v2 frame, else the shorter v1/Mi-Scale frame. */
+    fun parse(data: ByteArray): ScaleFrame? =
+        if (data.size >= 13) parseMibcs2(data) else parseMiScaleV1(data)
+
     private fun u16(data: ByteArray, offset: Int): Int =
         (data[offset].toInt() and 0xFF) or ((data[offset + 1].toInt() and 0xFF) shl 8)
 
