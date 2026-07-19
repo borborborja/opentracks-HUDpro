@@ -12,6 +12,7 @@
     <string name="training_stat_max_hr">Max HR</string>
     <string name="training_stat_avg_cadence">Avg cadence</string>
     <string name="training_stat_avg_power">Avg power</string>
+    <string name="training_stat_power_to_weight">Power/weight</string>
     <string name="training_action_duplicate_route">Duplicate to routes to follow</string>
     <string name="training_action_export">Export (GPX)</string>
     <string name="training_sync_title">Sync</string>

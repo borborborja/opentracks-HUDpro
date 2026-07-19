@@ -63,4 +63,5 @@
     <string name="training_paint_hr">Sykkeen mukaan</string>
     <string name="training_paint_speed">Nopeuden mukaan</string>
     <string name="training_stat_avg_pace">Keskitahti</string>
+    <string name="training_stat_power_to_weight">Teho/paino</string>
 </resources>

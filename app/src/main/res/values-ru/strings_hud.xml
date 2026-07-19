@@ -34,4 +34,5 @@
     <string name="metric_avg_pace">Ср. темп</string>
     <string name="metric_lap_avg_speed">Ср. скор. круга</string>
     <string name="metric_lap_avg_pace">Ср. темп круга</string>
+    <string name="metric_power_to_weight">Мощность/вес</string>
 </resources>

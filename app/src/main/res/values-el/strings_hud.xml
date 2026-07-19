@@ -34,4 +34,5 @@
     <string name="metric_avg_pace">Μέσος ρυθμός</string>
     <string name="metric_lap_avg_speed">Μ.Ο. ταχ. γύρου</string>
     <string name="metric_lap_avg_pace">Μ.Ο. ρυθμ. γύρου</string>
+    <string name="metric_power_to_weight">Ισχύς/βάρος</string>
 </resources>

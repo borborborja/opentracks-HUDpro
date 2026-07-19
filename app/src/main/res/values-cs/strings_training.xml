@@ -63,4 +63,5 @@
     <string name="training_paint_hr">Podle tepové frekvence</string>
     <string name="training_paint_speed">Podle rychlosti</string>
     <string name="training_stat_avg_pace">Průměrné tempo</string>
+    <string name="training_stat_power_to_weight">Výkon/hmotnost</string>
 </resources>

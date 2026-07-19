@@ -28,6 +28,8 @@ data class LiveMetrics(
     val heartRateBpm: Double? = null,
     val cadenceRpm: Double? = null,
     val powerW: Double? = null,
+    /** Body weight (kg) for power-to-weight; 0 = unknown. Injected from the profile/scale weight. */
+    val weightKg: Int = 0,
     val pointCount: Int = 0,
     val isRecording: Boolean = false,
     // Follow-route metrics (populated when a track is being followed; see follow package)

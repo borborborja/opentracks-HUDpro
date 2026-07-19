@@ -63,4 +63,5 @@
     <string name="training_paint_hr">Wg tętna</string>
     <string name="training_paint_speed">Wg prędkości</string>
     <string name="training_stat_avg_pace">Średnie tempo</string>
+    <string name="training_stat_power_to_weight">Moc/masa</string>
 </resources>

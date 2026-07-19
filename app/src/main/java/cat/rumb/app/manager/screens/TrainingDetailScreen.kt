@@ -289,7 +289,7 @@ fun TrainingDetailScreen(trackId: Long, onBack: () -> Unit, onCompare: (Long) ->
                         entity?.activityType, kcalWeightKg, s.movingTime ?: s.totalTime,
                         s.avgHr, prefs.userAge, prefs.userSex,
                     )
-                    StatsCard(s, kcal)
+                    StatsCard(s, kcal, kcalWeightKg)
                 }
 
                 if (cat.rumb.app.data.sync.SyncTargets.anyConfigured(context)) {
@@ -668,7 +668,7 @@ private fun formatPace(speedKmh: Double?): String? {
 }
 
 @Composable
-private fun StatsCard(s: TrackStats, kcal: Int) {
+private fun StatsCard(s: TrackStats, kcal: Int, weightKg: Int) {
     val cells = buildList {
         add(stringResource(R.string.training_stat_distance) to String.format("%.1f km", s.distanceM / 1000.0))
         add(stringResource(R.string.training_stat_total_time) to (s.totalTime?.let(::formatDuration) ?: "—"))
@@ -681,7 +681,10 @@ private fun StatsCard(s: TrackStats, kcal: Int) {
         s.avgHr?.let { add(stringResource(R.string.training_stat_avg_hr) to "${it.toInt()} bpm") }
         s.maxHr?.let { add(stringResource(R.string.training_stat_max_hr) to "${it.toInt()} bpm") }
         s.avgCadence?.let { add(stringResource(R.string.training_stat_avg_cadence) to "${it.toInt()} rpm") }
-        s.avgPower?.let { add(stringResource(R.string.training_stat_avg_power) to "${it.toInt()} W") }
+        s.avgPower?.let { p ->
+            add(stringResource(R.string.training_stat_avg_power) to "${p.toInt()} W")
+            if (weightKg > 0) add(stringResource(R.string.training_stat_power_to_weight) to String.format("%.1f W/kg", p / weightKg))
+        }
         if (kcal > 0) add(stringResource(R.string.records_stat_calories) to "$kcal kcal")
     }
     Card {

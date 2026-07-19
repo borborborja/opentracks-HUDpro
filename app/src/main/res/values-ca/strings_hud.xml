@@ -34,4 +34,5 @@
     <string name="metric_avg_pace">Ritme mitjà</string>
     <string name="metric_lap_avg_speed">Vel. mitj. volta</string>
     <string name="metric_lap_avg_pace">Ritme mitjà volta</string>
+    <string name="metric_power_to_weight">Potència/pes</string>
 </resources>

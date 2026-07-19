@@ -63,4 +63,5 @@
     <string name="training_paint_hr">По пульсу</string>
     <string name="training_paint_speed">По скорости</string>
     <string name="training_stat_avg_pace">Средний темп</string>
+    <string name="training_stat_power_to_weight">Мощность/вес</string>
 </resources>

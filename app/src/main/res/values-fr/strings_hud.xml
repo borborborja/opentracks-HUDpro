@@ -34,4 +34,5 @@
     <string name="metric_avg_pace">Allure moy.</string>
     <string name="metric_lap_avg_speed">Vit. moy. tour</string>
     <string name="metric_lap_avg_pace">All. moy. tour</string>
+    <string name="metric_power_to_weight">Puissance/poids</string>
 </resources>

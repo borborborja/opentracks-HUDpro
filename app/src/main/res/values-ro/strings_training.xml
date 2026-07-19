@@ -63,4 +63,5 @@
     <string name="training_paint_hr">După frecvență cardiacă</string>
     <string name="training_paint_speed">După viteză</string>
     <string name="training_stat_avg_pace">Ritm mediu</string>
+    <string name="training_stat_power_to_weight">Putere/greutate</string>
 </resources>

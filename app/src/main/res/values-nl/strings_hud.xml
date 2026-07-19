@@ -34,4 +34,5 @@
     <string name="metric_avg_pace">Gem. tempo</string>
     <string name="metric_lap_avg_speed">Gem. snelh. ronde</string>
     <string name="metric_lap_avg_pace">Gem. tempo ronde</string>
+    <string name="metric_power_to_weight">Vermogen/gewicht</string>
 </resources>

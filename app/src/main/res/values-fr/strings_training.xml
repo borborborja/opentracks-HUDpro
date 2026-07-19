@@ -63,4 +63,5 @@
     <string name="training_paint_hr">Par fréquence cardiaque</string>
     <string name="training_paint_speed">Par vitesse</string>
     <string name="training_stat_avg_pace">Allure moyenne</string>
+    <string name="training_stat_power_to_weight">Puissance/poids</string>
 </resources>

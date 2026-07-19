@@ -34,4 +34,5 @@
     <string name="metric_avg_pace">Ritmo medio</string>
     <string name="metric_lap_avg_speed">Vel. med. giro</string>
     <string name="metric_lap_avg_pace">Ritmo med. giro</string>
+    <string name="metric_power_to_weight">Potenza/peso</string>
 </resources>

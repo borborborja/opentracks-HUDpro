@@ -23,6 +23,7 @@ enum class HudMetric(val labelRes: Int) {
     HEART_RATE(cat.rumb.app.R.string.metric_heart_rate),
     CADENCE(cat.rumb.app.R.string.metric_cadence),
     POWER(cat.rumb.app.R.string.metric_power),
+    POWER_TO_WEIGHT(cat.rumb.app.R.string.metric_power_to_weight),
     REMAINING(cat.rumb.app.R.string.metric_remaining),
     OFF_ROUTE(cat.rumb.app.R.string.metric_off_route),
     GHOST_DELTA(cat.rumb.app.R.string.metric_ghost_delta),
@@ -55,6 +56,8 @@ enum class HudMetric(val labelRes: Int) {
         HEART_RATE -> fmt0(m.heartRateBpm)
         CADENCE -> fmt0(m.cadenceRpm)
         POWER -> fmt0(m.powerW)
+        // Power-to-weight: watts per kilo — the climbing metric. Needs a power sensor and a weight.
+        POWER_TO_WEIGHT -> fmt1(m.powerW?.let { p -> m.weightKg.takeIf { it > 0 }?.let { p / it } })
         REMAINING -> fmt2(m.remainingDistanceKm?.let { u.distance.fromKm(it) })
         OFF_ROUTE -> fmt0(m.offRouteMeters?.let { u.elevation.fromMeters(it) })
         GHOST_DELTA -> m.ghostDeltaMeters?.let { if (it >= 0) "+${it.toInt()}" else "${it.toInt()}" } ?: "—"
@@ -81,6 +84,7 @@ enum class HudMetric(val labelRes: Int) {
         HEART_RATE -> "bpm"
         CADENCE -> u.cadence.label
         POWER -> "W"
+        POWER_TO_WEIGHT -> "W/kg"
         GHOST_DELTA -> "m"
         GHOST_SECONDS -> "s"
         CALORIES -> "kcal"

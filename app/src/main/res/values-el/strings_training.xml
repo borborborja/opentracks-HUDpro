@@ -63,4 +63,5 @@
     <string name="training_paint_hr">Κατά καρδιακούς παλμούς</string>
     <string name="training_paint_speed">Κατά ταχύτητα</string>
     <string name="training_stat_avg_pace">Μέσος ρυθμός</string>
+    <string name="training_stat_power_to_weight">Ισχύς/βάρος</string>
 </resources>

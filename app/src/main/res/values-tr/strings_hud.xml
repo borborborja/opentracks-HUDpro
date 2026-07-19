@@ -34,4 +34,5 @@
     <string name="metric_avg_pace">Ort. tempo</string>
     <string name="metric_lap_avg_speed">Tur ort. hız</string>
     <string name="metric_lap_avg_pace">Tur ort. tempo</string>
+    <string name="metric_power_to_weight">Güç/ağırlık</string>
 </resources>

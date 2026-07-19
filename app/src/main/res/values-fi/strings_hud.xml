@@ -34,4 +34,5 @@
     <string name="metric_avg_pace">Ka. tahti</string>
     <string name="metric_lap_avg_speed">Kierr. keskinop.</string>
     <string name="metric_lap_avg_pace">Kierr. keskivauhti</string>
+    <string name="metric_power_to_weight">Teho/paino</string>
 </resources>

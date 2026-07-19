@@ -15,6 +15,7 @@
     <string name="metric_heart_rate">HR</string>
     <string name="metric_cadence">Cadence</string>
     <string name="metric_power">Power</string>
+    <string name="metric_power_to_weight">Power/weight</string>
     <string name="metric_remaining">Remaining</string>
     <string name="metric_off_route">Deviation</string>
     <string name="hudel_chart_speed">Speed chart</string>

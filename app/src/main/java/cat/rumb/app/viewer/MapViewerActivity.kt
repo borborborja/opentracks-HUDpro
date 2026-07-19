@@ -1706,7 +1706,9 @@ class MapViewerActivity : ComponentActivity() {
         }
 
         // Live calorie estimate (MET-based; generic activity until the user saves with a type).
+        // weightKg also feeds the power-to-weight tile (W/kg).
         metrics = metrics.copy(
+            weightKg = weightKg,
             caloriesKcal = cat.rumb.app.data.tracks.Calories.kcal(
                 null, weightKg, java.time.Duration.ofMillis(metrics.movingTime.inWholeMilliseconds),
             ).takeIf { recording },

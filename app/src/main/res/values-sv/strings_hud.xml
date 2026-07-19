@@ -34,4 +34,5 @@
     <string name="metric_avg_pace">Snittempo</string>
     <string name="metric_lap_avg_speed">Snitt varv</string>
     <string name="metric_lap_avg_pace">Snitttempo varv</string>
+    <string name="metric_power_to_weight">Effekt/vikt</string>
 </resources>
