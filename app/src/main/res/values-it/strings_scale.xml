@@ -52,4 +52,7 @@
     <string name="scale_err_bluetooth">Attiva il Bluetooth.</string>
     <string name="scale_err_unknown">Questa bilancia non è riconosciuta. Potrebbe usare un altro protocollo.</string>
     <string name="scale_err_generic">Impossibile leggere la bilancia.</string>
+    <string name="scale_tips_title">Pesati sempre allo stesso modo</string>
+    <string name="scale_tips_body">Le letture di composizione variano con idratazione, cibo e ora del giorno, quindi conta più la tendenza di un singolo numero. Per letture confrontabili:\n\n• Alla stessa ora — meglio al mattino\n• Prima di mangiare o bere, dopo aver svuotato la vescica\n• Piedi nudi e asciutti sul metallo\n• Non subito dopo doccia, pasto o attività fisica\n• Resta fermo finché non si stabilizza</string>
+    <string name="scale_stats_trend_hint">Fidati della tendenza, non di una singola lettura: peso e composizione variano di giorno in giorno con idratazione e ora.</string>
 </resources>

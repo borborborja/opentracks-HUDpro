@@ -52,4 +52,7 @@
     <string name="scale_err_bluetooth">Włącz Bluetooth.</string>
     <string name="scale_err_unknown">Ta waga nie jest rozpoznana. Może używać innego protokołu.</string>
     <string name="scale_err_generic">Nie udało się odczytać wagi.</string>
+    <string name="scale_tips_title">Waż się zawsze tak samo</string>
+    <string name="scale_tips_body">Pomiary składu ciała wahają się w zależności od nawodnienia, posiłków i pory dnia, więc trend znaczy więcej niż pojedyncza liczba. Aby pomiary były porównywalne:\n\n• O tej samej porze — najlepiej rano\n• Przed jedzeniem i piciem, po opróżnieniu pęcherza\n• Bose, suche stopy płasko na metalu\n• Nie tuż po prysznicu, posiłku czy ćwiczeniach\n• Stój nieruchomo, aż wynik się ustali</string>
+    <string name="scale_stats_trend_hint">Ufaj trendowi, a nie pojedynczemu pomiarowi — waga i skład wahają się z dnia na dzień z nawodnieniem i porą dnia.</string>
 </resources>

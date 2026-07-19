@@ -52,4 +52,7 @@
     <string name="scale_err_bluetooth">Zet Bluetooth aan.</string>
     <string name="scale_err_unknown">Deze weegschaal wordt niet herkend. Mogelijk een ander protocol.</string>
     <string name="scale_err_generic">Kon de weegschaal niet lezen.</string>
+    <string name="scale_tips_title">Weeg jezelf steeds hetzelfde</string>
+    <string name="scale_tips_body">Lichaamsmetingen schommelen met vocht, eten en tijdstip, dus de trend zegt meer dan één enkel getal. Voor vergelijkbare metingen:\n\n• Op hetzelfde tijdstip — \'s ochtends is het beste\n• Voor het eten of drinken, na een toiletbezoek\n• Blote, droge voeten plat op het metaal\n• Niet vlak na douche, maaltijd of sport\n• Blijf stilstaan tot de meting stabiel is</string>
+    <string name="scale_stats_trend_hint">Vertrouw op de trend, niet op één meting — gewicht en samenstelling schommelen per dag met vocht en tijdstip.</string>
 </resources>

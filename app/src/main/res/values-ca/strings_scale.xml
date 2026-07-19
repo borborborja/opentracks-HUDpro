@@ -52,4 +52,7 @@
     <string name="scale_err_bluetooth">Activa el Bluetooth.</string>
     <string name="scale_err_unknown">No es reconeix aquesta bàscula. Pot fer servir un altre protocol.</string>
     <string name="scale_err_generic">No s\'ha pogut llegir la bàscula.</string>
+    <string name="scale_tips_title">Pesa\'t sempre igual</string>
+    <string name="scale_tips_body">Les lectures de composició varien amb la hidratació, el menjar i l\'hora del dia, així que la tendència importa més que qualsevol xifra solta. Per a lectures comparables:\n\n• A la mateixa hora — millor al matí\n• Abans de menjar o beure, després de buidar la bufeta\n• Peus descalços i secs sobre el metall\n• No just després de la dutxa, un àpat o exercici\n• Queda\'t quiet fins que s\'estabilitzi</string>
+    <string name="scale_stats_trend_hint">Fia\'t de la tendència, no d\'una lectura solta: el pes i la composició varien d\'un dia a l\'altre amb la hidratació i l\'hora.</string>
 </resources>

@@ -52,4 +52,7 @@
     <string name="scale_err_bluetooth">Bluetooth\'u aç.</string>
     <string name="scale_err_unknown">Bu tartı tanınmıyor. Farklı bir protokol kullanıyor olabilir.</string>
     <string name="scale_err_generic">Tartı okunamadı.</string>
+    <string name="scale_tips_title">Her zaman aynı şekilde tartıl</string>
+    <string name="scale_tips_body">Vücut analizi değerleri sıvı, yemek ve günün saatine göre değişir; bu yüzden eğilim tek bir sayıdan daha önemlidir. Karşılaştırılabilir ölçümler için:\n\n• Aynı saatte — en iyisi sabah\n• Yemeden içmeden önce, tuvalete gittikten sonra\n• Çıplak, kuru ayaklarla metalin üzerinde\n• Duş, yemek veya egzersizden hemen sonra değil\n• Değer sabitlenene kadar hareketsiz dur</string>
+    <string name="scale_stats_trend_hint">Tek bir ölçüme değil eğilime güven — kilo ve vücut değerleri her gün sıvı ve saate göre değişir.</string>
 </resources>

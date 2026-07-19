@@ -52,4 +52,7 @@
     <string name="scale_err_bluetooth">Zapni Bluetooth.</string>
     <string name="scale_err_unknown">Tato váha není rozpoznána. Může používat jiný protokol.</string>
     <string name="scale_err_generic">Váhu se nepodařilo přečíst.</string>
+    <string name="scale_tips_title">Važte se vždy stejně</string>
+    <string name="scale_tips_body">Hodnoty složení těla kolísají s hydratací, jídlem a denní dobou, takže trend znamená víc než jediné číslo. Pro srovnatelná měření:\n\n• Ve stejnou dobu — nejlépe ráno\n• Před jídlem a pitím, po vyprázdnění močového měchýře\n• Bosýma, suchýma nohama přímo na kovu\n• Ne hned po sprše, jídle nebo cvičení\n• Stůjte klidně, dokud se hodnota neustálí</string>
+    <string name="scale_stats_trend_hint">Věřte trendu, ne jednomu měření — váha i složení kolísají den ode dne s hydratací a denní dobou.</string>
 </resources>

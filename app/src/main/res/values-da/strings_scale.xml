@@ -52,4 +52,7 @@
     <string name="scale_err_bluetooth">Slå Bluetooth til.</string>
     <string name="scale_err_unknown">Denne vægt genkendes ikke. Den bruger måske en anden protokol.</string>
     <string name="scale_err_generic">Kunne ikke læse vægten.</string>
+    <string name="scale_tips_title">Vej dig altid ens</string>
+    <string name="scale_tips_body">Kropsmålinger svinger med væske, mad og tidspunkt, så tendensen betyder mere end et enkelt tal. For sammenlignelige målinger:\n\n• Samme tidspunkt — helst om morgenen\n• Før du spiser eller drikker, efter toiletbesøg\n• Bare, tørre fødder fladt på metallet\n• Ikke lige efter bad, måltid eller træning\n• Stå stille, til målingen falder til ro</string>
+    <string name="scale_stats_trend_hint">Stol på tendensen, ikke på en enkelt måling — vægt og sammensætning svinger fra dag til dag med væske og tidspunkt.</string>
 </resources>

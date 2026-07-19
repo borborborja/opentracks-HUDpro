@@ -52,4 +52,7 @@
     <string name="scale_err_bluetooth">Kytke Bluetooth päälle.</string>
     <string name="scale_err_unknown">Tätä vaakaa ei tunnisteta. Se voi käyttää eri protokollaa.</string>
     <string name="scale_err_generic">Vaakaa ei voitu lukea.</string>
+    <string name="scale_tips_title">Punnitse aina samalla tavalla</string>
+    <string name="scale_tips_body">Kehonkoostumuslukemat vaihtelevat nesteytyksen, ruoan ja kellonajan mukaan, joten suuntaus kertoo enemmän kuin yksittäinen luku. Vertailukelpoisia lukemia varten:\n\n• Samaan aikaan — aamulla on paras\n• Ennen syömistä ja juomista, rakon tyhjennyksen jälkeen\n• Paljain, kuivin jaloin suoraan metallille\n• Ei heti suihkun, aterian tai liikunnan jälkeen\n• Seiso paikallasi, kunnes lukema vakiintuu</string>
+    <string name="scale_stats_trend_hint">Luota suuntaukseen, älä yksittäiseen lukemaan — paino ja koostumus vaihtelevat päivittäin nesteytyksen ja kellonajan mukaan.</string>
 </resources>

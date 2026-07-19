@@ -52,4 +52,7 @@
     <string name="scale_err_bluetooth">Active le Bluetooth.</string>
     <string name="scale_err_unknown">Cette balance n\'est pas reconnue. Elle utilise peut-être un autre protocole.</string>
     <string name="scale_err_generic">Impossible de lire la balance.</string>
+    <string name="scale_tips_title">Pesez-vous toujours pareil</string>
+    <string name="scale_tips_body">Les mesures de composition varient selon l\'hydratation, les repas et l\'heure — la tendance compte plus qu\'un chiffre isolé. Pour des mesures comparables :\n\n• À la même heure — le matin de préférence\n• Avant de manger ou boire, après être allé aux toilettes\n• Pieds nus et secs à plat sur le métal\n• Pas juste après la douche, un repas ou du sport\n• Restez immobile jusqu\'à stabilisation</string>
+    <string name="scale_stats_trend_hint">Fiez-vous à la tendance, pas à une seule mesure : le poids et la composition varient d\'un jour à l\'autre selon l\'hydratation et l\'heure.</string>
 </resources>

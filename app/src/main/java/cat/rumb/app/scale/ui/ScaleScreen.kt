@@ -28,6 +28,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -204,6 +207,36 @@ private fun LiveTab(prefs: ViewerPreferences, onPairNeeded: () -> Unit) {
                 ScaleState.Idle -> StatusLine(R.string.scale_state_idle)
             }
         }
+
+        // How to weigh so readings line up — the single biggest lever on BIA accuracy. Collapsed by
+        // default so it doesn't crowd repeat weigh-ins, always one tap away.
+        WeighTips()
+    }
+}
+
+/** Collapsible card with standardized-weigh-in guidance. */
+@Composable
+private fun WeighTips() {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    Card {
+        Column(
+            Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Filled.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Text(stringResource(R.string.scale_tips_title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Icon(
+                    if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            if (expanded) {
+                Text(stringResource(R.string.scale_tips_body), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+            }
+        }
     }
 }
 
@@ -282,6 +315,14 @@ private fun MetricList(metrics: BodyMetrics, sex: Sex?, previous: BodyMetrics?) 
                 }
             }
         }
+        // Composition (not plain weight/BMI) is a modelled estimate — say so wherever it's shown.
+        if (metrics.bodyFatPct != null) {
+            Text(
+                stringResource(R.string.scale_estimate_note),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline,
+            )
+        }
     }
 }
 
@@ -332,6 +373,11 @@ private fun StatsTab(weighIns: List<WeighInEntity>) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        Text(
+            stringResource(R.string.scale_stats_trend_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
         METRICS.forEach { spec ->
             val series = metricsSeq.mapNotNull { spec.value(it)?.toFloat() }
             if (series.size < 2) return@forEach

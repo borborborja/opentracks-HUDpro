@@ -52,4 +52,7 @@
     <string name="scale_err_bluetooth">Activa el Bluetooth.</string>
     <string name="scale_err_unknown">No se reconoce esta báscula. Puede usar otro protocolo.</string>
     <string name="scale_err_generic">No se pudo leer la báscula.</string>
+    <string name="scale_tips_title">Pésate siempre igual</string>
+    <string name="scale_tips_body">Las lecturas de composición varían con la hidratación, la comida y la hora del día, así que la tendencia importa más que cualquier número suelto. Para lecturas comparables:\n\n• A la misma hora — mejor por la mañana\n• Antes de comer o beber, tras vaciar la vejiga\n• Pies descalzos y secos sobre el metal\n• No justo después de la ducha, una comida o ejercicio\n• Quédate quieto hasta que se estabilice</string>
+    <string name="scale_stats_trend_hint">Fíate de la tendencia, no de un pesaje suelto: el peso y la composición varían de un día a otro con la hidratación y la hora.</string>
 </resources>

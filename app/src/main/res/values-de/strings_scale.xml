@@ -52,4 +52,7 @@
     <string name="scale_err_bluetooth">Bluetooth einschalten.</string>
     <string name="scale_err_unknown">Diese Waage wird nicht erkannt. Sie nutzt evtl. ein anderes Protokoll.</string>
     <string name="scale_err_generic">Waage konnte nicht gelesen werden.</string>
+    <string name="scale_tips_title">Immer gleich wiegen</string>
+    <string name="scale_tips_body">Körperanalyse-Werte schwanken mit Flüssigkeit, Essen und Tageszeit — der Trend zählt mehr als ein einzelner Wert. Für vergleichbare Messungen:\n\n• Immer zur selben Zeit — morgens ist am besten\n• Vor dem Essen und Trinken, nach dem Toilettengang\n• Barfuß und mit trockenen Füßen auf dem Metall\n• Nicht direkt nach Dusche, Mahlzeit oder Sport\n• Still stehen, bis der Wert steht</string>
+    <string name="scale_stats_trend_hint">Verlass dich auf den Trend, nicht auf eine einzelne Messung — Gewicht und Körperwerte schwanken täglich mit Flüssigkeit und Tageszeit.</string>
 </resources>
