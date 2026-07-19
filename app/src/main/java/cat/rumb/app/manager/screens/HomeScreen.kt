@@ -390,6 +390,7 @@ fun HomeScreen(
                     onOpenRecords = onOpenRecords,
                     onOpenHeatmap = onOpenHeatmap,
                     onOpenTraining = onOpenTraining,
+                    onOpenScale = onOpenScale,
                 )
             }
         }

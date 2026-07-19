@@ -12,9 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
@@ -26,6 +29,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cat.rumb.app.viewer.hud.drawSeries
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -57,6 +62,7 @@ fun ProgressTab(
     onOpenRecords: () -> Unit,
     onOpenHeatmap: () -> Unit,
     onOpenTraining: (Long) -> Unit = {},
+    onOpenScale: () -> Unit = {},
 ) {
     val prefs = ViewerPreferences.get(LocalContext.current)
     val typeOptions = rememberActivityTypeOptions(prefs)
@@ -94,6 +100,9 @@ fun ProgressTab(
         StreakCard(ProgressStats.streakWeeks(all))
 
         TotalsCard(all, typeFilter)
+
+        // Body glance — only when the weight module is on and there's at least one weigh-in (additive).
+        WeightGlanceCard(onOpenScale)
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             EntryCard(
@@ -249,6 +258,62 @@ private fun EntryCard(icon: @Composable () -> Unit, label: String, onClick: () -
         ) {
             icon()
             Text(label, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+// --- Body glance (weight-control module) ---
+
+/** Latest weight + body-fat with their change, and a weight trend line. Additive: renders nothing
+ *  unless the weight module is on and there's a weigh-in, and tapping opens the scale. */
+@Composable
+private fun WeightGlanceCard(onOpenScale: () -> Unit) {
+    val context = LocalContext.current
+    val prefs = remember { ViewerPreferences.get(context) }
+    if (!prefs.weightControlEnabled) return
+    val app = remember { cat.rumb.app.RumbApplication.from(context) }
+    val weighIns by app.weightRepository.observeAll().collectAsStateWithLifecycle(emptyList())
+    val list = weighIns
+    if (list.isEmpty()) return
+
+    val latest = list.last().metrics()
+    val prev = list.getOrNull(list.size - 2)?.metrics()
+    val primary = MaterialTheme.colorScheme.primary
+    Card(onClick = onOpenScale) {
+        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.MonitorWeight, contentDescription = null, tint = primary, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.size(8.dp))
+                Text(stringResource(R.string.scale_title), fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                GlanceStat(stringResource(R.string.scale_weight_label), latest.weightKg, "kg", prev?.weightKg)
+                val fat = latest.bodyFatPct
+                if (fat != null) GlanceStat(stringResource(R.string.scale_m_fat), fat, "%", prev?.bodyFatPct)
+            }
+            val series = list.map { it.weightKg.toFloat() }
+            if (series.size >= 2) {
+                Canvas(Modifier.fillMaxWidth().height(40.dp)) {
+                    drawSeries(series, size.width, size.height, primary, baselineZero = false)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.GlanceStat(label: String, value: Double, unit: String, previous: Double?) {
+    Column(Modifier.weight(1f)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(String.format(Locale.US, "%.1f", value), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(" $unit", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        val delta = previous?.let { value - it }
+        if (delta != null && abs(delta) >= 0.05) {
+            val sign = if (delta >= 0) "+" else "−"
+            Text("$sign${String.format(Locale.US, "%.1f", abs(delta))} $unit", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
         }
     }
 }
