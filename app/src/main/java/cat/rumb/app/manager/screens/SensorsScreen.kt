@@ -3,11 +3,9 @@ package cat.rumb.app.manager.screens
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.os.Build
-import android.os.ParcelUuid
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -66,9 +64,15 @@ fun SensorsScreen(onBack: () -> Unit) {
     val callback = remember {
         object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
+                // Many HR devices (Mi Band, Amazfit, watches) expose the heart-rate service only over
+                // GATT and advertise a name, not the 0x180D service UUID — so we scan unfiltered and
+                // keep any named device, plus the rare unnamed one that does advertise a fitness
+                // service. This mirrors BleSensorProbe, which scans unfiltered for the same reason.
                 val name = result.device.name ?: result.scanRecord?.deviceName
-                    ?: context.getString(R.string.sensors_default_name)
-                found[result.device.address] = name
+                val advertisesSensor = result.scanRecord?.serviceUuids
+                    ?.any { it.uuid in BleSensorManager.SCAN_SERVICES } == true
+                if (name == null && !advertisesSensor) return
+                found[result.device.address] = name ?: context.getString(R.string.sensors_default_name)
             }
             override fun onScanFailed(errorCode: Int) {
                 scanError = context.getString(R.string.sensors_scan_error, errorCode)
@@ -78,11 +82,10 @@ fun SensorsScreen(onBack: () -> Unit) {
 
     fun startScan() {
         val s = scanner ?: run { scanError = context.getString(R.string.sensors_bluetooth_off); return }
-        val filters = BleSensorManager.SCAN_SERVICES.map {
-            ScanFilter.Builder().setServiceUuid(ParcelUuid(it)).build()
-        }
+        // No ScanFilter: a service-UUID filter would drop devices that don't advertise 0x180D/0x1816/
+        // 0x1818 (Mi Band, Amazfit, most watches). The callback filters to named/sensor devices.
         val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
-        runCatching { s.startScan(filters, settings, callback); scanning = true; scanError = null }
+        runCatching { s.startScan(emptyList(), settings, callback); scanning = true; scanError = null }
             .onFailure { scanError = it.message; DebugLog.e("Record", "BLE scan", it) }
     }
 
